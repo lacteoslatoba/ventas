@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-slate-800 font-sans antialiased;
+    background-color: #f8fafc;
+    background-image: radial-gradient(at 0% 0%, hsla(43, 100%, 80%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(210, 100%, 90%, 0.1) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #ticket-print-area,
+  #ticket-print-area * {
+    visibility: visible;
+  }
+
+  #ticket-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    padding: 0;
+    margin: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Scrollbar utilities para vistas móviles limpias */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* Custom soft scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
+}
+
+/* Transition easing */
+.ease-out-expo {
+  transition-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
+}

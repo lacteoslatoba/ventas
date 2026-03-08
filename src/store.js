@@ -1,0 +1,234 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { supabase } from './lib/supabase';
+
+export const useStore = create(
+    persist(
+        (set, get) => ({
+            products: [],
+            inventory: [],
+            users: [],
+            clients: [],
+            sales: [],
+
+            // Autenticación y Roles
+            currentUser: null,
+            login: (username, password) => {
+                const state = get();
+                const cleanUsername = username.trim().toLowerCase();
+                const cleanPassword = password.trim();
+
+                // Admin hardcoded con nueva clave
+                if (cleanUsername === 'admin' && cleanPassword === '5151') {
+                    set({ currentUser: { id: 'admin', name: 'Administrador', role: 'admin' } });
+                    return true;
+                }
+                // Usuarios de la base de datos
+                const user = state.users.find(u => (u.name || '').trim().toLowerCase() === cleanUsername && u.pin === cleanPassword);
+                if (user) {
+                    set({ currentUser: { ...user, role: 'repartidor' } });
+                    return true;
+                }
+                return false;
+            },
+            logout: () => set({ currentUser: null }),
+
+            // Estado de Red / Nube
+            isOnline: navigator.onLine,
+            isSyncing: false,
+            lastSync: null,
+
+            setOnlineStatus: (status) => set({ isOnline: status }),
+
+            // Motor de Sincronización Automática (Subida)
+            syncToSupabase: async () => {
+                const state = get();
+                if (!state.isOnline || !supabase) return;
+
+                set({ isSyncing: true });
+
+                try {
+                    const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales'];
+                    const successTables = [];
+
+                    for (const tableName of tablesToSync) {
+                        const pendingData = state[tableName].filter(item => !item.synced);
+                        if (pendingData.length > 0) {
+                            // Remove the 'synced' property from the payload sent to the cloud
+                            // eslint-disable-next-line no-unused-vars
+                            const payload = pendingData.map(({ synced, ...rest }) => rest);
+
+                            const { error } = await supabase.from(tableName).upsert(payload);
+                            if (error) {
+                                console.error(`Error Syncing ${tableName}:`, error.message);
+                                if (error.message.includes('column')) {
+                                    alert(`ERROR DE NUBE: La tabla "${tableName}" no está actualizada. Falta una columna (como el PIN). Por favor comunícate para añadirla en Supabase.`);
+                                }
+                                // Mantenemos registro del error pero continuamos con las demás tablas
+                            } else {
+                                successTables.push(tableName);
+                            }
+                        } else {
+                            successTables.push(tableName);
+                        }
+                    }
+
+                    // Marcamos como sincronizadas SOLO las tablas que tuvieron éxito
+                    set((s) => {
+                        const nextState = { lastSync: new Date().toISOString() };
+                        successTables.forEach(t => {
+                            nextState[t] = s[t].map(x => ({ ...x, synced: true }));
+                        });
+                        return nextState;
+                    });
+
+                } catch (error) {
+                    console.error('Error sincronizando con la nube:', error);
+                } finally {
+                    set({ isSyncing: false });
+                }
+            },
+
+            // Descarga de datos oficiales desde Supabase
+            fetchFromSupabase: async () => {
+                if (!get().isOnline || !supabase) return;
+                set({ isSyncing: true });
+                try {
+                    const tablesToSync = ['products', 'users', 'clients'];
+                    const freshData = {};
+
+                    for (const tableName of tablesToSync) {
+                        const { data, error } = await supabase.from(tableName).select('*');
+                        if (!error && data) {
+                            // Mapear los datos de bajada para que la app sepa que ya están sincronizados
+                            freshData[tableName] = data.map(item => ({ ...item, synced: true }));
+                        }
+                    }
+
+                    set((state) => {
+                        // Función para fusionar preservando los cambios locales sin sincronizar
+                        const mergeState = (tableName) => {
+                            const newArray = freshData[tableName];
+                            if (!newArray) return state[tableName];
+
+                            const pendingLocal = state[tableName].filter(item => !item.synced);
+
+                            // Iniciamos con los que vienen de la nube y sobreescribimos con los pendientes locales
+                            const merged = newArray.map(remoteItem => {
+                                const localItem = pendingLocal.find(p => p.id === remoteItem.id);
+                                return localItem ? localItem : remoteItem;
+                            });
+
+                            // Agregamos aquellos que fueron creados localmente y no están en la nube
+                            const locallyCreated = pendingLocal.filter(p => !newArray.find(r => r.id === p.id));
+                            return [...merged, ...locallyCreated];
+                        };
+
+                        return {
+                            ...state,
+                            products: mergeState('products'),
+                            users: mergeState('users'),
+                            clients: mergeState('clients')
+                        };
+                    });
+
+                } catch (error) {
+                    console.error('Error descargando desde Supabase:', error);
+                } finally {
+                    set({ isSyncing: false });
+                }
+            },
+
+            // Productos
+            addProduct: (product) => {
+                set((state) => ({ products: [...state.products, { ...product, id: Date.now().toString(), synced: false }] }));
+                get().syncToSupabase();
+            },
+            updateProduct: (id, product) => {
+                set((state) => ({ products: state.products.map(p => p.id === id ? { ...p, ...product, synced: false } : p) }));
+                get().syncToSupabase();
+            },
+            deleteProduct: async (id) => {
+                set((state) => ({ products: state.products.filter(p => p.id !== id) }));
+                if (get().isOnline && supabase) {
+                    await supabase.from('products').delete().eq('id', id);
+                }
+            },
+
+            // Inventario (Entradas/Salidas)
+            addInventory: (item) => {
+                set((state) => ({
+                    inventory: [...state.inventory, { ...item, id: Date.now().toString(), date: new Date().toISOString(), synced: false }],
+                    products: state.products.map(p => {
+                        if (p.id === item.productId) {
+                            return {
+                                ...p,
+                                stock: (p.stock || 0) + (item.type === 'IN' ? Number(item.quantity) : -Number(item.quantity)),
+                                synced: false
+                            };
+                        }
+                        return p;
+                    })
+                }));
+                get().syncToSupabase();
+            },
+
+            // Usuarios
+            addUser: (user) => {
+                set((state) => ({ users: [...state.users, { ...user, id: Date.now().toString(), synced: false }] }));
+                get().syncToSupabase();
+            },
+            updateUser: (id, user) => {
+                set((state) => ({ users: state.users.map(u => u.id === id ? { ...u, ...user, synced: false } : u) }));
+                get().syncToSupabase();
+            },
+            deleteUser: async (id) => {
+                set((state) => ({ users: state.users.filter(u => u.id !== id) }));
+                if (get().isOnline && supabase) {
+                    const { error } = await supabase.from('users').delete().eq('id', id);
+                    if (error) console.error("Error Delete User:", error);
+                }
+            },
+
+            // Clientes
+            addClient: (client) => {
+                set((state) => ({ clients: [...state.clients, { ...client, id: Date.now().toString(), synced: false }] }));
+                get().syncToSupabase();
+            },
+            updateClient: (id, client) => {
+                set((state) => ({ clients: state.clients.map(c => c.id === id ? { ...c, ...client, synced: false } : c) }));
+                get().syncToSupabase();
+            },
+            deleteClient: async (id) => {
+                set((state) => ({ clients: state.clients.filter(c => c.id !== id) }));
+                if (get().isOnline && supabase) {
+                    await supabase.from('clients').delete().eq('id', id);
+                }
+            },
+
+            // Ventas
+            addSale: (sale) => {
+                set((state) => {
+                    const newSale = { ...sale, id: Date.now().toString(), date: new Date().toISOString(), synced: false };
+
+                    const updatedProducts = state.products.map(p => {
+                        const saleItem = sale.items.find(i => i.productId === p.id);
+                        if (saleItem) {
+                            return { ...p, stock: (p.stock || 0) - Number(saleItem.quantity), synced: false };
+                        }
+                        return p;
+                    });
+
+                    return {
+                        sales: [...state.sales, newSale],
+                        products: updatedProducts
+                    };
+                });
+                get().syncToSupabase();
+            },
+        }),
+        {
+            name: 'ventas-quesos-storage',
+        }
+    )
+);
