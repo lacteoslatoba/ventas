@@ -105,7 +105,7 @@ export default function Reports() {
                                     <div className="flex items-center gap-2 text-slate-400 mb-1">
                                         <User size={14} /> <span className="text-[10px] font-black uppercase tracking-widest">Repartidor</span>
                                     </div>
-                                    <p className="text-sm font-bold text-slate-700 truncate">{users.find(u => u.id === selectedSale.userId)?.name || 'Admin'}</p>
+                                    <p className="text-sm font-bold text-slate-700 truncate">{selectedSale.userId === 'admin' ? 'Administrador' : (users.find(u => u.id === selectedSale.userId)?.name || 'Admin')}</p>
                                 </div>
                                 <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 col-span-2">
                                     <div className="flex items-center gap-2 text-primary mb-1">
