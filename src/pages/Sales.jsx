@@ -60,7 +60,7 @@ export default function Sales() {
 
         addSale(sale);
         // eslint-disable-next-line
-        setGeneratedTicket({ ...sale, _id: Date.now().toString() });
+        setGeneratedTicket({ ...sale, id: Date.now().toString() });
         setCart([]);
         setSelectedClient('');
         setMobileCartOpen(false);
@@ -84,7 +84,7 @@ export default function Sales() {
                         <CheckCircle size={40} />
                     </div>
                     <h2 className="text-2xl font-black text-slate-800 mb-2">Venta Exitosa</h2>
-                    <p className="text-slate-500 mb-8 font-medium">Ticket #{generatedTicket._id.slice(-6)} generado</p>
+                    <p className="text-slate-500 mb-8 font-medium">Ticket #{generatedTicket.id.slice(-6)} generado</p>
                     <div className="flex flex-col gap-3 justify-center">
                         <button onClick={() => window.print()} className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 text-lg active:scale-95 transition-transform">
                             <Printer size={22} /> Imprimir Ticket
@@ -99,7 +99,7 @@ export default function Sales() {
                 <div id="ticket-print-area" className="bg-white p-6 w-[80mm] text-black hidden print:block text-xs font-mono mx-auto">
                     <div className="text-center mb-4">
                         <h1 className="text-lg font-bold">QUESOS EL BUEN SABOR</h1>
-                        <p>Ticket: #{generatedTicket._id.slice(-6)}</p>
+                        <p>Ticket: #{generatedTicket.id.slice(-6)}</p>
                         <p>{new Date(generatedTicket.date).toLocaleString()}</p>
                     </div>
                     <div className="mb-4 border-t border-b border-black py-2 border-dashed">

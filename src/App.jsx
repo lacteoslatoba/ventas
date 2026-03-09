@@ -75,8 +75,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   const handleLinkClick = () => setIsOpen(false);
 
-  const currentUser = useStore.getState().currentUser;
-  if (currentUser?.role !== 'admin') return null;
+  const { currentUser, isSyncing } = useStore();
+  if (!currentUser || currentUser.role !== 'admin') return null;
 
   return (
     <>
@@ -97,6 +97,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         <div className="flex items-center justify-between md:justify-center h-16 md:h-20 px-4 md:px-0 border-b border-slate-100 bg-white">
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-primary flex items-center gap-2 md:gap-3">
             QuesoApp
+            {isSyncing && <RefreshCw size={16} className="animate-spin text-slate-400" />}
           </h1>
           <button onClick={() => setIsOpen(false)} className="md:hidden p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
             <X size={24} />
@@ -151,7 +152,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const currentUser = useStore(state => state.currentUser);
+  const { currentUser, isSyncing } = useStore();
 
   return (
     <>
@@ -176,8 +177,13 @@ function App() {
                 <h1 className="text-base font-black tracking-tight text-slate-800 leading-none">{currentUser?.name?.split(' ')[0]}</h1>
               </div>
               <div className="w-10 flex justify-end">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs border border-primary/20">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs border border-primary/20 relative">
                   {currentUser?.name?.charAt(0)}
+                  {isSyncing && (
+                    <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                      <RefreshCw size={10} className="animate-spin text-primary" />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
