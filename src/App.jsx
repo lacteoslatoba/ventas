@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, Warehouse, Users, Store, ShoppingCart, FileBarChart, Menu, X, Cloud, CloudOff, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, Package, Warehouse, Users, Store, ShoppingCart, FileBarChart, Menu, X, Cloud, RefreshCw, PrinterIcon } from 'lucide-react';
 import { useStore } from './store';
 
 import Dashboard from './pages/Dashboard';
@@ -11,6 +11,7 @@ import Clients from './pages/Clients';
 import Sales from './pages/Sales';
 import Reports from './pages/Reports';
 import Login from './pages/Login';
+import PrinterSettings from './pages/PrinterSettings';
 
 const NetworkIndicator = () => {
   const { isOnline, setOnlineStatus, syncToSupabase } = useStore();
@@ -71,6 +72,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     { name: 'Repartidores', path: '/usuarios', icon: Users, roles: ['admin'] },
     { name: 'Clientes', path: '/clientes', icon: Store, roles: ['admin'] },
     { name: 'Reportes de Venta', path: '/reportes', icon: FileBarChart, roles: ['admin', 'repartidor'] },
+    { name: 'Impresora BT', path: '/impresora', icon: PrinterIcon, roles: ['admin', 'repartidor'] },
   ];
 
   const handleLinkClick = () => setIsOpen(false);
@@ -200,6 +202,7 @@ function App() {
                   <Route path="/usuarios" element={<UsersPage />} />
                   <Route path="/clientes" element={<Clients />} />
                   <Route path="/reportes" element={<Reports />} />
+                  <Route path="/impresora" element={<PrinterSettings />} />
                 </Routes>
               </div>
             </main>
@@ -214,17 +217,15 @@ function App() {
                 <FileBarChart size={20} />
                 <span className="text-[10px] font-bold uppercase tracking-tighter">Reportes</span>
               </Link>
+              <Link to="/impresora" className="flex flex-col items-center gap-1 text-slate-400 focus:text-primary active:text-primary transition-colors">
+                <PrinterIcon size={20} />
+                <span className="text-[10px] font-bold uppercase tracking-tighter">Impresora</span>
+              </Link>
               {currentUser?.role === 'admin' ? (
-                <>
-                  <Link to="/clientes" className="flex flex-col items-center gap-1 text-slate-400 focus:text-primary">
-                    <Store size={20} />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Clientes</span>
-                  </Link>
-                  <button onClick={() => setIsSidebarOpen(true)} className="flex flex-col items-center gap-1 text-slate-400">
-                    <Menu size={20} />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Más</span>
-                  </button>
-                </>
+                <button onClick={() => setIsSidebarOpen(true)} className="flex flex-col items-center gap-1 text-slate-400">
+                  <Menu size={20} />
+                  <span className="text-[10px] font-bold uppercase tracking-tighter">Más</span>
+                </button>
               ) : (
                 <button onClick={() => useStore.getState().logout()} className="flex flex-col items-center gap-1 text-slate-400 focus:text-red-500 transition-colors">
                   <RefreshCw size={20} className="rotate-45" />

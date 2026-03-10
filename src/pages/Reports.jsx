@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Printer, X, ShoppingBag, Calendar, User, Store } from 'lucide-react';
+import { Printer, X, ShoppingBag, Calendar, User, Store, Bluetooth } from 'lucide-react';
+import { printTicket } from '../lib/bluetoothPrinter';
 
 export default function Reports() {
     const { sales, users, clients, currentUser } = useStore();
     const [filterUser, setFilterUser] = useState('');
     const [selectedSale, setSelectedSale] = useState(null);
+    const [btPrinting, setBtPrinting] = useState(false);
 
     const isAdmin = currentUser?.role === 'admin';
     const effectiveFilterUser = isAdmin ? filterUser : currentUser?.id;
@@ -15,6 +17,27 @@ export default function Reports() {
 
     const handlePrintSelected = () => {
         window.print();
+    };
+
+    const handleBTPrint = async (sale) => {
+        const btPrinter = window.__btPrinter;
+        if (!btPrinter) return;
+        const user = users.find(u => u.id === sale.userId);
+        const client = clients.find(c => c.id === sale.clientId);
+        setBtPrinting(true);
+        try {
+            await printTicket({
+                ticket: sale,
+                user,
+                client,
+                isReprint: true,
+                characteristic: btPrinter.characteristic,
+            });
+        } catch (err) {
+            alert('Error al imprimir: ' + err.message);
+        } finally {
+            setBtPrinting(false);
+        }
     };
 
     return (
@@ -138,12 +161,31 @@ export default function Reports() {
                                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Venta</p>
                                     <p className="text-4xl font-black text-slate-900 tracking-tighter">${selectedSale.total.toFixed(2)}</p>
                                 </div>
-                                <button
-                                    onClick={handlePrintSelected}
-                                    className="px-4 py-2.5 bg-primary hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-2 text-sm"
-                                >
-                                    <Printer size={16} /> Imprimir
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    {window.__btPrinter ? (
+                                        <button
+                                            onClick={() => handleBTPrint(selectedSale)}
+                                            disabled={btPrinting}
+                                            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-2 text-sm"
+                                        >
+                                            <Bluetooth size={16} />
+                                            {btPrinting ? 'Enviando...' : 'BT'}
+                                        </button>
+                                    ) : (
+                                        <a
+                                            href="/impresora"
+                                            className="px-3 py-2.5 border border-dashed border-slate-300 text-slate-400 hover:text-primary hover:border-primary font-bold rounded-xl flex items-center gap-1.5 text-xs active:scale-95 transition-all"
+                                        >
+                                            <Bluetooth size={14} /> Config BT
+                                        </a>
+                                    )}
+                                    <button
+                                        onClick={handlePrintSelected}
+                                        className="px-4 py-2.5 bg-primary hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-2 text-sm"
+                                    >
+                                        <Printer size={16} /> Imprimir
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

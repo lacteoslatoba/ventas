@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { ShoppingCart, Printer, Trash2, CheckCircle, ChevronUp, ChevronDown, X, PackageOpen, Minus, Plus, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Printer, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth } from 'lucide-react';
+import { printTicket } from '../lib/bluetoothPrinter';
 
 export default function Sales() {
     const { products, clients, users, addSale, currentUser } = useStore();
     const [cart, setCart] = useState([]);
     const [selectedClient, setSelectedClient] = useState('');
     const [generatedTicket, setGeneratedTicket] = useState(null);
+    const [btPrinting, setBtPrinting] = useState(false);
 
     // Mobile Cart State
     const [mobileCartOpen, setMobileCartOpen] = useState(false);
@@ -59,7 +61,6 @@ export default function Sales() {
         };
 
         addSale(sale);
-        // eslint-disable-next-line
         setGeneratedTicket({ ...sale, id: Date.now().toString() });
         setCart([]);
         setSelectedClient('');
@@ -77,6 +78,27 @@ export default function Sales() {
         const user = users.find(u => u.id === generatedTicket.userId);
         const client = clients.find(c => c.id === generatedTicket.clientId);
 
+        const handleBTPrint = async () => {
+            const btPrinter = window.__btPrinter;
+            if (!btPrinter) return;
+            setBtPrinting(true);
+            try {
+                await printTicket({
+                    ticket: generatedTicket,
+                    user,
+                    client,
+                    isReprint: false,
+                    characteristic: btPrinter.characteristic,
+                });
+            } catch (err) {
+                alert('Error al imprimir: ' + err.message);
+            } finally {
+                setBtPrinting(false);
+            }
+        };
+
+        const btPrinter = window.__btPrinter;
+
         return (
             <div className="p-4 md:p-8 flex flex-col items-center justify-center min-h-[70vh]">
                 <div className="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 max-w-sm w-full no-print mb-6 text-center animate-in zoom-in duration-300">
@@ -86,10 +108,30 @@ export default function Sales() {
                     <h2 className="text-2xl font-black text-slate-800 mb-2">Venta Exitosa</h2>
                     <p className="text-slate-500 mb-8 font-medium">Ticket #{generatedTicket.id.slice(-6)} generado</p>
                     <div className="flex flex-col gap-3 justify-center">
-                        <button onClick={() => window.print()} className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 text-lg active:scale-95 transition-transform">
-                            <Printer size={22} /> Imprimir Ticket
+                        {/* Botón Bluetooth */}
+                        {btPrinter ? (
+                            <button
+                                onClick={handleBTPrint}
+                                disabled={btPrinting}
+                                className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 text-lg active:scale-95 transition-transform"
+                            >
+                                <Bluetooth size={22} />
+                                {btPrinting ? 'Enviando...' : 'Imprimir por Bluetooth'}
+                            </button>
+                        ) : (
+                            <a
+                                href="/impresora"
+                                className="w-full py-3 border border-dashed border-slate-300 text-slate-400 hover:text-primary hover:border-primary font-bold rounded-2xl flex items-center justify-center gap-2 text-sm active:scale-95 transition-all"
+                            >
+                                <Bluetooth size={18} />
+                                Configurar Impresora BT
+                            </a>
+                        )}
+                        {/* Botón imprimir normal */}
+                        <button onClick={() => window.print()} className="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl shadow flex items-center justify-center gap-2 text-base active:scale-95 transition-transform">
+                            <Printer size={20} /> Imprimir (Sistema)
                         </button>
-                        <button onClick={() => setGeneratedTicket(null)} className="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl active:scale-95 transition-transform">
+                        <button onClick={() => setGeneratedTicket(null)} className="w-full py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-2xl active:scale-95 transition-transform">
                             Nueva Venta
                         </button>
                     </div>
