@@ -229,9 +229,12 @@ export default function Reports() {
                         {selectedSale.items.map((item, idx) => (
                             <div key={idx}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>{item.quantity}x {item.name.slice(0, 14)}</span>
+                                    <span>{item.quantity}{item.unit || 'u'} {item.name.slice(0, 14)}</span>
                                     <span>${(item.price * item.quantity).toFixed(2)}</span>
                                 </div>
+                                {item.pieces > 0 && (
+                                    <div style={{ fontSize: '7pt', color: '#b45309' }}>└ {item.pieces} pza{item.pieces !== 1 ? 's' : ''}</div>
+                                )}
                                 <div style={{ textAlign: 'right', color: '#555', fontSize: '7pt' }}>@ ${item.price.toFixed(2)}/u</div>
                             </div>
                         ))}

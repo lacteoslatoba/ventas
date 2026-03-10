@@ -16,10 +16,12 @@ export default function Sales() {
     // Product Selection Modal State
     const [selectedProductDialog, setSelectedProductDialog] = useState(null);
     const [selectedQuantity, setSelectedQuantity] = useState('');
+    const [selectedPieces, setSelectedPieces] = useState('');
 
     const openProductDialog = (product) => {
         setSelectedProductDialog(product);
         setSelectedQuantity('');
+        setSelectedPieces('');
     };
 
     const confirmAddToCart = () => {
@@ -28,11 +30,22 @@ export default function Sales() {
         const numQty = parseFloat(selectedQuantity);
         if (isNaN(numQty) || numQty <= 0) return alert('Por favor, ingresa una cantidad válida');
 
+        const numPieces = parseInt(selectedPieces) || 0;
+
         const existing = cart.find(item => item.productId === selectedProductDialog.id);
         if (existing) {
-            setCart(cart.map(item => item.productId === selectedProductDialog.id ? { ...item, quantity: item.quantity + numQty } : item));
+            setCart(cart.map(item => item.productId === selectedProductDialog.id
+                ? { ...item, quantity: item.quantity + numQty, pieces: (item.pieces || 0) + numPieces }
+                : item));
         } else {
-            setCart([...cart, { productId: selectedProductDialog.id, name: selectedProductDialog.name, price: Number(selectedProductDialog.price), quantity: numQty, unit: selectedProductDialog.unit }]);
+            setCart([...cart, {
+                productId: selectedProductDialog.id,
+                name: selectedProductDialog.name,
+                price: Number(selectedProductDialog.price),
+                quantity: numQty,
+                pieces: numPieces,
+                unit: selectedProductDialog.unit
+            }]);
         }
 
         setSelectedProductDialog(null);
@@ -174,9 +187,12 @@ export default function Sales() {
                         {generatedTicket.items.map((item, idx) => (
                             <div key={idx}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>{item.quantity}x {item.name.slice(0, 14)}</span>
+                                    <span>{item.quantity}{item.unit || 'u'} {item.name.slice(0, 14)}</span>
                                     <span>${(item.price * item.quantity).toFixed(2)}</span>
                                 </div>
+                                {item.pieces > 0 && (
+                                    <div style={{ fontSize: '7pt', color: '#b45309' }}>└ {item.pieces} pza{item.pieces !== 1 ? 's' : ''}</div>
+                                )}
                                 <div style={{ textAlign: 'right', color: '#555', fontSize: '7pt' }}>@ ${item.price.toFixed(2)}/u</div>
                             </div>
                         ))}
@@ -251,7 +267,14 @@ export default function Sales() {
                             <div key={item.productId} className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                                 <div className="flex-1">
                                     <p className="font-bold text-slate-800 text-sm leading-tight mb-0.5">{item.name}</p>
-                                    <p className="text-xs font-semibold text-slate-500">{item.quantity} x ${item.price.toFixed(2)}</p>
+                                    <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5">
+                                        <p className="text-xs font-semibold text-slate-500">{item.quantity} {item.unit || 'u'} × ${item.price.toFixed(2)}</p>
+                                        {item.pieces > 0 && (
+                                            <span className="text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-md">
+                                                {item.pieces} pza{item.pieces !== 1 ? 's' : ''}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <p className="font-bold text-slate-900 text-base">${(item.quantity * item.price).toFixed(2)}</p>
@@ -371,22 +394,49 @@ export default function Sales() {
                         </div>
 
                         <div className="p-6">
-                            <label className="block text-center text-slate-500 font-bold mb-4 uppercase text-xs tracking-wider">Cantidad a agregar</label>
+                            <div className="space-y-5 mb-8">
+                                {/* Campo Cantidad */}
+                                <div>
+                                    <label className="block text-center text-slate-500 font-bold mb-2 uppercase text-xs tracking-wider">
+                                        Cantidad ({selectedProductDialog.unit || 'u'})
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            id="qty-input"
+                                            type="number"
+                                            inputMode="decimal"
+                                            step="any"
+                                            min="0.01"
+                                            value={selectedQuantity}
+                                            onChange={(e) => setSelectedQuantity(e.target.value)}
+                                            className="w-full text-center text-4xl font-black text-slate-800 bg-slate-50 border-[3px] border-slate-200 focus:border-primary focus:ring-0 rounded-2xl py-5 px-4 outline-none transition-colors"
+                                            placeholder="0.00"
+                                            autoFocus
+                                        />
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">{selectedProductDialog.unit || 'u'}</div>
+                                    </div>
+                                </div>
 
-                            <div className="flex flex-col items-center justify-center gap-4 mb-8">
-                                <div className="relative w-full">
-                                    <input
-                                        type="number"
-                                        inputMode="decimal"
-                                        step="any"
-                                        min="0.01"
-                                        value={selectedQuantity}
-                                        onChange={(e) => setSelectedQuantity(e.target.value)}
-                                        className="w-full text-center text-5xl font-black text-slate-800 bg-slate-50 border-[3px] border-slate-200 focus:border-primary focus:ring-0 rounded-2xl py-6 px-4 outline-none transition-colors"
-                                        placeholder="0.00"
-                                        autoFocus
-                                    />
-                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl">{selectedProductDialog.unit || 'u'}</div>
+                                {/* Campo Piezas */}
+                                <div>
+                                    <label className="block text-center text-amber-600 font-bold mb-2 uppercase text-xs tracking-wider flex items-center justify-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+                                        Piezas (opcional)
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            id="pieces-input"
+                                            type="number"
+                                            inputMode="numeric"
+                                            step="1"
+                                            min="0"
+                                            value={selectedPieces}
+                                            onChange={(e) => setSelectedPieces(e.target.value)}
+                                            className="w-full text-center text-4xl font-black text-amber-700 bg-amber-50 border-[3px] border-amber-200 focus:border-amber-400 focus:ring-0 rounded-2xl py-5 px-4 outline-none transition-colors"
+                                            placeholder="0"
+                                        />
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-amber-400 font-bold text-sm">pzas</div>
+                                    </div>
                                 </div>
                             </div>
 

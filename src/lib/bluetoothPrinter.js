@@ -123,9 +123,12 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false, con
     ticket.items.forEach(item => {
         const importe = `$${(item.price * item.quantity).toFixed(2)}`;
         const concepto = item.name.slice(0, 14).padEnd(14);
-        const cant = `${item.quantity}x`.slice(0, 4).padEnd(5);
+        const cant = `${item.quantity}${item.unit || 'u'}`.slice(0, 5).padEnd(5);
         add(CMD.ALIGN_LEFT);
         add(`${cant}${concepto}${importe}\n`);
+        if (item.pieces > 0) {
+            add(`  └ ${item.pieces} pieza${item.pieces !== 1 ? 's' : ''}\n`);
+        }
         add(CMD.ALIGN_RIGHT);
         add(`@ $${item.price.toFixed(2)}/u\n`);
         add(CMD.ALIGN_LEFT);
@@ -231,8 +234,8 @@ export async function connectPrinter() {
 }
 
 // ─── Imprimir ticket completo ─────────────────────────────────────────────────
-export async function printTicket({ ticket, user, client, isReprint = false, characteristic }) {
-    const buffer = buildTicketBuffer({ ticket, user, client, isReprint });
+export async function printTicket({ ticket, user, client, isReprint = false, characteristic, config = {} }) {
+    const buffer = buildTicketBuffer({ ticket, user, client, isReprint, config });
     await sendInChunks(characteristic, buffer);
 }
 
