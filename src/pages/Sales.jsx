@@ -9,6 +9,7 @@ export default function Sales() {
     const [selectedClient, setSelectedClient] = useState('');
     const [generatedTicket, setGeneratedTicket] = useState(null);
     const [btPrinting, setBtPrinting] = useState(false);
+    const [showVirtualTicket, setShowVirtualTicket] = useState(false);
 
     // Mobile Cart State
     const [mobileCartOpen, setMobileCartOpen] = useState(false);
@@ -91,67 +92,72 @@ export default function Sales() {
         const user = users.find(u => u.id === generatedTicket.userId);
         const client = clients.find(c => c.id === generatedTicket.clientId);
 
-        const handleBTPrint = async () => {
+        // ── Imprimir Ticket (BT si hay impresora, si no sistema) ──────────────
+        const handlePrint = async () => {
             const btPrinter = window.__btPrinter;
-            if (!btPrinter) return;
-            setBtPrinting(true);
-            try {
-                await printTicket({
-                    ticket: generatedTicket,
-                    user,
-                    client,
-                    isReprint: false,
-                    characteristic: btPrinter.characteristic,
-                    config: ticketConfig,
-                });
-            } catch (err) {
-                alert('Error al imprimir: ' + err.message);
-            } finally {
-                setBtPrinting(false);
+            if (btPrinter) {
+                setBtPrinting(true);
+                try {
+                    await printTicket({
+                        ticket: generatedTicket,
+                        user,
+                        client,
+                        isReprint: false,
+                        characteristic: btPrinter.characteristic,
+                        config: ticketConfig,
+                    });
+                } catch (err) {
+                    alert('Error al imprimir: ' + err.message);
+                } finally {
+                    setBtPrinting(false);
+                }
+            } else {
+                window.print();
             }
         };
 
-        const btPrinter = window.__btPrinter;
-
         return (
             <div className="p-4 md:p-8 flex flex-col items-center justify-center min-h-[70vh]">
-                <div className="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 max-w-sm w-full no-print mb-6 text-center animate-in zoom-in duration-300">
+
+                {/* Tarjeta de éxito */}
+                <div className="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 max-w-sm w-full no-print text-center animate-in zoom-in duration-300">
                     <div className="bg-green-100 text-green-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
                         <CheckCircle size={40} />
                     </div>
-                    <h2 className="text-2xl font-black text-slate-800 mb-2">Venta Exitosa</h2>
-                    <p className="text-slate-500 mb-8 font-medium">Ticket #{generatedTicket.id.slice(-6)} generado</p>
-                    <div className="flex flex-col gap-3 justify-center">
-                        {/* Botón Bluetooth */}
-                        {btPrinter ? (
-                            <button
-                                onClick={handleBTPrint}
-                                disabled={btPrinting}
-                                className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 text-lg active:scale-95 transition-transform"
-                            >
-                                <Bluetooth size={22} />
-                                {btPrinting ? 'Enviando...' : 'Imprimir por Bluetooth'}
-                            </button>
-                        ) : (
-                            <a
-                                href="/impresora"
-                                className="w-full py-3 border border-dashed border-slate-300 text-slate-400 hover:text-primary hover:border-primary font-bold rounded-2xl flex items-center justify-center gap-2 text-sm active:scale-95 transition-all"
-                            >
-                                <Bluetooth size={18} />
-                                Configurar Impresora BT
-                            </a>
-                        )}
-                        {/* Botón imprimir normal */}
-                        <button onClick={() => window.print()} className="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl shadow flex items-center justify-center gap-2 text-base active:scale-95 transition-transform">
-                            <Printer size={20} /> Imprimir (Sistema)
+                    <h2 className="text-2xl font-black text-slate-800 mb-1">Venta Exitosa</h2>
+                    <p className="text-slate-400 mb-8 font-medium text-sm">Ticket #{generatedTicket.id.slice(-6)}</p>
+
+                    <div className="flex flex-col gap-3">
+                        {/* Imprimir Ticket */}
+                        <button
+                            onClick={handlePrint}
+                            disabled={btPrinting}
+                            className="w-full py-4 bg-primary hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 text-base active:scale-95 transition-all"
+                        >
+                            <Printer size={20} />
+                            {btPrinting ? 'Enviando...' : 'Imprimir Ticket'}
                         </button>
-                        <button onClick={() => setGeneratedTicket(null)} className="w-full py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-2xl active:scale-95 transition-transform">
-                            Nueva Venta
+
+                        {/* Imprimir Virtual */}
+                        <button
+                            onClick={() => setShowVirtualTicket(true)}
+                            className="w-full py-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl flex items-center justify-center gap-2 text-base active:scale-95 transition-all"
+                        >
+                            <Printer size={20} className="opacity-60" />
+                            Ticket Virtual
+                        </button>
+
+                        {/* Cerrar */}
+                        <button
+                            onClick={() => setGeneratedTicket(null)}
+                            className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 font-bold rounded-2xl active:scale-95 transition-all text-sm"
+                        >
+                            Cerrar
                         </button>
                     </div>
                 </div>
 
-                {/* TICKET IMPRIMIBLE - 58mm */}
+                {/* TICKET IMPRIMIBLE - 58mm (oculto, sólo al imprimir por sistema) */}
                 <div id="ticket-print-area" className="hidden print:block">
                     <div style={{ fontFamily: 'monospace', fontSize: '8pt', lineHeight: '1.3', width: '56mm', margin: '0', padding: '2mm 0', color: '#000' }}>
 
@@ -219,6 +225,95 @@ export default function Sales() {
                         <div style={{ marginTop: '20px' }} />
                     </div>
                 </div>
+                {/* MODAL TICKET VIRTUAL */}
+                {showVirtualTicket && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 no-print"
+                        onClick={() => setShowVirtualTicket(false)}
+                    >
+                        <div
+                            className="relative max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Ticket de papel */}
+                            <div className="bg-white shadow-2xl" style={{ fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.45', width: '260px', padding: '16px 18px 24px' }}>
+
+                                {/* Perforado superior */}
+                                <div style={{ borderTop: '2px dashed #e2e8f0', marginBottom: '14px' }} />
+
+                                {/* Encabezado */}
+                                <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                                    <div style={{ fontWeight: '900', fontSize: '15px', letterSpacing: '0.03em' }}>
+                                        {ticketConfig.businessName || 'MI NEGOCIO'}
+                                    </div>
+                                    {ticketConfig.subtitle && <div style={{ fontSize: '11px', color: '#64748b' }}>{ticketConfig.subtitle}</div>}
+                                    {ticketConfig.address && <div style={{ fontSize: '11px', color: '#64748b' }}>{ticketConfig.address}</div>}
+                                    {ticketConfig.phone && <div style={{ fontSize: '11px', color: '#64748b' }}>Tel: {ticketConfig.phone}</div>}
+                                    {ticketConfig.extraLine1 && <div style={{ fontSize: '11px', color: '#64748b' }}>{ticketConfig.extraLine1}</div>}
+                                    {ticketConfig.extraLine2 && <div style={{ fontSize: '11px', color: '#64748b' }}>{ticketConfig.extraLine2}</div>}
+                                </div>
+
+                                <div style={{ borderTop: '1px dashed #cbd5e1', margin: '10px 0' }} />
+
+                                <div style={{ fontSize: '11px', color: '#475569', marginBottom: '2px' }}>Ticket : <strong>#{generatedTicket.id.slice(-6)}</strong></div>
+                                <div style={{ fontSize: '11px', color: '#475569', marginBottom: '2px' }}>Fecha  : {new Date(generatedTicket.date).toLocaleDateString('es-MX')}</div>
+                                <div style={{ fontSize: '11px', color: '#475569', marginBottom: '8px' }}>Hora   : {new Date(generatedTicket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
+
+                                <div style={{ borderTop: '1px dashed #cbd5e1', margin: '10px 0' }} />
+
+                                <div style={{ fontSize: '11px', color: '#475569' }}>Repartidor: <strong>{user?.name || 'Admin'}</strong></div>
+                                <div style={{ fontSize: '11px', color: '#475569', marginBottom: '8px' }}>Cliente   : <strong>{client?.name || 'General'}</strong></div>
+
+                                <div style={{ borderTop: '1px dashed #cbd5e1', margin: '10px 0' }} />
+
+                                {/* Items */}
+                                {generatedTicket.items.map((item, idx) => (
+                                    <div key={idx} style={{ marginBottom: '8px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700' }}>
+                                            <span>{item.name}</span>
+                                            <span>${(item.price * item.quantity).toFixed(2)}</span>
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>{item.quantity} {item.unit || 'u'} × ${item.price.toFixed(2)}</span>
+                                            {item.pieces > 0 && <span style={{ color: '#b45309' }}>{item.pieces} pzas</span>}
+                                        </div>
+                                    </div>
+                                ))}
+
+                                <div style={{ borderTop: '2px solid #1e293b', margin: '10px 0' }} />
+
+                                {/* Total */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
+                                    <span style={{ fontWeight: '700', fontSize: '13px' }}>TOTAL</span>
+                                    <span style={{ fontWeight: '900', fontSize: '22px', letterSpacing: '-0.02em' }}>${generatedTicket.total.toFixed(2)}</span>
+                                </div>
+
+                                <div style={{ borderTop: '1px dashed #cbd5e1', margin: '10px 0' }} />
+
+                                {/* Pie */}
+                                <div style={{ textAlign: 'center', fontSize: '11px', color: '#64748b' }}>
+                                    {ticketConfig.footerLine1 && <div>{ticketConfig.footerLine1}</div>}
+                                    {ticketConfig.footerLine2 && <div>{ticketConfig.footerLine2}</div>}
+                                </div>
+
+                                {ticketConfig.showSignature && (
+                                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '16px' }}>Firma: ________________________</div>
+                                )}
+
+                                {/* Perforado inferior */}
+                                <div style={{ borderBottom: '2px dashed #e2e8f0', marginTop: '16px' }} />
+                            </div>
+
+                            {/* Botón cerrar ticket virtual */}
+                            <button
+                                onClick={() => setShowVirtualTicket(false)}
+                                className="w-full mt-3 py-3 bg-white/90 backdrop-blur text-slate-700 font-bold rounded-xl shadow active:scale-95 transition-all text-sm"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
