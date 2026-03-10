@@ -58,7 +58,7 @@ export const useStore = create(
                             // Remove userId if it's 'admin' to avoid foreign key violation if the DB allows nulls,
                             // or replace it with a valid system UUID if known.
                             // For now, we'll try to omit it or set it to null if it's 'admin'.
-                            const payload = pendingData.map(({ synced, ...rest }) => {
+                            const payload = pendingData.map(({ synced: _synced, ...rest }) => {
                                 if (rest.userId === 'admin') {
                                     // If 'admin' is not a valid UUID, we might need to omit it or use a fallback.
                                     // Most Supabase schemas for 'sales' will require a valid user_id.
