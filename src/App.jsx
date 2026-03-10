@@ -301,7 +301,7 @@ function App() {
 
             <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-            <main className="flex-1 overflow-x-hidden w-full relative h-[calc(100vh-60px)] md:h-screen scroll-smooth">
+            <main className="flex-1 overflow-x-hidden w-full relative h-[calc(100dvh-64px)] md:h-screen scroll-smooth">
               <div className="h-full overflow-y-auto pb-24 md:pb-8 relative custom-scrollbar">
                 <Routes>
                   <Route path="/" element={currentUser.role === 'admin' ? <Dashboard /> : <Sales />} />

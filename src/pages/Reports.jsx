@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Printer, X, ShoppingBag, Calendar, User, Store, Bluetooth } from 'lucide-react';
+import { Printer, X, ShoppingBag, Calendar, User, Store, Bluetooth, ArrowLeft } from 'lucide-react';
 import { printTicket } from '../lib/bluetoothPrinter';
 
 export default function Reports() {
@@ -15,9 +15,7 @@ export default function Reports() {
     const filteredSales = effectiveFilterUser ? sales.filter(s => s.userId === effectiveFilterUser) : sales;
     const totalEarned = filteredSales.reduce((sum, s) => sum + s.total, 0);
 
-    const handlePrintSelected = () => {
-        window.print();
-    };
+
 
     const handleBTPrint = async (sale) => {
         const btPrinter = window.__btPrinter;
@@ -90,9 +88,9 @@ export default function Reports() {
                                             onClick={() => setSelectedSale(sale)}
                                             className="border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
                                         >
-                                            <td className="py-4 px-6 text-sm text-slate-600 font-medium group-hover:text-primary transition-colors">{new Date(sale.date).toLocaleString()}</td>
-                                            <td className="py-4 px-6 text-sm font-black text-slate-800">{client?.name || 'Cliente'}</td>
-                                            <td className="py-4 px-6 text-lg font-black text-slate-900 text-right tracking-tight">${sale.total.toFixed(2)}</td>
+                                            <td className="py-4 px-6 text-sm text-slate-500 font-normal group-hover:text-primary transition-colors">{new Date(sale.date).toLocaleString()}</td>
+                                            <td className="py-4 px-6 text-sm font-normal text-slate-700">{client?.name || 'Cliente'}</td>
+                                            <td className="py-4 px-6 text-base font-normal text-slate-900 text-right tracking-tight">${sale.total.toFixed(2)}</td>
                                         </tr>
                                     )
                                 })}
@@ -103,92 +101,78 @@ export default function Reports() {
                 </div>
             </div>
 
-            {/* DETALLE DE VENTA MODAL */}
+            {/* DETALLE DE VENTA - PANTALLA COMPLETA */}
             {selectedSale && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300 no-print">
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 relative">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                            <div>
-                                <h3 className="text-xl font-black text-slate-800">Detalle de Venta</h3>
-                                <p className="text-xs text-slate-400 font-mono font-bold mt-0.5 uppercase tracking-wider italic">Ticket #{selectedSale.id.slice(-6)}</p>
-                            </div>
-                            <button onClick={() => setSelectedSale(null)} className="p-2 bg-slate-100 text-slate-400 hover:text-red-500 rounded-full transition-all active:scale-90">
-                                <X size={20} />
+                <div className="fixed inset-0 z-[100] bg-white animate-in slide-in-from-bottom duration-300 no-print flex flex-col">
+                    {/* Header Full Screen */}
+                    <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0">
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => setSelectedSale(null)} className="p-2 -ml-2 text-slate-400 hover:text-slate-600 active:scale-90 transition-all">
+                                <ArrowLeft size={24} />
                             </button>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-800">DETALLE DE VENTA</h3>
+                                <p className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-wider">TICKET #{selectedSale.id.slice(-6)}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                        <div className="grid grid-cols-2 gap-6">
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Fecha</p>
+                                <p className="text-slate-600 font-normal">{new Date(selectedSale.date).toLocaleDateString()} {new Date(selectedSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Repartidor</p>
+                                <p className="text-slate-600 font-normal">{selectedSale.userId === 'admin' ? 'Administrador' : (users.find(u => u.id === selectedSale.userId)?.name || 'Admin')}</p>
+                            </div>
+                            <div className="col-span-2">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente / Destino</p>
+                                <p className="text-xl text-slate-700 font-normal">{clients.find(c => c.id === selectedSale.clientId)?.name || 'General'}</p>
+                            </div>
                         </div>
 
-                        <div className="p-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
-                            <div className="grid grid-cols-2 gap-4 mb-6">
-                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                    <div className="flex items-center gap-2 text-slate-400 mb-1">
-                                        <Calendar size={14} /> <span className="text-[10px] font-black uppercase tracking-widest">Fecha</span>
-                                    </div>
-                                    <p className="text-sm font-bold text-slate-700">{new Date(selectedSale.date).toLocaleDateString()}</p>
-                                </div>
-                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                    <div className="flex items-center gap-2 text-slate-400 mb-1">
-                                        <User size={14} /> <span className="text-[10px] font-black uppercase tracking-widest">Repartidor</span>
-                                    </div>
-                                    <p className="text-sm font-bold text-slate-700 truncate">{selectedSale.userId === 'admin' ? 'Administrador' : (users.find(u => u.id === selectedSale.userId)?.name || 'Admin')}</p>
-                                </div>
-                                <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 col-span-2">
-                                    <div className="flex items-center gap-2 text-primary mb-1">
-                                        <Store size={14} /> <span className="text-[10px] font-black uppercase tracking-widest">Cliente / Tienda</span>
-                                    </div>
-                                    <p className="text-base font-black text-slate-800">{clients.find(c => c.id === selectedSale.clientId)?.name || 'General'}</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Productos Vendidos</p>
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Productos</p>
+                            <div className="space-y-4">
                                 {selectedSale.items.map((item, idx) => (
-                                    <div key={idx} className="flex justify-between items-center p-3 rounded-2xl bg-white border border-slate-50 shadow-sm">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group">
-                                                <ShoppingBag size={18} />
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-slate-800 text-sm">{item.name}</p>
-                                                <p className="text-xs text-slate-400 font-medium">{item.quantity} {item.unit || 'u'} x ${item.price.toFixed(2)}</p>
-                                            </div>
+                                    <div key={idx} className="flex justify-between items-start pb-4 border-b border-slate-50 last:border-0 font-normal">
+                                        <div className="flex-1">
+                                            <p className="text-slate-700 text-base">{item.name}</p>
+                                            <p className="text-xs text-slate-400 mt-0.5">{item.quantity} {item.unit || 'u'} x ${item.price.toFixed(2)}</p>
+                                            {item.pieces > 0 && <p className="text-[10px] text-amber-600 font-medium tracking-tight">└ {item.pieces} pzas</p>}
                                         </div>
-                                        <p className="font-black text-slate-900">${(item.quantity * item.price).toFixed(2)}</p>
+                                        <p className="text-slate-900 text-base font-normal tracking-tight">${(item.quantity * item.price).toFixed(2)}</p>
                                     </div>
                                 ))}
                             </div>
-
-                            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-between items-end">
-                                <div>
-                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Venta</p>
-                                    <p className="text-4xl font-black text-slate-900 tracking-tighter">${selectedSale.total.toFixed(2)}</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {window.__btPrinter ? (
-                                        <button
-                                            onClick={() => handleBTPrint(selectedSale)}
-                                            disabled={btPrinting}
-                                            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-2 text-sm"
-                                        >
-                                            <Bluetooth size={16} />
-                                            {btPrinting ? 'Enviando...' : 'BT'}
-                                        </button>
-                                    ) : (
-                                        <a
-                                            href="/impresora"
-                                            className="px-3 py-2.5 border border-dashed border-slate-300 text-slate-400 hover:text-primary hover:border-primary font-bold rounded-xl flex items-center gap-1.5 text-xs active:scale-95 transition-all"
-                                        >
-                                            <Bluetooth size={14} /> Config BT
-                                        </a>
-                                    )}
-                                    <button
-                                        onClick={handlePrintSelected}
-                                        className="px-4 py-2.5 bg-primary hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-2 text-sm"
-                                    >
-                                        <Printer size={16} /> Imprimir
-                                    </button>
-                                </div>
-                            </div>
                         </div>
+                    </div>
+
+                    {/* Footer / Actions */}
+                    <div className="p-6 border-t border-slate-100 bg-slate-50 flex flex-col gap-3">
+                        <div className="flex justify-between items-end mb-2">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Venta</p>
+                            <p className="text-3xl font-black text-slate-900 tracking-tighter">${selectedSale.total.toFixed(2)}</p>
+                        </div>
+
+                        <button
+                            onClick={async () => {
+                                const btPrinter = window.__btPrinter;
+                                if (btPrinter) {
+                                    await handleBTPrint(selectedSale);
+                                } else {
+                                    window.print();
+                                }
+                            }}
+                            disabled={btPrinting}
+                            className="w-full py-4 bg-primary hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 text-lg"
+                        >
+                            <Printer size={22} />
+                            {btPrinting ? 'Imprimiendo BT...' : 'Imprimir Ticket'}
+                        </button>
                     </div>
                 </div>
             )}
