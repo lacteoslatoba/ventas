@@ -4,7 +4,7 @@ import { Printer, X, ShoppingBag, Calendar, User, Store, Bluetooth } from 'lucid
 import { printTicket } from '../lib/bluetoothPrinter';
 
 export default function Reports() {
-    const { sales, users, clients, currentUser } = useStore();
+    const { sales, users, clients, currentUser, ticketConfig } = useStore();
     const [filterUser, setFilterUser] = useState('');
     const [selectedSale, setSelectedSale] = useState(null);
     const [btPrinting, setBtPrinting] = useState(false);
@@ -32,6 +32,7 @@ export default function Reports() {
                 client,
                 isReprint: true,
                 characteristic: btPrinter.characteristic,
+                config: ticketConfig,
             });
         } catch (err) {
             alert('Error al imprimir: ' + err.message);
@@ -192,43 +193,68 @@ export default function Reports() {
                 </div>
             )}
 
-            {/* PRINTABLE AREA FOR RE-PRINTING */}
+            {/* TICKET IMPRIMIBLE (REIMPRESIÓN) - 58mm */}
             {selectedSale && (
-                <div id="ticket-print-area" className="bg-white p-6 w-[80mm] text-black hidden print:block text-xs font-mono mx-auto">
-                    <div className="text-center mb-4">
-                        <h1 className="text-lg font-bold">QUESOS EL BUEN SABOR</h1>
-                        <p>Ticket: #{selectedSale.id.slice(-6)} (REIMPRESIÓN)</p>
-                        <p>{new Date(selectedSale.date).toLocaleString()}</p>
-                    </div>
-                    <div className="mb-4 border-t border-b border-black py-2 border-dashed">
-                        <p><strong>Repartidor:</strong> {users.find(u => u.id === selectedSale.userId)?.name || 'Admin'}</p>
-                        <p><strong>Cliente:</strong> {clients.find(c => c.id === selectedSale.clientId)?.name || 'General'}</p>
-                    </div>
-                    <table className="w-full text-left mb-4">
-                        <thead>
-                            <tr className="border-b border-black border-dashed">
-                                <th>Cant</th>
-                                <th>Concepto</th>
-                                <th className="text-right">Importe</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {selectedSale.items.map((item, idx) => (
-                                <tr key={idx}>
-                                    <td className="align-top py-1 text-center">{item.quantity}</td>
-                                    <td className="align-top py-1">{item.name} <div className="text-[10px] text-gray-600">${item.price}/u</div></td>
-                                    <td className="text-right align-top py-1">${(item.price * item.quantity).toFixed(2)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <div className="text-right border-t border-black border-dashed pt-2 font-bold mb-4">
-                        <p className="text-base">TOTAL: ${selectedSale.total.toFixed(2)}</p>
-                    </div>
-                    <div className="text-center">
-                        <p>¡Gracias por su compra!</p>
-                        <p className="mb-2 italic text-[10px]">Copia de historial</p>
-                        <p className="mt-8 mb-4 break-words">Firma: ________________</p>
+                <div id="ticket-print-area" className="hidden print:block">
+                    <div style={{ fontFamily: 'monospace', fontSize: '8pt', lineHeight: '1.3', width: '56mm', margin: '0', padding: '2mm 0', color: '#000' }}>
+
+                        {/* Encabezado negocio */}
+                        <div style={{ textAlign: 'center', marginBottom: '3px' }}>
+                            <div style={{ fontWeight: 'bold', fontSize: '11pt', lineHeight: '1.2' }}>
+                                {ticketConfig.businessName || 'MI NEGOCIO'}
+                            </div>
+                            {ticketConfig.subtitle && <div>{ticketConfig.subtitle}</div>}
+                            {ticketConfig.address && <div>{ticketConfig.address}</div>}
+                            {ticketConfig.phone && <div>Tel: {ticketConfig.phone}</div>}
+                            {ticketConfig.extraLine1 && <div>{ticketConfig.extraLine1}</div>}
+                            {ticketConfig.extraLine2 && <div>{ticketConfig.extraLine2}</div>}
+                            <div style={{ marginTop: '2px', fontWeight: 'bold' }}>** REIMPRESION **</div>
+                        </div>
+
+                        <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
+
+                        <div>Ticket : #{selectedSale.id.slice(-6)}</div>
+                        <div>Fecha  : {new Date(selectedSale.date).toLocaleDateString('es-MX')}</div>
+                        <div>Hora   : {new Date(selectedSale.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
+
+                        <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
+
+                        <div>Repartidor: {selectedSale.userId === 'admin' ? 'Administrador' : (users.find(u => u.id === selectedSale.userId)?.name || 'Admin')}</div>
+                        <div>Cliente   : {clients.find(c => c.id === selectedSale.clientId)?.name || 'General'}</div>
+
+                        <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
+
+                        <div style={{ fontWeight: 'bold' }}>Cant Concepto     Importe</div>
+                        <div style={{ borderTop: '1px dashed #000', margin: '2px 0' }} />
+                        {selectedSale.items.map((item, idx) => (
+                            <div key={idx}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>{item.quantity}x {item.name.slice(0, 14)}</span>
+                                    <span>${(item.price * item.quantity).toFixed(2)}</span>
+                                </div>
+                                <div style={{ textAlign: 'right', color: '#555', fontSize: '7pt' }}>@ ${item.price.toFixed(2)}/u</div>
+                            </div>
+                        ))}
+
+                        <div style={{ borderTop: '2px solid #000', margin: '3px 0' }} />
+
+                        <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '12pt' }}>
+                            TOTAL ${selectedSale.total.toFixed(2)}
+                        </div>
+
+                        <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
+
+                        <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                            {ticketConfig.footerLine1 && <div>{ticketConfig.footerLine1}</div>}
+                            {ticketConfig.footerLine2 && <div>{ticketConfig.footerLine2}</div>}
+                            <div style={{ fontSize: '6pt', marginTop: '2px', color: '#888' }}>Copia de historial</div>
+                        </div>
+
+                        {ticketConfig.showSignature && (
+                            <div style={{ marginTop: '12px' }}>Firma: ________________________</div>
+                        )}
+
+                        <div style={{ marginTop: '20px' }} />
                     </div>
                 </div>
             )}

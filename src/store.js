@@ -11,6 +11,22 @@ export const useStore = create(
             clients: [],
             sales: [],
 
+            // Configuración del Ticket
+            ticketConfig: {
+                businessName: 'QUESOS EL BUEN SABOR',
+                subtitle: '',
+                address: '',
+                phone: '',
+                extraLine1: '',
+                extraLine2: '',
+                footerLine1: '¡Gracias por su compra!',
+                footerLine2: '',
+                showSignature: true,
+                paperWidth: 58, // mm: 58 o 80
+            },
+            updateTicketConfig: (config) =>
+                set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config } })),
+
             // Autenticación y Roles
             currentUser: null,
             login: (username, password) => {

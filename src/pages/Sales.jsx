@@ -4,7 +4,7 @@ import { ShoppingCart, Printer, Trash2, CheckCircle, ChevronUp, X, PackageOpen, 
 import { printTicket } from '../lib/bluetoothPrinter';
 
 export default function Sales() {
-    const { products, clients, users, addSale, currentUser } = useStore();
+    const { products, clients, users, addSale, currentUser, ticketConfig } = useStore();
     const [cart, setCart] = useState([]);
     const [selectedClient, setSelectedClient] = useState('');
     const [generatedTicket, setGeneratedTicket] = useState(null);
@@ -89,6 +89,7 @@ export default function Sales() {
                     client,
                     isReprint: false,
                     characteristic: btPrinter.characteristic,
+                    config: ticketConfig,
                 });
             } catch (err) {
                 alert('Error al imprimir: ' + err.message);
@@ -137,41 +138,69 @@ export default function Sales() {
                     </div>
                 </div>
 
-                {/* PRINTABLE TICKET */}
-                <div id="ticket-print-area" className="bg-white p-6 w-[80mm] text-black hidden print:block text-xs font-mono mx-auto">
-                    <div className="text-center mb-4">
-                        <h1 className="text-lg font-bold">QUESOS EL BUEN SABOR</h1>
-                        <p>Ticket: #{generatedTicket.id.slice(-6)}</p>
-                        <p>{new Date(generatedTicket.date).toLocaleString()}</p>
-                    </div>
-                    <div className="mb-4 border-t border-b border-black py-2 border-dashed">
-                        <p><strong>Repartidor:</strong> {user?.name}</p>
-                        <p><strong>Cliente:</strong> {client?.name}</p>
-                    </div>
-                    <table className="w-full text-left mb-4">
-                        <thead>
-                            <tr className="border-b border-black border-dashed">
-                                <th>Cant</th>
-                                <th>Concepto</th>
-                                <th className="text-right">Importe</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {generatedTicket.items.map((item, idx) => (
-                                <tr key={idx}>
-                                    <td className="align-top py-1 text-center">{item.quantity}</td>
-                                    <td className="align-top py-1">{item.name} <div className="text-[10px] text-gray-600">${item.price}/u</div></td>
-                                    <td className="text-right align-top py-1">${((item.price) * (item.quantity)).toFixed(2)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <div className="text-right border-t border-black border-dashed pt-2 font-bold mb-4">
-                        <p className="text-base">TOTAL: ${generatedTicket.total.toFixed(2)}</p>
-                    </div>
-                    <div className="text-center">
-                        <p>¡Gracias por su compra!</p>
-                        <p className="mt-8 mb-4 break-words">Firma: ________________</p>
+                {/* TICKET IMPRIMIBLE - 58mm */}
+                <div id="ticket-print-area" className="hidden print:block">
+                    <div style={{ fontFamily: 'monospace', fontSize: '8pt', lineHeight: '1.3', width: '56mm', margin: '0', padding: '2mm 0', color: '#000' }}>
+
+                        {/* Encabezado negocio */}
+                        <div style={{ textAlign: 'center', marginBottom: '3px' }}>
+                            <div style={{ fontWeight: 'bold', fontSize: '11pt', lineHeight: '1.2' }}>
+                                {ticketConfig.businessName || 'MI NEGOCIO'}
+                            </div>
+                            {ticketConfig.subtitle && <div>{ticketConfig.subtitle}</div>}
+                            {ticketConfig.address && <div>{ticketConfig.address}</div>}
+                            {ticketConfig.phone && <div>Tel: {ticketConfig.phone}</div>}
+                            {ticketConfig.extraLine1 && <div>{ticketConfig.extraLine1}</div>}
+                            {ticketConfig.extraLine2 && <div>{ticketConfig.extraLine2}</div>}
+                        </div>
+
+                        <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
+
+                        {/* Datos del ticket */}
+                        <div>Ticket : #{generatedTicket.id.slice(-6)}</div>
+                        <div>Fecha  : {new Date(generatedTicket.date).toLocaleDateString('es-MX')}</div>
+                        <div>Hora   : {new Date(generatedTicket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
+
+                        <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
+
+                        <div>Repartidor: {user?.name || 'Admin'}</div>
+                        <div>Cliente   : {client?.name || 'General'}</div>
+
+                        <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
+
+                        {/* Items */}
+                        <div style={{ fontWeight: 'bold' }}>Cant Concepto     Importe</div>
+                        <div style={{ borderTop: '1px dashed #000', margin: '2px 0' }} />
+                        {generatedTicket.items.map((item, idx) => (
+                            <div key={idx}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>{item.quantity}x {item.name.slice(0, 14)}</span>
+                                    <span>${(item.price * item.quantity).toFixed(2)}</span>
+                                </div>
+                                <div style={{ textAlign: 'right', color: '#555', fontSize: '7pt' }}>@ ${item.price.toFixed(2)}/u</div>
+                            </div>
+                        ))}
+
+                        <div style={{ borderTop: '2px solid #000', margin: '3px 0' }} />
+
+                        {/* Total */}
+                        <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '12pt' }}>
+                            TOTAL ${generatedTicket.total.toFixed(2)}
+                        </div>
+
+                        <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
+
+                        {/* Pie */}
+                        <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                            {ticketConfig.footerLine1 && <div>{ticketConfig.footerLine1}</div>}
+                            {ticketConfig.footerLine2 && <div>{ticketConfig.footerLine2}</div>}
+                        </div>
+
+                        {ticketConfig.showSignature && (
+                            <div style={{ marginTop: '12px' }}>Firma: ________________________</div>
+                        )}
+
+                        <div style={{ marginTop: '20px' }} />
                     </div>
                 </div>
             </div>

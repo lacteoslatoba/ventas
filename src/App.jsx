@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, Warehouse, Users, Store, ShoppingCart, FileBarChart, Menu, X, Cloud, RefreshCw, PrinterIcon } from 'lucide-react';
+import { LayoutDashboard, Package, Warehouse, Users, Store, ShoppingCart, FileBarChart, Menu, X, Cloud, RefreshCw, PrinterIcon, FileText } from 'lucide-react';
 import { useStore } from './store';
 
 import Dashboard from './pages/Dashboard';
@@ -12,6 +12,7 @@ import Sales from './pages/Sales';
 import Reports from './pages/Reports';
 import Login from './pages/Login';
 import PrinterSettings from './pages/PrinterSettings';
+import TicketConfig from './pages/TicketConfig';
 
 const NetworkIndicator = () => {
   const { isOnline, setOnlineStatus, syncToSupabase } = useStore();
@@ -64,15 +65,31 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     }
   };
 
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard, roles: ['admin'] },
-    { name: 'Venta Rápida', path: '/ventas', icon: ShoppingCart, roles: ['admin', 'repartidor'] },
-    { name: 'Productos', path: '/productos', icon: Package, roles: ['admin'] },
-    { name: 'Inventario', path: '/inventario', icon: Warehouse, roles: ['admin'] },
-    { name: 'Repartidores', path: '/usuarios', icon: Users, roles: ['admin'] },
-    { name: 'Clientes', path: '/clientes', icon: Store, roles: ['admin'] },
-    { name: 'Reportes de Venta', path: '/reportes', icon: FileBarChart, roles: ['admin', 'repartidor'] },
-    { name: 'Impresora BT', path: '/impresora', icon: PrinterIcon, roles: ['admin', 'repartidor'] },
+  const navGroups = [
+    {
+      label: 'Operación',
+      items: [
+        { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+        { name: 'Venta Rápida', path: '/ventas', icon: ShoppingCart },
+        { name: 'Reportes', path: '/reportes', icon: FileBarChart },
+        { name: 'Clientes', path: '/clientes', icon: Store },
+      ],
+    },
+    {
+      label: 'Inventario',
+      items: [
+        { name: 'Productos', path: '/productos', icon: Package },
+        { name: 'Inventario', path: '/inventario', icon: Warehouse },
+        { name: 'Repartidores', path: '/usuarios', icon: Users },
+      ],
+    },
+    {
+      label: 'Configuración',
+      items: [
+        { name: 'Impresora BT', path: '/impresora', icon: PrinterIcon },
+        { name: 'Config. Ticket', path: '/ticket', icon: FileText },
+      ],
+    },
   ];
 
   const handleLinkClick = () => setIsOpen(false);
@@ -106,25 +123,32 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </button>
         </div>
 
-        <div className="flex-1 px-3 py-6 space-y-1 overflow-y-auto custom-scrollbar">
-          {navItems.filter(item => item.roles.includes('admin')).map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={handleLinkClick}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${isActive
-                  ? 'bg-primary/10 text-primary shadow-sm'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-              >
-                <Icon size={20} className={isActive ? 'text-primary' : 'text-slate-400'} />
-                <span className="text-sm">{item.name}</span>
-              </Link>
-            );
-          })}
+        <div className="flex-1 px-3 py-4 overflow-y-auto custom-scrollbar space-y-4">
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 px-4 mb-1">{group.label}</p>
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={handleLinkClick}
+                      className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all font-medium ${isActive
+                        ? 'bg-primary/10 text-primary shadow-sm'
+                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                        }`}
+                    >
+                      <Icon size={18} className={isActive ? 'text-primary' : 'text-slate-400'} />
+                      <span className="text-sm">{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* PWA Install Button Prompter */}
@@ -203,6 +227,7 @@ function App() {
                   <Route path="/clientes" element={<Clients />} />
                   <Route path="/reportes" element={<Reports />} />
                   <Route path="/impresora" element={<PrinterSettings />} />
+                  <Route path="/ticket" element={<TicketConfig />} />
                 </Routes>
               </div>
             </main>

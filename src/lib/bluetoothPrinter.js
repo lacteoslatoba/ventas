@@ -58,16 +58,30 @@ function toBytes(...parts) {
     return out;
 }
 
-// ─── Formatear línea (padding) ───────────────────────────────────────────────
-function padLine(left, right, width = 32) {
-    const spaces = Math.max(1, width - left.length - right.length);
-    return left + ' '.repeat(spaces) + right;
+
+function centerText(text, width = 32) {
+    if (text.length >= width) return text.slice(0, width);
+    const pad = Math.floor((width - text.length) / 2);
+    return ' '.repeat(pad) + text;
 }
 
 // ─── Crear buffer ESC/POS del ticket ─────────────────────────────────────────
-export function buildTicketBuffer({ ticket, user, client, isReprint = false }) {
-    const SEP = '-'.repeat(32) + '\n';
-    const SEP2 = '='.repeat(32) + '\n';
+export function buildTicketBuffer({ ticket, user, client, isReprint = false, config = {} }) {
+    const LINE_WIDTH = 32; // 58mm → ~32 chars por línea con fuente estándar
+    const SEP = '-'.repeat(LINE_WIDTH) + '\n';
+    const SEP2 = '='.repeat(LINE_WIDTH) + '\n';
+
+    const {
+        businessName = 'MI NEGOCIO',
+        subtitle = '',
+        address = '',
+        phone = '',
+        extraLine1 = '',
+        extraLine2 = '',
+        footerLine1 = '¡Gracias por su compra!',
+        footerLine2 = '',
+        showSignature = true,
+    } = config;
 
     const chunks = [];
     const add = (...parts) => chunks.push(toBytes(...parts));
@@ -75,35 +89,45 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false }) {
     // Inicializar
     add(CMD.INIT);
 
-    // Encabezado
+    // Encabezado del negocio
     add(CMD.ALIGN_CENTER, CMD.BOLD_ON, CMD.DOUBLE_SIZE);
-    add('QUESOS EL BUEN SABOR\n');
+    add(businessName.toUpperCase().slice(0, 16) + '\n');
     add(CMD.NORMAL_SIZE, CMD.BOLD_OFF);
-    if (isReprint) add('** REIMPRESION **\n');
-    add(`Ticket #${ticket.id.slice(-6)}\n`);
-    add(`${new Date(ticket.date).toLocaleString('es-MX')}\n`);
+    if (subtitle) add(centerText(subtitle, LINE_WIDTH) + '\n');
+    if (address) add(centerText(address, LINE_WIDTH) + '\n');
+    if (phone) add(centerText(`Tel: ${phone}`, LINE_WIDTH) + '\n');
+    if (extraLine1) add(centerText(extraLine1, LINE_WIDTH) + '\n');
+    if (extraLine2) add(centerText(extraLine2, LINE_WIDTH) + '\n');
+    if (isReprint) add(CMD.BOLD_ON, centerText('** REIMPRESION **', LINE_WIDTH) + '\n', CMD.BOLD_OFF);
+    add(SEP);
+
+    // Info del ticket
+    add(CMD.ALIGN_LEFT);
+    add(`Ticket : #${ticket.id.slice(-6)}\n`);
+    add(`Fecha  : ${new Date(ticket.date).toLocaleDateString('es-MX')}\n`);
+    add(`Hora   : ${new Date(ticket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}\n`);
     add(SEP);
 
     // Repartidor y cliente
-    add(CMD.ALIGN_LEFT);
-    add(`Repartidor: ${user?.name || 'Admin'}\n`);
-    add(`Cliente   : ${client?.name || 'General'}\n`);
+    add(`Repartidor: ${(user?.name || 'Admin').slice(0, 20)}\n`);
+    add(`Cliente   : ${(client?.name || 'General').slice(0, 20)}\n`);
     add(SEP);
 
     // Cabecera tabla
     add(CMD.BOLD_ON);
-    add(padLine('Cant  Concepto', 'Importe', 32) + '\n');
+    add('CANT  CONCEPTO       IMPORTE\n');
     add(CMD.BOLD_OFF);
     add(SEP);
 
     // Items
     ticket.items.forEach(item => {
         const importe = `$${(item.price * item.quantity).toFixed(2)}`;
-        const concepto = `${item.name}`.slice(0, 18);
-        const cant = `${item.quantity}x`.padEnd(4);
-        add(`${cant}${concepto}\n`);
+        const concepto = item.name.slice(0, 14).padEnd(14);
+        const cant = `${item.quantity}x`.slice(0, 4).padEnd(5);
+        add(CMD.ALIGN_LEFT);
+        add(`${cant}${concepto}${importe}\n`);
         add(CMD.ALIGN_RIGHT);
-        add(`@ $${item.price.toFixed(2)}  ${importe}\n`);
+        add(`@ $${item.price.toFixed(2)}/u\n`);
         add(CMD.ALIGN_LEFT);
     });
 
@@ -111,12 +135,18 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false }) {
     add(SEP2);
     add(CMD.ALIGN_RIGHT, CMD.BOLD_ON, CMD.DOUBLE_SIZE);
     add(`TOTAL $${ticket.total.toFixed(2)}\n`);
-    add(CMD.NORMAL_SIZE, CMD.BOLD_OFF, CMD.ALIGN_CENTER);
+    add(CMD.NORMAL_SIZE, CMD.BOLD_OFF);
     add(SEP);
 
     // Pie de página
-    add('Gracias por su compra!\n\n');
-    add('Firma: ___________________\n\n\n');
+    add(CMD.ALIGN_CENTER);
+    if (footerLine1) add(centerText(footerLine1, LINE_WIDTH) + '\n');
+    if (footerLine2) add(centerText(footerLine2, LINE_WIDTH) + '\n');
+    add('\n');
+    if (showSignature) {
+        add(CMD.ALIGN_LEFT);
+        add('Firma: ________________________\n\n');
+    }
 
     // Corte
     add(CMD.FEED, CMD.CUT);
@@ -128,6 +158,7 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false }) {
     chunks.forEach(c => { buffer.set(c, offset); offset += c.length; });
     return buffer;
 }
+
 
 // ─── Enviar datos en chunks (BT tiene límite de MTU ~20 bytes) ───────────────
 async function sendInChunks(characteristic, data, chunkSize = 512) {

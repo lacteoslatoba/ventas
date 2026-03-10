@@ -13,6 +13,17 @@
 }
 
 @media print {
+  @page {
+    size: 58mm auto;
+    margin: 0mm 1mm;
+  }
+
+  html, body {
+    width: 58mm;
+    margin: 0;
+    padding: 0;
+  }
+
   body * {
     visibility: hidden;
   }
@@ -23,12 +34,14 @@
   }
 
   #ticket-print-area {
-    position: absolute;
+    position: fixed;
     left: 0;
     top: 0;
-    width: 100% !important;
-    padding: 0;
-    margin: 0;
+    width: 56mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 8pt !important;
+    line-height: 1.3 !important;
   }
 
   .no-print {
