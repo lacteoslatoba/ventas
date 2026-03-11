@@ -256,34 +256,7 @@ export default function Reports() {
                                 <span className="text-lg">{btPrinting ? 'Imprimiendo...' : 'Reimprimir Ticket'}</span>
                             </button>
                             
-                            <div className="flex gap-3">
-                                {(() => {
-                                    const client = clients.find(c => c.id === selectedSale.clientId);
-                                    return client?.address ? (
-                                        <a 
-                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(client.address)}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all text-sm"
-                                        >
-                                            <span className="material-symbols-outlined text-xl">map</span>
-                                            <span>Ver Mapa</span>
-                                        </a>
-                                    ) : (
-                                        <div className="flex-1 opacity-30 bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 text-sm">
-                                            <span className="material-symbols-outlined text-xl">map_off</span>
-                                            <span>Sin Mapa</span>
-                                        </div>
-                                    );
-                                })()}
-                                <button 
-                                    onClick={() => setSelectedSale(null)}
-                                    className="flex-1 bg-slate-900 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all text-sm"
-                                >
-                                    <span className="material-symbols-outlined text-xl">close</span>
-                                    <span>Cerrar</span>
-                                </button>
-                            </div>
+                            {/* Botones secundarios eliminados a petición del usuario */}
                         </div>
 
                         {/* Bottom Spacer for mobile chin */}

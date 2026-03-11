@@ -125,9 +125,7 @@ export default function Sales() {
                         <div className="size-10 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400">
                              <span className="material-symbols-outlined">analytics</span>
                         </div>
-                        <button onClick={() => setGeneratedTicket(null)} className="size-10 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400">
-                             <span className="material-symbols-outlined">close</span>
-                        </button>
+                        {/* Botón X eliminado a petición del usuario */}
                     </div>
 
                     <div className="flex-1 overflow-y-auto px-6 flex flex-col items-center text-center">
@@ -178,23 +176,13 @@ export default function Sales() {
                             {btPrinting ? 'Enviando...' : 'Imprimir Ticket'}
                         </button>
 
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowVirtualTicket(true)}
-                                className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-2xl flex items-center justify-center gap-2 text-sm active:scale-95 transition-all"
-                            >
-                                <span className="material-symbols-outlined text-xl">visibility</span>
-                                Ticket Virtual
-                            </button>
-
-                            <button
-                                onClick={() => setGeneratedTicket(null)}
-                                className="flex-1 py-4 bg-slate-900 text-white font-bold rounded-2xl active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
-                            >
-                                <span className="material-symbols-outlined text-xl">add_shopping_cart</span>
-                                Nueva Venta
-                            </button>
-                        </div>
+                        <button
+                            onClick={() => setGeneratedTicket(null)}
+                            className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
+                        >
+                            <span className="material-symbols-outlined text-xl">add_shopping_cart</span>
+                            NUEVA VENTA
+                        </button>
                     </div>
 
                     <div className="h-6 bg-white dark:bg-background-dark"></div>
