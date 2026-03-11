@@ -18,11 +18,33 @@ export default function Sales() {
     const [selectedProductDialog, setSelectedProductDialog] = useState(null);
     const [selectedQuantity, setSelectedQuantity] = useState('');
     const [selectedPieces, setSelectedPieces] = useState('');
+    const [activeField, setActiveField] = useState('qty'); // 'qty' or 'pieces'
 
     const openProductDialog = (product) => {
         setSelectedProductDialog(product);
         setSelectedQuantity('');
         setSelectedPieces('');
+        setActiveField('qty');
+    };
+
+    const handleKeypadPress = (val) => {
+        if (val === 'backspace') {
+            if (activeField === 'qty') setSelectedQuantity(prev => prev.slice(0, -1));
+            else setSelectedPieces(prev => prev.slice(0, -1));
+            return;
+        }
+
+        if (activeField === 'qty') {
+            if (val === '.') {
+                if (!selectedQuantity.includes('.')) setSelectedQuantity(prev => prev === '' ? '0.' : prev + '.');
+            } else {
+                // Limitar decimales o largo si es necesario, pero sencillo por ahora
+                setSelectedQuantity(prev => prev + val);
+            }
+        } else {
+            if (val === '.') return; // No decimales en piezas
+            setSelectedPieces(prev => prev + val);
+        }
     };
 
     const confirmAddToCart = () => {
@@ -443,77 +465,82 @@ export default function Sales() {
                 </div>
             </div>
 
-            {/* Seleccionar Cantidad Modal (Desktop & Mobile) */}
+            {/* Seleccionar Cantidad Modal con Teclado Integrado */}
             {selectedProductDialog && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto no-scrollbar" onClick={() => setSelectedProductDialog(null)}>
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelectedProductDialog(null)}>
                     <div 
                         onClick={e => e.stopPropagation()}
-                        className="bg-white rounded-[2rem] w-full max-w-sm shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] animate-in zoom-in-95 duration-200 border border-white/20 flex flex-col shrink-0 my-auto"
+                        className="bg-white w-full max-w-sm h-full md:h-auto md:max-h-[90vh] md:rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] animate-in zoom-in-95 duration-200 flex flex-col overflow-hidden"
                     >
-                        <div className="p-5 flex flex-row items-start justify-between border-b border-slate-100 shrink-0">
-                            <div>
-                                <h3 className="font-black text-xl md:text-2xl text-slate-800 pr-2 leading-tight tracking-tight">{selectedProductDialog.name}</h3>
-                                <p className="text-primary font-black text-xl md:text-2xl mt-0.5 tracking-tighter">${selectedProductDialog.price}</p>
+                        {/* Header Header */}
+                        <div className="p-5 flex flex-row items-center justify-between border-b border-slate-100 shrink-0 bg-slate-50/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <PackageOpen size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-lg text-slate-800 leading-tight">{selectedProductDialog.name}</h3>
+                                    <p className="text-primary font-bold text-sm">${selectedProductDialog.price} / {selectedProductDialog.unit || 'u'}</p>
+                                </div>
                             </div>
                             <button
                                 onClick={() => setSelectedProductDialog(null)}
-                                className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full transition-all active:scale-90 shrink-0"
+                                className="p-2.5 bg-white shadow-sm border border-slate-100 text-slate-400 hover:text-slate-600 rounded-xl transition-all active:scale-90"
                             >
                                 <X size={20} />
                             </button>
                         </div>
 
-                        <div className="p-5 md:p-6 overflow-y-auto shrink-0 touch-pan-y">
-                            <div className="flex flex-row gap-3 mb-5 md:mb-6">
-                                {/* Campo Cantidad */}
-                                <div className="flex-1">
-                                    <label className="block text-center text-slate-500 font-bold mb-2 uppercase text-[10px] md:text-xs tracking-wider">
-                                        Cantidad <span className="text-slate-400 lowercase">({selectedProductDialog.unit || 'u'})</span>
-                                    </label>
-                                    <div className="relative">
-                                        <input
-                                            id="qty-input"
-                                            type="number"
-                                            inputMode="decimal"
-                                            step="any"
-                                            min="0.01"
-                                            value={selectedQuantity}
-                                            onChange={(e) => setSelectedQuantity(e.target.value)}
-                                            className="w-full text-center text-2xl md:text-4xl font-black text-primary bg-blue-50/50 border-[3px] border-blue-100 focus:border-primary focus:ring-0 rounded-[1.25rem] py-3 md:py-5 px-2 outline-none transition-all placeholder:text-blue-200 shadow-inner"
-                                            placeholder="0"
-                                            autoFocus
-                                        />
+                        <div className="flex-1 overflow-y-auto flex flex-col p-4">
+                            {/* Inputs Visuales */}
+                            <div className="flex flex-row gap-3 mb-4">
+                                <div 
+                                    onClick={() => setActiveField('qty')}
+                                    className={`flex-1 p-3 rounded-2xl border-2 transition-all cursor-pointer ${activeField === 'qty' ? 'border-primary bg-blue-50 ring-4 ring-primary/5' : 'border-slate-100 bg-slate-50 opacity-70'}`}
+                                >
+                                    <label className="block text-center text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Cantidad ({selectedProductDialog.unit || 'u'})</label>
+                                    <div className="text-center text-3xl font-black text-slate-800 min-h-[36px]">
+                                        {selectedQuantity || <span className="text-slate-200">0</span>}
+                                        {activeField === 'qty' && <span className="inline-block w-1 h-8 bg-primary ml-1 animate-pulse align-middle" />}
                                     </div>
                                 </div>
 
-                                {/* Campo Piezas */}
-                                <div className="flex-1">
-                                    <label className="block text-center text-amber-600 font-bold mb-2 uppercase text-[10px] md:text-xs tracking-wider flex items-center justify-center gap-1">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-                                        Piezas <span className="text-amber-400 lowercase">(opc)</span>
-                                    </label>
-                                    <div className="relative">
-                                        <input
-                                            id="pieces-input"
-                                            type="number"
-                                            inputMode="numeric"
-                                            step="1"
-                                            min="0"
-                                            value={selectedPieces}
-                                            onChange={(e) => setSelectedPieces(e.target.value)}
-                                            className="w-full text-center text-2xl md:text-4xl font-black text-amber-600 bg-amber-50/50 border-[3px] border-amber-100/80 focus:border-amber-400 focus:ring-0 rounded-[1.25rem] py-3 md:py-5 px-2 outline-none transition-all placeholder:text-amber-200 shadow-inner"
-                                            placeholder="0"
-                                        />
+                                <div 
+                                    onClick={() => setActiveField('pieces')}
+                                    className={`flex-1 p-3 rounded-2xl border-2 transition-all cursor-pointer ${activeField === 'pieces' ? 'border-amber-500 bg-amber-50 ring-4 ring-amber-500/5' : 'border-slate-100 bg-slate-50 opacity-70'}`}
+                                >
+                                    <label className="block text-center text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Piezas (opc)</label>
+                                    <div className="text-center text-3xl font-black text-slate-800 min-h-[36px]">
+                                        {selectedPieces || <span className="text-slate-200">0</span>}
+                                        {activeField === 'pieces' && <span className="inline-block w-1 h-8 bg-amber-500 ml-1 animate-pulse align-middle" />}
                                     </div>
                                 </div>
                             </div>
 
+                            {/* Teclado Numérico */}
+                            <div className="grid grid-cols-3 gap-2 flex-1 max-h-[400px]">
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0, 'backspace'].map((key) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => handleKeypadPress(key)}
+                                        className={`h-16 rounded-2xl flex items-center justify-center transition-all active:scale-90 active:bg-slate-200 ${
+                                            key === 'backspace' 
+                                            ? 'bg-slate-100 text-slate-500' 
+                                            : 'bg-white border border-slate-100 text-2xl font-black text-slate-800 shadow-sm'
+                                        }`}
+                                    >
+                                        {key === 'backspace' ? <Trash2 size={24} /> : key}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Botón Acción */}
                             <button
                                 onClick={confirmAddToCart}
-                                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-[1.25rem] shadow-[0_8px_20px_rgba(0,0,0,0.15)] active:scale-95 transition-all text-base md:text-lg flex justify-center gap-2 items-center group mb-2 md:mb-0"
+                                className="w-full bg-slate-900 text-white font-black h-16 rounded-2xl shadow-xl mt-4 active:scale-95 transition-all text-lg flex justify-center gap-3 items-center group shrink-0"
                             >
-                                <ShoppingCart size={20} className="group-hover:-rotate-12 transition-transform" />
-                                Al Carrito • <span className="text-blue-400">${(selectedProductDialog.price * (parseFloat(selectedQuantity) || 0)).toFixed(2)}</span>
+                                <ShoppingCart size={22} className="group-hover:-rotate-12 transition-transform" />
+                                AGREGAR • <span className="text-blue-400 font-black">${(selectedProductDialog.price * (parseFloat(selectedQuantity) || 0)).toFixed(2)}</span>
                             </button>
                         </div>
                     </div>
