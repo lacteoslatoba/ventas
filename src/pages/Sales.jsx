@@ -50,28 +50,44 @@ export default function Sales() {
     const confirmAddToCart = () => {
         if (!selectedProductDialog) return;
 
-        const numQty = parseFloat(selectedQuantity);
-        if (isNaN(numQty) || numQty <= 0) return alert('Por favor, ingresa una cantidad válida');
+        // Limpiar el string de cualquier caracter no numérico y convertir
+        const rawQty = (selectedQuantity || "0").toString().trim();
+        const numQty = parseFloat(rawQty);
 
-        const numPieces = parseInt(selectedPieces) || 0;
-
-        const existing = cart.find(item => item.productId === selectedProductDialog.id);
-        if (existing) {
-            setCart(cart.map(item => item.productId === selectedProductDialog.id
-                ? { ...item, quantity: item.quantity + numQty, pieces: (item.pieces || 0) + numPieces }
-                : item));
-        } else {
-            setCart([...cart, {
-                productId: selectedProductDialog.id,
-                name: selectedProductDialog.name,
-                price: Number(selectedProductDialog.price),
-                quantity: numQty,
-                pieces: numPieces,
-                unit: selectedProductDialog.unit
-            }]);
+        if (isNaN(numQty) || numQty <= 0) {
+            return alert('Por favor, ingresa una cantidad válida');
         }
 
+        const rawPieces = (selectedPieces || "0").toString().trim();
+        const numPieces = parseInt(rawPieces) || 0;
+
+        const productPrice = Number(selectedProductDialog.price) || 0;
+
+        setCart(currentCart => {
+            const existing = currentCart.find(item => item.productId === selectedProductDialog.id);
+            if (existing) {
+                return currentCart.map(item => item.productId === selectedProductDialog.id
+                    ? { ...item, quantity: item.quantity + numQty, pieces: (item.pieces || 0) + numPieces }
+                    : item);
+            } else {
+                return [...currentCart, {
+                    productId: selectedProductDialog.id,
+                    name: selectedProductDialog.name,
+                    price: productPrice,
+                    quantity: numQty,
+                    pieces: numPieces,
+                    unit: selectedProductDialog.unit || 'u'
+                }];
+            }
+        });
+
+        // Limpiar y cerrar modal
         setSelectedProductDialog(null);
+        setSelectedQuantity('');
+        setSelectedPieces('');
+
+        // Notificación visual opcional o simplemente dejamos que el usuario vea el cambio
+        // En móvil, si no está abierto el carrito, a veces el usuario no sabe si se agregó.
     };
 
     const removeFromCart = (productId) => {
