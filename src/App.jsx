@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, Warehouse, Users, Store, ShoppingCart, FileBarChart, Menu, X, Cloud, RefreshCw, PrinterIcon, FileText, Settings2, LogOut, Bluetooth } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Package, Warehouse, Users, Store, ShoppingCart, FileBarChart, Menu, X, Cloud, RefreshCw, PrinterIcon, FileText, Settings2, LogOut, Bluetooth, ArrowLeft } from 'lucide-react';
 import { useStore } from './store';
 import { autoConnectPrinter, getSavedPrinterName } from './lib/bluetoothPrinter';
 
@@ -207,10 +207,77 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   );
 };
 
+const MobileHeader = ({ currentUser, isSyncing, setIsSidebarOpen, setIsConfigOpen }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isHome = location.pathname === '/' || (currentUser?.role !== 'admin' && location.pathname === '/ventas');
+
+  return (
+    <div className="md:hidden flex-shrink-0 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 no-print z-20">
+      {/* Izquierda: Regresar o Hamburger */}
+      <div className="w-10">
+        {!isHome ? (
+          <button 
+            onClick={() => navigate(-1)} 
+            className="p-2 -ml-2 rounded-xl text-primary bg-primary/5 active:scale-90 transition-all"
+          >
+            <ArrowLeft size={24} />
+          </button>
+        ) : (
+          currentUser?.role === 'admin' ? (
+            <button onClick={() => setIsSidebarOpen(true)} className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors active:scale-95">
+              <Menu size={24} />
+            </button>
+          ) : null
+        )}
+      </div>
+
+      {/* Centro: nombre usuario */}
+      <div className="flex flex-col items-center">
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-0.5">
+          {isHome ? 'Bienvenido' : 'Navegación'}
+        </span>
+        <h1 className="text-base font-black tracking-tight text-slate-800 dark:text-white leading-none">
+          {isHome ? currentUser?.name?.split(' ')[0] : location.pathname.replace('/', '').toUpperCase()}
+        </h1>
+      </div>
+
+      {/* Derecha: avatar + botón configuración */}
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs border border-primary/20 relative">
+          {currentUser?.name?.charAt(0)}
+          {isSyncing && (
+            <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+              <RefreshCw size={10} className="animate-spin text-primary" />
+            </div>
+          )}
+        </div>
+        <button
+          onClick={() => setIsConfigOpen(true)}
+          className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 active:scale-90 transition-all font-black"
+        >
+          <Settings2 size={16} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const { currentUser, isSyncing } = useStore();
+
+  // Forzar Fullscreen al primer toque si es PWA
+  useEffect(() => {
+    const enableFullscreen = () => {
+      if (!document.fullscreenElement && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches)) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    };
+    window.addEventListener('click', enableFullscreen, { once: true });
+    return () => window.removeEventListener('click', enableFullscreen);
+  }, []);
 
   return (
     <>
@@ -220,45 +287,12 @@ function App() {
       ) : (
         <Router>
           <div className="flex flex-col md:flex-row h-screen bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900">
-
-            {/* ENCABEZADO MÓVIL */}
-            <div className="md:hidden flex-shrink-0 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 no-print z-20">
-              {/* Izquierda: hamburger (admin) o placeholder */}
-              {currentUser?.role === 'admin' ? (
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors active:scale-95">
-                  <Menu size={24} />
-                </button>
-              ) : (
-                <div className="w-10" />
-              )}
-
-              {/* Centro: nombre usuario */}
-              <div className="flex flex-col items-center">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-0.5">Bienvenido</span>
-                <h1 className="text-base font-black tracking-tight text-slate-800 leading-none">{currentUser?.name?.split(' ')[0]}</h1>
-              </div>
-
-              {/* Derecha: avatar + botón configuración */}
-              <div className="flex items-center gap-2">
-                {/* Avatar con inicial */}
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs border border-primary/20 relative">
-                  {currentUser?.name?.charAt(0)}
-                  {isSyncing && (
-                    <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-                      <RefreshCw size={10} className="animate-spin text-primary" />
-                    </div>
-                  )}
-                </div>
-                {/* Botón C = Configuración */}
-                <button
-                  onClick={() => setIsConfigOpen(true)}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 active:scale-90 transition-all"
-                  title="Configuración"
-                >
-                  <Settings2 size={16} />
-                </button>
-              </div>
-            </div>
+            <MobileHeader 
+              currentUser={currentUser} 
+              isSyncing={isSyncing} 
+              setIsSidebarOpen={setIsSidebarOpen} 
+              setIsConfigOpen={setIsConfigOpen} 
+            />
 
             {/* SHEET FLOTANTE DE CONFIGURACIÓN */}
             {isConfigOpen && (
