@@ -180,7 +180,7 @@ export default function Reports() {
             {/* TICKET IMPRIMIBLE (REIMPRESIÓN) - 58mm */}
             {selectedSale && (
                 <div id="ticket-print-area" className="hidden print:block">
-                    <div style={{ fontFamily: 'monospace', fontSize: '8pt', lineHeight: '1.3', width: '56mm', margin: '0', padding: '2mm 0', color: '#000' }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: '8pt', lineHeight: '1.2', width: `${(ticketConfig.paperWidth || 58) - 2}mm`, margin: '0', padding: '2mm 0', color: '#000' }}>
 
                         {/* Encabezado negocio */}
                         <div style={{ textAlign: 'center', marginBottom: '3px' }}>
