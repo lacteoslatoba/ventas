@@ -188,19 +188,17 @@ export async function connectPrinter() {
     }
 
     const device = await navigator.bluetooth.requestDevice({
-        // acceptAllDevices para compatibilidad máxima
         acceptAllDevices: true,
         optionalServices: [
             PRINTER_SERVICE_UUID,
             NORDIC_SERVICE_UUID,
-            '0000ff00-0000-1000-8000-00805f9b34fb', // Genérico
-            '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Microchip BM70
+            '0000ff00-0000-1000-8000-00805f9b34fb',
+            '49535343-fe7d-4ae5-8fa9-9fafd205e455',
         ],
     });
 
     const server = await device.gatt.connect();
 
-    // Intentar servicios conocidos en orden
     let characteristic = null;
     const serviceUUIDs = [
         { service: PRINTER_SERVICE_UUID, char: PRINTER_CHAR_UUID },
@@ -213,32 +211,80 @@ export async function connectPrinter() {
             const svc = await server.getPrimaryService(service);
             characteristic = await svc.getCharacteristic(char);
             break;
-        } catch {
-            // Continuar con el siguiente
+        } catch { continue; }
+    }
+
+    if (!characteristic) {
+        const services = await server.getPrimaryServices();
+        for (const svc of services) {
+            const chars = await svc.getCharacteristics();
+            const writable = chars.find(c => c.properties.write || c.properties.writeWithoutResponse);
+            if (writable) { characteristic = writable; break; }
         }
     }
 
     if (!characteristic) {
-        // Último recurso: obtener cualquier característica escribible
-        try {
-            const services = await server.getPrimaryServices();
-            for (const svc of services) {
-                const chars = await svc.getCharacteristics();
-                const writable = chars.find(c =>
-                    c.properties.write || c.properties.writeWithoutResponse
-                );
-                if (writable) { characteristic = writable; break; }
-            }
-        } catch {
-            throw new Error('No se encontró ninguna característica de escritura en la impresora.');
-        }
-    }
-
-    if (!characteristic) {
-        throw new Error('No se pudo encontrar un canal de escritura en la impresora Bluetooth.');
+        throw new Error('No se encontró canal de escritura en la impresora.');
     }
 
     return { device, server, characteristic };
+}
+
+/**
+ * Intenta reconectar a una impresora previamente autorizada.
+ */
+export async function autoConnectPrinter(lastDeviceName = null) {
+    if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return null;
+
+    try {
+        const devices = await navigator.bluetooth.getDevices();
+        if (devices.length === 0) return null;
+
+        let device = null;
+        if (lastDeviceName) {
+            device = devices.find(d => d.name === lastDeviceName);
+        }
+        
+        if (!device && devices.length === 1) {
+            device = devices[0];
+        }
+
+        if (!device) return null;
+
+        // Intentar conectar GATT
+        const server = await device.gatt.connect();
+
+        let characteristic = null;
+        const serviceUUIDs = [
+            { service: PRINTER_SERVICE_UUID, char: PRINTER_CHAR_UUID },
+            { service: NORDIC_SERVICE_UUID, char: NORDIC_TX_CHAR_UUID },
+            { service: '0000ff00-0000-1000-8000-00805f9b34fb', char: '0000ff02-0000-1000-8000-00805f9b34fb' },
+        ];
+
+        for (const { service, char } of serviceUUIDs) {
+            try {
+                const svc = await server.getPrimaryService(service);
+                characteristic = await svc.getCharacteristic(char);
+                break;
+            } catch { continue; }
+        }
+
+        if (!characteristic) {
+            const services = await server.getPrimaryServices();
+            for (const svc of services) {
+                const chars = await svc.getCharacteristics();
+                characteristic = chars.find(c => c.properties.write || c.properties.writeWithoutResponse);
+                if (characteristic) break;
+            }
+        }
+
+        if (!characteristic) return null;
+
+        return { device, server, characteristic };
+    } catch (err) {
+        console.warn('Auto-reconexión fallida:', err);
+        return null;
+    }
 }
 
 // ─── Imprimir ticket completo ─────────────────────────────────────────────────

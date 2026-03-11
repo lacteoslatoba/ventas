@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Package, Warehouse, Users, Store, ShoppingCart, FileBarChart, Menu, X, Cloud, RefreshCw, PrinterIcon, FileText, Settings2, LogOut, Bluetooth } from 'lucide-react';
 import { useStore } from './store';
+import { autoConnectPrinter, getSavedPrinterName } from './lib/bluetoothPrinter';
 
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
@@ -40,7 +41,37 @@ const NetworkIndicator = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return null; // El indicador visual fue ocultado a petición, pero la lógica de sincronización sigue activa en segundo plano
+  // Reconexión automática de impresora al cargar la app
+  useEffect(() => {
+    const tryAutoConnect = async () => {
+      // Si ya hay una instancia o no hay permiso, no hacemos nada
+      if (window.__btPrinter) return;
+
+      const savedName = getSavedPrinterName();
+      if (!savedName) return;
+
+      try {
+        const result = await autoConnectPrinter(savedName);
+        if (result) {
+          window.__btPrinter = result;
+          console.log('Impresora reconectada automáticamente:', result.device.name);
+          
+          // Escuchar desconexión
+          result.device.addEventListener('gattserverdisconnected', () => {
+            window.__btPrinter = null;
+          });
+        }
+      } catch (err) {
+        console.warn('No se pudo reconectar la impresora automáticamente:', err);
+      }
+    };
+
+    // Pequeño delay para dejar que la app cargue
+    const timer = setTimeout(tryAutoConnect, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return null;
 };
 
 const Sidebar = ({ isOpen, setIsOpen }) => {

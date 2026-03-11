@@ -8,17 +8,12 @@ import {
     savePrinterName, getSavedPrinterName, clearSavedPrinter
 } from '../lib/bluetoothPrinter';
 
-// Acceso a la impresora global
-function getGlobalPrinter() { return window.__btPrinter || null; }
-function setGlobalPrinter(p) { window.__btPrinter = p; }
+import { useBTPrinter } from '../lib/useBTPrinter';
 
-// ─── Componente Principal ────────────────────────────────────────────────────
 export default function PrinterSettings() {
+    const { printer, setPrinter } = useBTPrinter();
     const [status, setStatus] = useState('idle'); // idle | connecting | connected | error | disconnected
     const [statusMsg, setStatusMsg] = useState('');
-    const [printerDevice, setPrinterDevice] = useState(null);
-    const [characteristic, setCharacteristic] = useState(null);
-    const [savedName, setSavedName] = useState(getSavedPrinterName());
     const [isTesting, setIsTesting] = useState(false);
     const [btSupported, setBtSupported] = useState(true);
 
@@ -26,37 +21,31 @@ export default function PrinterSettings() {
         if (!navigator.bluetooth) {
             setBtSupported(false);
         }
-        // Restaurar conexión guardada si el dispositivo sigue conectado
-        const saved = getGlobalPrinter();
-        if (saved) {
-            setPrinterDevice(saved.device);
-            setCharacteristic(saved.characteristic);
-            setStatus('connected');
-            setStatusMsg(`Conectado a: ${saved.device.name || 'Impresora BT'}`);
-        }
     }, []);
+
+    // Sincronizar estado local con el hook global
+    useEffect(() => {
+        if (printer) {
+            setStatus('connected');
+            setStatusMsg(`Conectado a: ${printer.device.name || 'Impresora BT'}`);
+        } else if (status === 'connected') {
+            setStatus('disconnected');
+            setStatusMsg('Se perdió la conexión.');
+        }
+    }, [printer]);
 
     const handleConnect = async () => {
         setStatus('connecting');
         setStatusMsg('Buscando impresoras Bluetooth...');
         try {
-            const { device, characteristic: char } = await connectPrinter();
+            const result = await connectPrinter();
 
-            setPrinterDevice(device);
-            setCharacteristic(char);
-            setStatus('connected');
-            setStatusMsg(`Conectado a: ${device.name || 'Impresora Bluetooth'}`);
-            savePrinterName(device.name || 'Impresora BT');
-            setSavedName(device.name || 'Impresora BT');
-
-            // Guardar globalmente para otros componentes
-            setGlobalPrinter({ device, characteristic: char });
+            setPrinter(result);
+            savePrinterName(result.device.name || 'Impresora BT');
 
             // Escuchar desconexión
-            device.addEventListener('gattserverdisconnected', () => {
-                setStatus('disconnected');
-                setStatusMsg('La impresora se desconectó.');
-                setGlobalPrinter(null);
+            result.device.addEventListener('gattserverdisconnected', () => {
+                setPrinter(null);
             });
 
         } catch (err) {
@@ -71,23 +60,18 @@ export default function PrinterSettings() {
     };
 
     const handleDisconnect = () => {
-        if (printerDevice?.gatt?.connected) {
-            printerDevice.gatt.disconnect();
+        if (printer?.device?.gatt?.connected) {
+            printer.device.gatt.disconnect();
         }
-        setGlobalPrinter(null);
-        setPrinterDevice(null);
-        setCharacteristic(null);
-        setStatus('idle');
-        setStatusMsg('');
+        setPrinter(null);
         clearSavedPrinter();
-        setSavedName(null);
     };
 
     const handleTest = async () => {
-        if (!characteristic) return;
+        if (!printer?.characteristic) return;
         setIsTesting(true);
         try {
-            await printTestPage(characteristic);
+            await printTestPage(printer.characteristic);
             setStatusMsg('✓ Página de prueba enviada correctamente');
         } catch (err) {
             setStatusMsg(`Error al imprimir: ${err.message}`);
@@ -97,7 +81,7 @@ export default function PrinterSettings() {
         }
     };
 
-    const isConnected = status === 'connected' && characteristic;
+    const isConnected = status === 'connected' && printer;
 
     return (
         <div className="p-4 md:p-8 max-w-2xl mx-auto">
@@ -153,7 +137,7 @@ export default function PrinterSettings() {
                             status === 'error' ? 'text-red-800' :
                                 'text-slate-700'
                             }`}>
-                            {isConnected ? (printerDevice?.name || 'Impresora Bluetooth') :
+                            {isConnected ? (printer.device.name || 'Impresora Bluetooth') :
                                 status === 'connecting' ? 'Buscando dispositivo...' :
                                     status === 'error' ? 'Error de conexión' :
                                         status === 'disconnected' ? 'Desconectada' :
@@ -214,14 +198,14 @@ export default function PrinterSettings() {
             </div>
 
             {/* Última impresora */}
-            {savedName && !isConnected && (
+            {getSavedPrinterName() && !isConnected && (
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6 flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
                         <Bluetooth size={18} className="text-slate-400" />
                     </div>
                     <div className="flex-1">
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-0.5">Último dispositivo</p>
-                        <p className="font-bold text-slate-700">{savedName}</p>
+                        <p className="font-bold text-slate-700">{getSavedPrinterName()}</p>
                     </div>
                     <button
                         onClick={handleConnect}
