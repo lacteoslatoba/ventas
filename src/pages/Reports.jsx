@@ -101,78 +101,189 @@ export default function Reports() {
                 </div>
             </div>
 
-            {/* DETALLE DE VENTA - PANTALLA COMPLETA */}
+            {/* DETALLE DE VENTA - INTERFAZ PREMIUM */}
             {selectedSale && (
-                <div className="fixed inset-0 z-[100] bg-white animate-in slide-in-from-bottom duration-300 no-print flex flex-col">
-                    {/* Header Full Screen */}
-                    <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => setSelectedSale(null)} className="p-2 -ml-2 text-slate-400 hover:text-slate-600 active:scale-90 transition-all">
-                                <ArrowLeft size={24} />
+                <div className="fixed inset-0 z-[100] bg-background-light dark:bg-background-dark animate-in slide-in-from-bottom duration-300 no-print flex flex-col items-center">
+                    <div className="relative flex h-full w-full max-w-md mx-auto flex-col bg-white dark:bg-background-dark overflow-x-hidden shadow-2xl">
+                        
+                        {/* Top App Bar */}
+                        <div className="flex items-center bg-white dark:bg-background-dark p-4 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
+                            <button 
+                                onClick={() => setSelectedSale(null)}
+                                className="text-slate-900 dark:text-slate-100 flex size-10 items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-2xl font-bold">arrow_back</span>
                             </button>
-                            <div>
-                                <h3 className="text-xl font-black text-slate-800">DETALLE DE VENTA</h3>
-                                <p className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-wider">TICKET #{selectedSale.id.slice(-6)}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                        <div className="grid grid-cols-2 gap-6">
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Fecha</p>
-                                <p className="text-slate-600 font-normal">{new Date(selectedSale.date).toLocaleDateString()} {new Date(selectedSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Repartidor</p>
-                                <p className="text-slate-600 font-normal">{selectedSale.userId === 'admin' ? 'Administrador' : (users.find(u => u.id === selectedSale.userId)?.name || 'Admin')}</p>
-                            </div>
-                            <div className="col-span-2">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente / Destino</p>
-                                <p className="text-xl text-slate-700 font-normal">{clients.find(c => c.id === selectedSale.clientId)?.name || 'General'}</p>
-                            </div>
+                            <h2 className="text-slate-900 dark:text-slate-100 text-xl font-bold leading-tight tracking-tight flex-1 ml-2">
+                                Venta #{selectedSale.id.slice(-6)}
+                            </h2>
+                            <button className="flex items-center justify-center rounded-lg h-10 w-10 text-slate-400">
+                                <span className="material-symbols-outlined text-2xl">more_vert</span>
+                            </button>
                         </div>
 
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Productos</p>
-                            <div className="space-y-4">
-                                {selectedSale.items.map((item, idx) => (
-                                    <div key={idx} className="flex justify-between items-start pb-4 border-b border-slate-50 last:border-0 font-normal">
-                                        <div className="flex-1">
-                                            <p className="text-slate-700 text-base">{item.name}</p>
-                                            <p className="text-xs text-slate-400 mt-0.5">{item.quantity} {item.unit || 'u'} x ${item.price.toFixed(2)}</p>
-                                            {item.pieces > 0 && <p className="text-[10px] text-amber-600 font-medium tracking-tight">└ {item.pieces} pzas</p>}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-6 p-4 pb-32">
+                            {/* Status Badge */}
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 text-emerald-600 rounded-full w-fit">
+                                <span className="material-symbols-outlined text-sm font-bold">check_circle</span>
+                                <span className="text-[10px] font-black uppercase tracking-wider">Venta Finalizada</span>
+                            </div>
+
+                            {/* Customer Section */}
+                            <section>
+                                <h3 className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mb-3">Información del Cliente</h3>
+                                {(() => {
+                                    const client = clients.find(c => c.id === selectedSale.clientId);
+                                    return (
+                                        <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-800">
+                                            <div className="bg-primary/10 flex items-center justify-center rounded-full h-14 w-14 border-2 border-white dark:border-slate-700 shadow-sm text-primary font-black text-xl">
+                                                {client?.name?.charAt(0) || 'C'}
+                                            </div>
+                                            <div className="flex flex-col flex-1 min-w-0">
+                                                <p className="text-slate-900 dark:text-white text-lg font-black leading-none mb-1 truncate">{client?.name || 'Cliente General'}</p>
+                                                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium truncate">{client?.address || 'Sin dirección registrada'}</p>
+                                                <p className="text-primary text-sm font-bold mt-1">{client?.phone || 'Sin teléfono'}</p>
+                                            </div>
+                                            {client?.phone && (
+                                                <a href={`tel:${client.phone}`} className="bg-primary text-white p-3 rounded-2xl shadow-lg shadow-primary/20 active:scale-90 transition-all">
+                                                    <span className="material-symbols-outlined text-xl">phone</span>
+                                                </a>
+                                            )}
                                         </div>
-                                        <p className="text-slate-900 text-base font-normal tracking-tight">${(item.quantity * item.price).toFixed(2)}</p>
+                                    );
+                                })()}
+                            </section>
+
+                            {/* Order Items Section */}
+                            <section>
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Resumen del Pedido</h3>
+                                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                                        {selectedSale.items.length} {selectedSale.items.length === 1 ? 'Producto' : 'Productos'}
+                                    </span>
+                                </div>
+                                <div className="space-y-1">
+                                    {selectedSale.items.map((item, idx) => (
+                                        <div key={idx} className="flex items-center gap-4 bg-white dark:bg-background-dark py-4 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                                            <div className="h-12 w-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-100 dark:border-slate-700">
+                                                <span className="material-symbols-outlined text-slate-300">inventory_2</span>
+                                            </div>
+                                            <div className="flex flex-col flex-1 min-w-0">
+                                                <p className="text-slate-900 dark:text-white text-base font-black leading-tight truncate">{item.name}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-slate-500 dark:text-slate-400 text-xs font-bold">{item.quantity}{item.unit || 'u'} × ${item.price.toFixed(2)}</p>
+                                                    {item.pieces > 0 && (
+                                                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-lg border border-amber-100">
+                                                            {item.pieces} pzas
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-slate-900 dark:text-white text-base font-black tracking-tight">${(item.quantity * item.price).toFixed(2)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Payment Breakdown */}
+                            <section className="mt-2 space-y-2 bg-slate-50 dark:bg-slate-900/30 p-5 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+                                <div className="flex justify-between items-center text-slate-500">
+                                    <span className="text-xs font-bold uppercase tracking-wider">Subtotal</span>
+                                    <span className="text-sm font-black">${selectedSale.total.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-slate-500">
+                                    <span className="text-xs font-bold uppercase tracking-wider">Envío</span>
+                                    <span className="text-sm font-black text-emerald-500">GRATIS</span>
+                                </div>
+                                <div className="pt-4 mt-2 border-t-2 border-dashed border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                                    <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Total Cobrado</span>
+                                    <span className="text-3xl font-black text-primary tracking-tighter">${selectedSale.total.toFixed(2)}</span>
+                                </div>
+                            </section>
+
+                            {/* Info Extra (User / Time) */}
+                            <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                                        <span className="material-symbols-outlined text-lg">person</span>
                                     </div>
-                                ))}
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Atendió</p>
+                                        <p className="text-xs font-black text-slate-700 dark:text-slate-200">
+                                            {selectedSale.userId === 'admin' ? 'Administración' : (users.find(u => u.id === selectedSale.userId)?.name?.split(' ')[0] || 'Repartidor')}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                                        <span className="material-symbols-outlined text-lg">schedule</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hora</p>
+                                        <p className="text-xs font-black text-slate-700 dark:text-slate-200">
+                                            {new Date(selectedSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Footer / Actions */}
-                    <div className="p-6 border-t border-slate-100 bg-slate-50 flex flex-col gap-3">
-                        <div className="flex justify-between items-end mb-2">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Venta</p>
-                            <p className="text-3xl font-black text-slate-900 tracking-tighter">${selectedSale.total.toFixed(2)}</p>
+                        {/* Action Area - Sticky Bottom */}
+                        <div className="mt-auto p-4 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex flex-col gap-3">
+                            <button 
+                                onClick={async () => {
+                                    const btPrinter = window.__btPrinter;
+                                    if (btPrinter) {
+                                        await handleBTPrint(selectedSale);
+                                    } else {
+                                        window.print();
+                                    }
+                                }}
+                                disabled={btPrinting}
+                                className="w-full bg-primary hover:bg-blue-700 text-white font-black py-5 rounded-3xl shadow-xl shadow-primary/25 flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {btPrinting ? (
+                                    <span className="material-symbols-outlined animate-spin">refresh</span>
+                                ) : (
+                                    <span className="material-symbols-outlined">print</span>
+                                )}
+                                <span className="text-lg">{btPrinting ? 'Imprimiendo...' : 'Reimprimir Ticket'}</span>
+                            </button>
+                            
+                            <div className="flex gap-3">
+                                {(() => {
+                                    const client = clients.find(c => c.id === selectedSale.clientId);
+                                    return client?.address ? (
+                                        <a 
+                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(client.address)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all text-sm"
+                                        >
+                                            <span className="material-symbols-outlined text-xl">map</span>
+                                            <span>Ver Mapa</span>
+                                        </a>
+                                    ) : (
+                                        <div className="flex-1 opacity-30 bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 text-sm">
+                                            <span className="material-symbols-outlined text-xl">map_off</span>
+                                            <span>Sin Mapa</span>
+                                        </div>
+                                    );
+                                })()}
+                                <button 
+                                    onClick={() => setSelectedSale(null)}
+                                    className="flex-1 bg-slate-900 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all text-sm"
+                                >
+                                    <span className="material-symbols-outlined text-xl">close</span>
+                                    <span>Cerrar</span>
+                                </button>
+                            </div>
                         </div>
 
-                        <button
-                            onClick={async () => {
-                                const btPrinter = window.__btPrinter;
-                                if (btPrinter) {
-                                    await handleBTPrint(selectedSale);
-                                } else {
-                                    window.print();
-                                }
-                            }}
-                            disabled={btPrinting}
-                            className="w-full py-4 bg-primary hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 text-lg"
-                        >
-                            <Printer size={22} />
-                            {btPrinting ? 'Imprimiendo BT...' : 'Imprimir Ticket'}
-                        </button>
+                        {/* Bottom Spacer for mobile chin */}
+                        <div className="h-6 bg-white dark:bg-background-dark"></div>
                     </div>
                 </div>
             )}
