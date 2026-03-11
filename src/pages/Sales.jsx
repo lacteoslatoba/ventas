@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { ShoppingCart, Printer, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth } from 'lucide-react';
+import { ShoppingCart, Printer, Delete, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth } from 'lucide-react';
 import { printTicket } from '../lib/bluetoothPrinter';
 
 export default function Sales() {
@@ -518,18 +518,18 @@ export default function Sales() {
                             </div>
 
                             {/* Teclado Numérico */}
-                            <div className="grid grid-cols-3 gap-2 flex-1 max-h-[400px]">
+                            <div className="grid grid-cols-3 gap-2.5 flex-1 max-h-[400px]">
                                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0, 'backspace'].map((key) => (
                                     <button
                                         key={key}
                                         onClick={() => handleKeypadPress(key)}
-                                        className={`h-16 rounded-2xl flex items-center justify-center transition-all active:scale-90 active:bg-slate-200 ${
+                                        className={`h-[72px] rounded-2xl flex items-center justify-center transition-all active:scale-95 active:brightness-90 ${
                                             key === 'backspace' 
-                                            ? 'bg-slate-100 text-slate-500' 
-                                            : 'bg-white border border-slate-100 text-2xl font-black text-slate-800 shadow-sm'
+                                            ? 'bg-slate-200 text-slate-600 shadow-inner' 
+                                            : 'bg-white border-2 border-slate-200 text-3xl font-black text-slate-800 shadow-md hover:border-primary/30'
                                         }`}
                                     >
-                                        {key === 'backspace' ? <Trash2 size={24} /> : key}
+                                        {key === 'backspace' ? <Delete size={28} /> : key}
                                     </button>
                                 ))}
                             </div>
