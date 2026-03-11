@@ -23,9 +23,12 @@ export const useStore = create(
                 footerLine2: '',
                 showSignature: true,
                 paperWidth: 58, // mm: 58 o 80
+                synced: true, // Por defecto asumimos sincronizado si no se ha cambiado
             },
-            updateTicketConfig: (config) =>
-                set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config } })),
+            updateTicketConfig: (config) => {
+                set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));
+                get().syncToSupabase();
+            },
 
             // Autenticación y Roles
             currentUser: null,
@@ -112,6 +115,18 @@ export const useStore = create(
                         return nextState;
                     });
 
+                    // Sincronización especial de Ticket Config
+                    if (state.ticketConfig && !state.ticketConfig.synced) {
+                        const { synced: _synced, ...payload } = state.ticketConfig;
+                        // Forzamos un id único para configuraciones globales
+                        const { error } = await supabase.from('ticket_config').upsert({ id: 'main', ...payload });
+                        if (!error) {
+                            set(s => ({ ticketConfig: { ...s.ticketConfig, synced: true } }));
+                        } else {
+                            console.error(`Error Syncing ticket_config:`, error.message);
+                        }
+                    }
+
                 } catch (error) {
                     console.error('Error sincronizando con la nube:', error);
                 } finally {
@@ -161,6 +176,18 @@ export const useStore = create(
                             clients: mergeState('clients')
                         };
                     });
+
+                    // Descarga especial de Ticket Config
+                    const { data: configData, error: configError } = await supabase.from('ticket_config').select('*').eq('id', 'main').single();
+                    if (!configError && configData) {
+                        set(s => {
+                            // Solo sobreescribimos si no tenemos cambios locales sin sincronizar
+                            if (s.ticketConfig?.synced) {
+                                return { ticketConfig: { ...configData, synced: true } };
+                            }
+                            return {};
+                        });
+                    }
 
                 } catch (error) {
                     console.error('Error descargando desde Supabase:', error);
