@@ -84,6 +84,7 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false, con
         subtitle = '',
         address = '',
         phone = '',
+        extraLine1 = '',
         extraLine2 = '',
         footerLine1 = '¡Gracias por su compra!',
         footerLine2 = '',
