@@ -112,12 +112,27 @@ function Toggle({ label, desc, checked, onChange, id }) {
 }
 
 // ─── Sección con título ───────────────────────────────────────────────────────
-function Section({ title, icon: Icon, children }) {
+function Section({ title, icon: Icon, children, onSave, saved }) {
     return (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center gap-2">
-                {Icon && <Icon size={16} className="text-primary" />}
-                <h2 className="font-black text-slate-700 text-sm uppercase tracking-wider">{title}</h2>
+            <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    {Icon && <Icon size={16} className="text-primary" />}
+                    <h2 className="font-black text-slate-700 text-sm uppercase tracking-wider">{title}</h2>
+                </div>
+                {onSave && (
+                    <button
+                        onClick={onSave}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${saved ? 'bg-emerald-500 text-white' : 'bg-primary/10 text-primary hover:bg-primary/20'
+                            }`}
+                    >
+                        {saved ? (
+                            <><CheckCheck size={14} /> Guardado</>
+                        ) : (
+                            <><Save size={14} /> Guardar</>
+                        )}
+                    </button>
+                )}
             </div>
             <div className="p-5 space-y-4">{children}</div>
         </div>
@@ -186,7 +201,7 @@ export default function TicketConfig() {
                 <div className="space-y-5">
 
                     {/* Identificación del negocio */}
-                    <Section title="Datos del Negocio" icon={Building2}>
+                    <Section title="Datos del Negocio" icon={Building2} onSave={handleSave} saved={saved}>
                         <Field
                             id="businessName"
                             label="Nombre del Negocio"
