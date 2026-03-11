@@ -3,7 +3,8 @@ import { useStore } from '../store';
 import {
     Settings2, Save, RotateCcw, FileText, Building2, Phone,
     MapPin, AlignCenter, CheckCheck, Printer, Eye, EyeOff,
-    ChevronRight, Info
+    ChevronRight, Info, AlignLeft, AlignRight, Type, Calendar, User, Eye as EyeIcon
+
 } from 'lucide-react';
 
 // ─── Preview del ticket (HTML) ───────────────────────────────────────────────
@@ -12,21 +13,27 @@ function TicketPreview({ config }) {
         businessName, subtitle, address, phone,
         extraLine1, extraLine2,
         footerLine1, footerLine2, showSignature,
+        titleAlignment = 'center', showAddress = true, showPhone = true,
+        showDate = true, showTime = true, showSeller = true, showCustomer = true,
+        useFontB = false
     } = config;
+
+    const alignClass = titleAlignment === 'left' ? 'text-left' : titleAlignment === 'right' ? 'text-right' : 'text-center';
+    const fontClass = useFontB ? 'text-[8.5px]' : 'text-[10px]';
 
     return (
         <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-4 flex justify-center">
             <div
-                className="font-mono text-[10px] leading-snug text-black bg-white"
+                className={`font-mono leading-snug text-black bg-white ${fontClass}`}
                 style={{ width: '200px', minHeight: '300px' }}
             >
                 {/* Encabezado */}
-                <div className="text-center font-bold text-[13px] mb-0.5 leading-tight">
+                <div className={`${alignClass} font-bold text-[13px] mb-0.5 leading-tight`}>
                     {businessName || 'MI NEGOCIO'}
                 </div>
-                {subtitle && <div className="text-center text-[9px]">{subtitle}</div>}
-                {address && <div className="text-center">{address}</div>}
-                {phone && <div className="text-center">Tel: {phone}</div>}
+                {subtitle && <div className={`${alignClass} ${useFontB ? 'text-[7px]' : 'text-[9px]'}`}>{subtitle}</div>}
+                {showAddress && address && <div className={alignClass}>{address}</div>}
+                {showPhone && phone && <div className={alignClass}>Tel: {phone}</div>}
                 {extraLine1 && <div className="text-center">{extraLine1}</div>}
                 {extraLine2 && <div className="text-center">{extraLine2}</div>}
 
@@ -34,13 +41,19 @@ function TicketPreview({ config }) {
 
                 {/* Info ticket */}
                 <div>Ticket : #A1B2C3</div>
-                <div>Fecha  : {new Date().toLocaleDateString('es-MX')}</div>
-                <div>Hora   : {new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
+                {showDate && <div>Fecha  : {new Date().toLocaleDateString('es-MX')}</div>}
+                {showTime && <div>Hora   : {new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>}
 
                 <div className="border-t border-dashed border-black my-1" />
-                <div>Repartidor: Juan Pérez</div>
-                <div>Cliente   : Tienda La Fe</div>
-                <div className="border-t border-dashed border-black my-1" />
+                
+                {(showSeller || showCustomer) && (
+                    <>
+                        {showSeller && <div>Repartidor: Juan Pérez</div>}
+                        {showCustomer && <div>Cliente   : Tienda La Fe</div>}
+                        <div className="border-t border-dashed border-black my-1" />
+                    </>
+                )}
+
 
                 {/* Tabla */}
                 <div className="font-bold">CANT  CONCEPTO    IMPORTE</div>
@@ -168,7 +181,16 @@ export default function TicketConfig() {
             footerLine2: '',
             showSignature: true,
             paperWidth: 58,
+            titleAlignment: 'center',
+            showAddress: true,
+            showPhone: true,
+            showDate: true,
+            showTime: true,
+            showSeller: true,
+            showCustomer: true,
+            useFontB: false,
         };
+
         setForm(defaults);
     };
 
@@ -241,7 +263,94 @@ export default function TicketConfig() {
                         />
                     </Section>
 
+                    {/* Campos Visibles */}
+                    <Section title="Campos Visibles" icon={EyeIcon}>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                            <Toggle
+                                id="showAddress"
+                                label="Dirección"
+                                checked={form.showAddress}
+                                onChange={update('showAddress')}
+                            />
+                            <Toggle
+                                id="showPhone"
+                                label="Teléfono"
+                                checked={form.showPhone}
+                                onChange={update('showPhone')}
+                            />
+                            <Toggle
+                                id="showDate"
+                                label="Fecha"
+                                checked={form.showDate}
+                                onChange={update('showDate')}
+                            />
+                            <Toggle
+                                id="showTime"
+                                label="Hora"
+                                checked={form.showTime}
+                                onChange={update('showTime')}
+                            />
+                            <Toggle
+                                id="showSeller"
+                                label="Repartidor/Vendedor"
+                                checked={form.showSeller}
+                                onChange={update('showSeller')}
+                            />
+                            <Toggle
+                                id="showCustomer"
+                                label="Cliente"
+                                checked={form.showCustomer}
+                                onChange={update('showCustomer')}
+                            />
+                        </div>
+                    </Section>
+
+                    {/* Diseño y Apariencia */}
+                    <Section title="Diseño y Apariencia" icon={Type}>
+                        <div className="space-y-6">
+                            <div>
+                                <label className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
+                                    <AlignCenter size={14} /> Alineación de Títulos
+                                </label>
+                                <div className="flex bg-slate-100 p-1.5 rounded-xl">
+                                    <button
+                                        type="button"
+                                        onClick={() => update('titleAlignment')('left')}
+                                        className={`flex-1 flex justify-center py-2.5 rounded-lg text-sm font-bold transition-all ${form.titleAlignment === 'left' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                                    >
+                                        <AlignLeft size={18} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => update('titleAlignment')('center')}
+                                        className={`flex-1 flex justify-center py-2.5 rounded-lg text-sm font-bold transition-all ${form.titleAlignment === 'center' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                                    >
+                                        <AlignCenter size={18} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => update('titleAlignment')('right')}
+                                        className={`flex-1 flex justify-center py-2.5 rounded-lg text-sm font-bold transition-all ${form.titleAlignment === 'right' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                                    >
+                                        <AlignRight size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="pt-2 border-t border-slate-100">
+                                <Toggle
+                                    id="useFontB"
+                                    label="Usar Fuente Pequeña (Modo B)"
+                                    desc="Reduce el tamaño de letra si tu impresora lo soporta"
+                                    checked={form.useFontB}
+                                    onChange={update('useFontB')}
+                                />
+                            </div>
+                        </div>
+                    </Section>
+
                     {/* Líneas extra */}
+
                     <Section title="Líneas Adicionales del Encabezado" icon={AlignCenter}>
                         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex gap-2 text-xs text-blue-600">
                             <Info size={14} className="shrink-0 mt-0.5" />

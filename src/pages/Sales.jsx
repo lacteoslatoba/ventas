@@ -190,22 +190,26 @@ export default function Sales() {
 
                 {/* TICKET IMPRIMIBLE */}
                 <div id="ticket-print-area" className="hidden print:block">
-                    <div style={{ fontFamily: 'monospace', fontSize: '8pt', lineHeight: '1.2', width: `${(ticketConfig.paperWidth || 58) - 2}mm`, margin: '0', padding: '2mm 0', color: '#000' }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: ticketConfig.useFontB ? '7pt' : '8pt', lineHeight: '1.2', width: `${(ticketConfig.paperWidth || 58) - 2}mm`, margin: '0', padding: '2mm 0', color: '#000' }}>
                         {/* (Contenido del ticket mantenido igual por compatibilidad con impresora térmica) */}
-                        <div style={{ textAlign: 'center', marginBottom: '3px' }}>
-                            <div style={{ fontWeight: 'bold', fontSize: '11pt', lineHeight: '1.2' }}>{ticketConfig.businessName || 'MI NEGOCIO'}</div>
-                            {ticketConfig.subtitle && <div>{ticketConfig.subtitle}</div>}
-                            {ticketConfig.address && <div>{ticketConfig.address}</div>}
-                            {ticketConfig.phone && <div>Tel: {ticketConfig.phone}</div>}
+                        <div style={{ textAlign: ticketConfig.titleAlignment || 'center', marginBottom: '3px' }}>
+                            <div style={{ fontWeight: 'bold', fontSize: ticketConfig.useFontB ? '9pt' : '11pt', lineHeight: '1.2' }}>{ticketConfig.businessName || 'MI NEGOCIO'}</div>
+                            {ticketConfig.subtitle && <div style={{ fontSize: ticketConfig.useFontB ? '6pt' : '8pt' }}>{ticketConfig.subtitle}</div>}
+                            {ticketConfig.showAddress !== false && ticketConfig.address && <div>{ticketConfig.address}</div>}
+                            {ticketConfig.showPhone !== false && ticketConfig.phone && <div>Tel: {ticketConfig.phone}</div>}
                         </div>
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
                         <div>Ticket : #{generatedTicket.id.slice(-6).toUpperCase()}</div>
-                        <div>Fecha  : {new Date(generatedTicket.date).toLocaleDateString('es-MX')}</div>
-                        <div>Hora   : {new Date(generatedTicket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
+                        {ticketConfig.showDate !== false && <div>Fecha  : {new Date(generatedTicket.date).toLocaleDateString('es-MX')}</div>}
+                        {ticketConfig.showTime !== false && <div>Hora   : {new Date(generatedTicket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>}
                         
-                        <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
-                        <div>Repartidor: {user?.name || 'Administrador'}</div>
-                        <div>Cliente   : {client?.name || 'General'}</div>
+                        {(ticketConfig.showSeller !== false || ticketConfig.showCustomer !== false) && (
+                            <>
+                                <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
+                                {ticketConfig.showSeller !== false && <div>Repartidor: {user?.name || 'Administrador'}</div>}
+                                {ticketConfig.showCustomer !== false && <div>Cliente   : {client?.name || 'General'}</div>}
+                            </>
+                        )}
                         
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
                         <div style={{ fontWeight: 'bold' }}>CANT CONCEPTO         IMPORTE</div>
@@ -239,9 +243,10 @@ export default function Sales() {
                              {/* ... contenido ticket papel ... */}
                              <div className="bg-white shadow-2xl" style={{ fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.45', width: '260px', padding: '16px 18px 24px' }}>
                                 <div style={{ borderTop: '2px dashed #e2e8f0', marginBottom: '14px' }} />
-                                <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                                <div style={{ textAlign: ticketConfig.titleAlignment || 'center', marginBottom: '8px' }}>
                                     <div style={{ fontWeight: '900', fontSize: '15px' }}>{ticketConfig.businessName || 'MI NEGOCIO'}</div>
-                                    <div style={{ fontSize: '11px', color: '#64748b' }}>{ticketConfig.address}</div>
+                                    {ticketConfig.showAddress !== false && ticketConfig.address && <div style={{ fontSize: '11px', color: '#64748b' }}>{ticketConfig.address}</div>}
+                                    {ticketConfig.showPhone !== false && ticketConfig.phone && <div style={{ fontSize: '11px', color: '#64748b' }}>Tel: {ticketConfig.phone}</div>}
                                 </div>
                                 <div style={{ borderTop: '1px dashed #cbd5e1', margin: '10px 0' }} />
                                 <div style={{ fontSize: '11px' }}>Ticket : <strong>#{generatedTicket.id.slice(-6)}</strong></div>

@@ -24,6 +24,15 @@ export const useStore = create(
                 showSignature: true,
                 paperWidth: 58, // mm: 58 o 80
                 synced: true, // Por defecto asumimos sincronizado si no se ha cambiado
+                titleAlignment: 'center', // left, center, right
+                showAddress: true,
+                showPhone: true,
+                showDate: true,
+                showTime: true,
+                showSeller: true,
+                showCustomer: true,
+                useFontB: false,
+
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));

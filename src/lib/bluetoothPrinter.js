@@ -65,6 +65,14 @@ function centerText(text, width = 32) {
     return ' '.repeat(pad) + text;
 }
 
+function alignTextStr(text, align, width = 32) {
+    if (text.length >= width) return text.slice(0, width);
+    if (align === 'center') return centerText(text, width);
+    if (align === 'right') return ' '.repeat(width - text.length) + text;
+    return text; // left
+}
+
+
 // ─── Crear buffer ESC/POS del ticket ─────────────────────────────────────────
 export function buildTicketBuffer({ ticket, user, client, isReprint = false, config = {} }) {
     const LINE_WIDTH = 32; // 58mm → ~32 chars por línea con fuente estándar
@@ -76,29 +84,44 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false, con
         subtitle = '',
         address = '',
         phone = '',
-        extraLine1 = '',
         extraLine2 = '',
         footerLine1 = '¡Gracias por su compra!',
         footerLine2 = '',
         showSignature = true,
+        
+        // Nuevas opciones
+        titleAlignment = 'center', // left, center, right
+        showAddress = true,
+        showPhone = true,
+        showDate = true,
+        showTime = true,
+        showSeller = true,
+        showCustomer = true,
+        useFontB = false, // Fuente más pequeña si la soporta
     } = config;
+
 
     const chunks = [];
     const add = (...parts) => chunks.push(toBytes(...parts));
 
     // Inicializar
     add(CMD.INIT);
+    
+    if (useFontB) {
+        add([0x1B, 0x4D, 0x01]); // Comando ESC M 1 para Fuente B
+    }
 
-    // Encabezado del negocio (CENTRADO)
+    // Encabezado del negocio
     add(CMD.BOLD_ON);
-    add(centerText(businessName.toUpperCase(), LINE_WIDTH) + '\n');
+    add(alignTextStr(businessName.toUpperCase(), titleAlignment, LINE_WIDTH) + '\n');
     add(CMD.BOLD_OFF);
     
-    if (subtitle) add(centerText(subtitle, LINE_WIDTH) + '\n');
-    if (address) add(centerText(address, LINE_WIDTH) + '\n');
-    if (phone) add(centerText(`Tel: ${phone}`, LINE_WIDTH) + '\n');
+    if (subtitle) add(alignTextStr(subtitle, titleAlignment, LINE_WIDTH) + '\n');
+    if (showAddress && address) add(alignTextStr(address, titleAlignment, LINE_WIDTH) + '\n');
+    if (showPhone && phone) add(alignTextStr(`Tel: ${phone}`, titleAlignment, LINE_WIDTH) + '\n');
     if (extraLine1) add(centerText(extraLine1, LINE_WIDTH) + '\n');
     if (extraLine2) add(centerText(extraLine2, LINE_WIDTH) + '\n');
+
 
     if (isReprint) {
         add(CMD.BOLD_ON);
@@ -110,14 +133,16 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false, con
 
     // Info del ticket
     add(`Ticket : #${ticket.id.slice(-6).toUpperCase()}\n`);
-    add(`Fecha  : ${new Date(ticket.date).toLocaleDateString('es-MX')}\n`);
-    add(`Hora   : ${new Date(ticket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}\n`);
+    if (showDate) add(`Fecha  : ${new Date(ticket.date).toLocaleDateString('es-MX')}\n`);
+    if (showTime) add(`Hora   : ${new Date(ticket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}\n`);
+
     
     add(SEP);
 
-    // Repartidor y cliente (Soberbio y claro)
-    add(`Repartidor: ${user?.name || 'Administrador'}\n`);
-    add(`Cliente   : ${client?.name || 'General'}\n`);
+    // Repartidor y cliente
+    if (showSeller || showCustomer) add(SEP);
+    if (showSeller) add(`Repartidor: ${user?.name || 'Administrador'}\n`);
+    if (showCustomer) add(`Cliente   : ${client?.name || 'General'}\n`);
     
     add(SEP);
 
