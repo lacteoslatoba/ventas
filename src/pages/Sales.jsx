@@ -120,69 +120,116 @@ export default function Sales() {
             <div className="fixed inset-0 z-[100] bg-background-light dark:bg-background-dark no-print flex flex-col items-center">
                 <div className="relative flex h-full w-full max-w-md mx-auto flex-col bg-white dark:bg-background-dark overflow-x-hidden shadow-2xl">
                     
-                    {/* Header Minimal */}
-                    <div className="flex items-center justify-between p-6">
-                        <div className="size-10 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400">
-                             <span className="material-symbols-outlined">analytics</span>
+                    <div className="flex items-center justify-center p-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 z-10">
+                        <div className="bg-emerald-500/10 text-emerald-500 w-8 h-8 rounded-full flex items-center justify-center mr-3 hidden">
+                            <span className="material-symbols-outlined text-xl font-black">check_circle</span>
                         </div>
-                        {/* Botón X eliminado a petición del usuario */}
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                             <span className="material-symbols-outlined text-emerald-500">check_circle</span>
+                             Venta Exitosa
+                        </h2>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-6 flex flex-col items-center text-center">
-                        {/* Animación de éxito */}
-                        <div className="bg-emerald-500/10 text-emerald-500 w-24 h-24 rounded-[2.5rem] flex items-center justify-center mb-6 animate-bounce duration-1000">
-                            <span className="material-symbols-outlined text-5xl font-black">check_circle</span>
-                        </div>
-
-                        <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">¡Venta Exitosa!</h2>
-                        <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-8">Ticket #{generatedTicket.id.slice(-6)}</p>
-
-                        {/* Card del Cliente */}
-                        <div className="w-full bg-slate-50 dark:bg-slate-900/50 rounded-[2rem] p-5 border border-slate-100 dark:border-slate-800 mb-6 text-left flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xl">
-                                {client?.name?.charAt(0) || 'C'}
+                    <div className="flex-1 overflow-y-auto w-full flex flex-col items-center py-6 bg-slate-50/50 dark:bg-slate-900/50 relative">
+                        {/* Ticket Virtual rendered directly */}
+                        <div className="bg-white shadow-xl shadow-slate-200/50 rounded-xl animate-in fade-in slide-in-from-bottom-4 duration-500 will-change-transform" style={{ fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.45', width: '280px', padding: '20px 20px 28px', color: '#000' }}>
+                            <div style={{ textAlign: ticketConfig.titleAlignment || 'center', marginBottom: '12px' }}>
+                                <div style={{ fontWeight: '900', fontSize: '16px', textTransform: 'uppercase' }}>{ticketConfig.businessName || 'MI NEGOCIO'}</div>
+                                {ticketConfig.subtitle && <div style={{ fontSize: '11px', textTransform: 'uppercase', marginTop: '4px' }}>{ticketConfig.subtitle}</div>}
+                                {ticketConfig.showAddress !== false && ticketConfig.address && <div style={{ fontSize: '11px', color: '#475569', textTransform: 'uppercase', marginTop: '4px' }}>{ticketConfig.address}</div>}
+                                {ticketConfig.showPhone !== false && ticketConfig.phone && <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>Tel: {ticketConfig.phone}</div>}
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Entregado a</p>
-                                <p className="text-lg font-black text-slate-800 dark:text-white truncate">{client?.name || 'Cliente General'}</p>
-                            </div>
-                        </div>
 
-                        {/* Resumen rápido */}
-                        <div className="w-full grid grid-cols-2 gap-4 mb-8">
-                             <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-left">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Monto Total</p>
-                                <p className="text-2xl font-black text-primary tracking-tighter">${generatedTicket.total.toFixed(2)}</p>
-                             </div>
-                             <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-left">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Productos</p>
-                                <p className="text-2xl font-black text-slate-800 dark:text-white tracking-tighter">{generatedTicket.items.length}</p>
-                             </div>
+                            <div style={{ borderTop: '2px dashed #cbd5e1', margin: '14px 0' }} />
+
+                            <div className="flex justify-between items-center text-[11px] mb-1">
+                                <span>TICKET:</span>
+                                <strong>#{generatedTicket.id.slice(-6).toUpperCase()}</strong>
+                            </div>
+                            
+                            {ticketConfig.showDate !== false && (
+                                <div className="flex justify-between items-center text-[11px] mb-1">
+                                    <span>FECHA:</span>
+                                    <span>{new Date(generatedTicket.date).toLocaleDateString('es-MX')} {ticketConfig.showTime !== false && new Date(generatedTicket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                            )}
+
+                            {(ticketConfig.showSeller !== false || ticketConfig.showCustomer !== false) && (
+                                <>
+                                    <div style={{ borderTop: '1px dashed #e2e8f0', margin: '10px 0' }} />
+                                    {ticketConfig.showSeller !== false && (
+                                        <div className="flex justify-between items-center text-[11px] mb-1">
+                                            <span>CAJERO:</span>
+                                            <span className="uppercase text-right truncate max-w-[120px] font-semibold">{user?.name || 'ADMIN'}</span>
+                                        </div>
+                                    )}
+                                    {ticketConfig.showCustomer !== false && (
+                                        <div className="flex justify-between items-center text-[11px] mb-1">
+                                            <span>CLIENTE:</span>
+                                            <span className="uppercase text-right truncate max-w-[120px] font-semibold">{client?.name || 'GENERAL'}</span>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            <div style={{ borderTop: '2px dashed #cbd5e1', margin: '14px 0' }} />
+                            
+                            <div className="flex justify-between text-[11px] font-bold mb-2">
+                                <span>ITEM</span>
+                                <span>PRECIO</span>
+                            </div>
+
+                            <div style={{ borderTop: '1px dashed #e2e8f0', margin: '10px 0' }} />
+
+                            <div className="space-y-3">
+                                {generatedTicket.items.map((item, idx) => (
+                                    <div key={idx} className="text-[11px]">
+                                        <div className="font-bold uppercase truncate">{item.name}</div>
+                                        <div className="flex justify-between text-slate-600 mt-0.5">
+                                            <span>{item.quantity} {item.unit === 'Kg' ? 'kg' : 'x'} x ${item.price.toFixed(2)}</span>
+                                            <span className="text-black font-bold">${(item.price * item.quantity).toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div style={{ borderTop: '2px solid #1e293b', margin: '14px 0 10px 0' }} />
+                            
+                            <div className="text-right text-[11px] font-bold mb-1">SUBTOTAL: ${generatedTicket.total.toFixed(2)}</div>
+                            <div className="text-center font-black text-[17px] mt-3 mb-4 tracking-tighter">TOTAL ${generatedTicket.total.toFixed(2)}</div>
+
+                            <div style={{ borderTop: '1px dashed #cbd5e1', margin: '12px 0' }} />
+                            
+                            <div style={{ textAlign: 'center', fontSize: '10px', marginTop: '16px' }}>
+                                <div className="uppercase">{ticketConfig.footerLine1 || '¡GRACIAS POR SU COMPRA!'}</div>
+                                {ticketConfig.footerLine2 && <div className="uppercase mt-1">{ticketConfig.footerLine2}</div>}
+                            </div>
                         </div>
                     </div>
 
                     {/* Acciones principales */}
-                    <div className="p-6 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex flex-col gap-3">
-                        <button
-                            onClick={handlePrint}
-                            disabled={btPrinting}
-                            className="w-full py-5 bg-primary hover:bg-blue-700 disabled:opacity-60 text-white font-black rounded-3xl shadow-xl shadow-primary/25 flex items-center justify-center gap-3 text-lg active:scale-95 transition-all"
-                        >
-                            {btPrinting ? (
-                                <span className="material-symbols-outlined animate-spin">refresh</span>
-                            ) : (
-                                <span className="material-symbols-outlined">print</span>
-                            )}
-                            {btPrinting ? 'Enviando...' : 'Imprimir Ticket'}
-                        </button>
-
-                        <button
-                            onClick={() => setGeneratedTicket(null)}
-                            className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
-                        >
-                            <span className="material-symbols-outlined text-xl">add_shopping_cart</span>
-                            NUEVA VENTA
-                        </button>
+                    <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-3 shrink-0 relative z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] pb-6 md:pb-4">
+                        <div className="flex gap-3 h-[60px]">
+                            <button
+                                onClick={() => setGeneratedTicket(null)}
+                                className="w-[30%] h-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-[1.25rem] active:scale-95 transition-all text-[11px] uppercase tracking-wider flex flex-col items-center justify-center gap-0.5"
+                            >
+                                <span className="material-symbols-outlined text-xl leading-none">add_shopping_cart</span>
+                                <span className="mt-1">Nueva</span>
+                            </button>
+                            <button
+                                onClick={handlePrint}
+                                disabled={btPrinting}
+                                className="w-[70%] h-full bg-primary hover:bg-blue-700 disabled:opacity-60 text-white font-black rounded-[1.25rem] shadow-lg shadow-primary/25 flex items-center justify-center gap-2 text-base active:scale-95 transition-all"
+                            >
+                                {btPrinting ? (
+                                    <span className="material-symbols-outlined animate-spin hidden md:block">refresh</span>
+                                ) : (
+                                    <span className="material-symbols-outlined hidden md:block">print</span>
+                                )}
+                                {btPrinting ? 'Imprimiendo...' : 'Imprimir Ticket'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="h-6 bg-white dark:bg-background-dark"></div>
@@ -236,36 +283,7 @@ export default function Sales() {
                     </div>
                 </div>
 
-                {/* Ticket Virtual Modal (opcionalmente igual pero con botón cerrar premium) */}
-                {showVirtualTicket && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 no-print" onClick={() => setShowVirtualTicket(false)}>
-                        <div className="relative max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                             {/* ... contenido ticket papel ... */}
-                             <div className="bg-white shadow-2xl" style={{ fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.45', width: '260px', padding: '16px 18px 24px' }}>
-                                <div style={{ borderTop: '2px dashed #e2e8f0', marginBottom: '14px' }} />
-                                <div style={{ textAlign: ticketConfig.titleAlignment || 'center', marginBottom: '8px' }}>
-                                    <div style={{ fontWeight: '900', fontSize: '15px' }}>{ticketConfig.businessName || 'MI NEGOCIO'}</div>
-                                    {ticketConfig.showAddress !== false && ticketConfig.address && <div style={{ fontSize: '11px', color: '#64748b' }}>{ticketConfig.address}</div>}
-                                    {ticketConfig.showPhone !== false && ticketConfig.phone && <div style={{ fontSize: '11px', color: '#64748b' }}>Tel: {ticketConfig.phone}</div>}
-                                </div>
-                                <div style={{ borderTop: '1px dashed #cbd5e1', margin: '10px 0' }} />
-                                <div style={{ fontSize: '11px' }}>Ticket : <strong>#{generatedTicket.id.slice(-6)}</strong></div>
-                                <div style={{ fontSize: '11px' }}>Total  : <strong>${generatedTicket.total.toFixed(2)}</strong></div>
-                                <div style={{ borderTop: '1px dashed #cbd5e1', margin: '10px 0' }} />
-                                {generatedTicket.items.map((item, idx) => (
-                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                                        <span>{item.name}</span>
-                                        <span>${(item.price * item.quantity).toFixed(2)}</span>
-                                    </div>
-                                ))}
-                                <div style={{ borderTop: '2px solid #1e293b', margin: '10px 0' }} />
-                                <div style={{ textAlign: 'center', fontSize: '11px' }}>{ticketConfig.footerLine1}</div>
-                                <div style={{ borderBottom: '2px dashed #e2e8f0', marginTop: '16px' }} />
-                             </div>
-                             <button onClick={() => setShowVirtualTicket(false)} className="w-full mt-3 py-4 bg-white text-slate-900 font-black rounded-2xl shadow active:scale-95 transition-all text-sm">CERRAR</button>
-                        </div>
-                    </div>
-                )}
+
             </div>
         );
     }
