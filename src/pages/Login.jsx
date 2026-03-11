@@ -9,7 +9,7 @@ export default function Login() {
     const [error, setError] = useState('');
     const { login, isOnline, isSyncing, fetchFromSupabase } = useStore();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
@@ -19,7 +19,22 @@ export default function Login() {
         }
 
         const success = login(username, password);
-        if (!success) {
+        if (success) {
+            // Intentar reconectar impresora al iniciar sesión
+            try {
+                const { autoConnectPrinter, getSavedPrinterName } = await import('../lib/bluetoothPrinter');
+                const savedName = getSavedPrinterName();
+                if (savedName && !window.__btPrinter) {
+                    const result = await autoConnectPrinter(savedName);
+                    if (result) {
+                        window.__btPrinter = result;
+                        console.log('Impresora reconectada tras inicio de sesión');
+                    }
+                }
+            } catch (err) {
+                console.warn('Error al auto-reconectar impresora en login:', err);
+            }
+        } else {
             setError('Usuario o contraseña incorrectos.');
             setPassword('');
         }
