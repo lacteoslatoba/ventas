@@ -422,21 +422,21 @@ export default function Sales() {
 
             {/* Seleccionar Cantidad Modal (Desktop & Mobile) */}
             {selectedProductDialog && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-6 border-b border-slate-100 relative">
+                <div className="fixed inset-0 z-[60] flex items-start md:items-center justify-center p-4 pt-8 md:pt-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto no-scrollbar">
+                    <div className="bg-white rounded-[2rem] w-full max-w-sm shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-200 mb-auto md:my-0 border border-white/20 flex flex-col shrink-0">
+                        <div className="p-5 md:p-6 border-b border-slate-100 relative shrink-0">
                             <button
                                 onClick={() => setSelectedProductDialog(null)}
-                                className="absolute top-4 right-4 p-2 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-full transition-colors"
+                                className="absolute right-4 top-4 p-2 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full transition-all active:scale-90"
                             >
                                 <X size={20} />
                             </button>
-                            <h3 className="font-bold text-xl text-slate-800 pr-8">{selectedProductDialog.name}</h3>
-                            <p className="text-primary font-bold text-xl mt-1">${selectedProductDialog.price}</p>
+                            <h3 className="font-black text-xl md:text-2xl text-slate-800 pr-8 leading-tight tracking-tight">{selectedProductDialog.name}</h3>
+                            <p className="text-primary font-black text-2xl mt-1 tracking-tighter">${selectedProductDialog.price}</p>
                         </div>
 
-                        <div className="p-6">
-                            <div className="space-y-5 mb-8">
+                        <div className="p-5 md:p-6 shrink-0">
+                            <div className="space-y-4 md:space-y-5 mb-6 md:mb-8">
                                 {/* Campo Cantidad */}
                                 <div>
                                     <label className="block text-center text-slate-500 font-bold mb-2 uppercase text-xs tracking-wider">
@@ -451,11 +451,11 @@ export default function Sales() {
                                             min="0.01"
                                             value={selectedQuantity}
                                             onChange={(e) => setSelectedQuantity(e.target.value)}
-                                            className="w-full text-center text-4xl font-black text-slate-800 bg-slate-50 border-[3px] border-slate-200 focus:border-primary focus:ring-0 rounded-2xl py-5 px-4 outline-none transition-colors"
+                                            className="w-full text-center text-3xl md:text-4xl font-black text-primary bg-blue-50/50 border-[3px] border-blue-100 focus:border-primary focus:ring-0 rounded-[1.25rem] py-3.5 md:py-5 px-4 outline-none transition-all placeholder:text-blue-200 shadow-inner"
                                             placeholder="0.00"
                                             autoFocus
                                         />
-                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">{selectedProductDialog.unit || 'u'}</div>
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-blue-400 font-black text-lg select-none">{selectedProductDialog.unit || 'u'}</div>
                                     </div>
                                 </div>
 
@@ -474,20 +474,20 @@ export default function Sales() {
                                             min="0"
                                             value={selectedPieces}
                                             onChange={(e) => setSelectedPieces(e.target.value)}
-                                            className="w-full text-center text-4xl font-black text-amber-700 bg-amber-50 border-[3px] border-amber-200 focus:border-amber-400 focus:ring-0 rounded-2xl py-5 px-4 outline-none transition-colors"
+                                            className="w-full text-center text-3xl md:text-4xl font-black text-amber-600 bg-amber-50/50 border-[3px] border-amber-100/80 focus:border-amber-400 focus:ring-0 rounded-[1.25rem] py-3.5 md:py-5 px-4 outline-none transition-all placeholder:text-amber-200 shadow-inner"
                                             placeholder="0"
                                         />
-                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-amber-400 font-bold text-sm">pzas</div>
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-amber-400 font-black text-sm select-none">pzas</div>
                                     </div>
                                 </div>
                             </div>
 
                             <button
                                 onClick={confirmAddToCart}
-                                className="w-full bg-primary hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/25 active:scale-95 transition-all text-lg flex justify-center gap-2 items-center"
+                                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-[1.25rem] shadow-xl shadow-slate-900/20 active:scale-95 transition-all text-lg flex justify-center gap-3 items-center group"
                             >
-                                <ShoppingCart size={20} />
-                                Al Carrito • ${(selectedProductDialog.price * (parseFloat(selectedQuantity) || 0)).toFixed(2)}
+                                <ShoppingCart size={22} className="group-hover:-rotate-12 transition-transform" />
+                                Al Carrito • <span className="text-blue-400">${(selectedProductDialog.price * (parseFloat(selectedQuantity) || 0)).toFixed(2)}</span>
                             </button>
                         </div>
                     </div>
