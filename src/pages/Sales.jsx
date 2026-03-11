@@ -445,10 +445,10 @@ export default function Sales() {
 
             {/* Seleccionar Cantidad Modal (Desktop & Mobile) */}
             {selectedProductDialog && (
-                <div className="fixed inset-0 z-[60] flex items-start md:items-center justify-center p-4 pt-12 md:pt-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto no-scrollbar" onClick={() => setSelectedProductDialog(null)}>
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto no-scrollbar" onClick={() => setSelectedProductDialog(null)}>
                     <div 
                         onClick={e => e.stopPropagation()}
-                        className="bg-white rounded-[2rem] w-full max-w-sm shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] animate-in zoom-in-95 duration-200 border border-white/20 flex flex-col shrink-0 mb-auto md:my-0"
+                        className="bg-white rounded-[2rem] w-full max-w-sm shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] animate-in zoom-in-95 duration-200 border border-white/20 flex flex-col shrink-0 my-auto"
                     >
                         <div className="p-5 flex flex-row items-start justify-between border-b border-slate-100 shrink-0">
                             <div>

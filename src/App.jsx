@@ -298,33 +298,7 @@ function App() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const { currentUser, isSyncing } = useStore();
 
-  // Forzar Fullscreen estricto (oculta botones nav de sistema en Android)
-  useEffect(() => {
-    const enableFullscreen = async () => {
-      // Solo forzar en móviles y si no está en fullscreen ya
-      if (window.innerWidth >= 768 || document.fullscreenElement) return;
-
-      // Intentar pedir fullscreen nativo del OS (Oculta botones triangulo/circulo/cuadrado)
-      try {
-        const docElm = document.documentElement;
-        if (docElm.requestFullscreen) {
-          await docElm.requestFullscreen();
-        }
-      } catch (err) {
-        // Ignorar errores silenciados
-      }
-    };
-
-    // Intentar agresivamente en cada interacción del usuario para que los comandos
-    // del sistema no le roben enfoque o pantalla permanentemente.
-    document.addEventListener('click', enableFullscreen, { passive: true });
-    document.addEventListener('touchstart', enableFullscreen, { passive: true });
-
-    return () => {
-      document.removeEventListener('click', enableFullscreen);
-      document.removeEventListener('touchstart', enableFullscreen);
-    };
-  }, []);
+  // Ya no se fuerza Fullscreen porque el usuario prefiere su barra de navegación y para evitar bugs de teclado en Android.
 
   return (
     <>
