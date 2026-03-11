@@ -123,7 +123,7 @@ function Section({ title, icon: Icon, children, onSave, saved }) {
                 {onSave && (
                     <button
                         onClick={onSave}
-                        className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${saved ? 'bg-emerald-500 text-white' : 'bg-primary/10 text-primary hover:bg-primary/20'
+                        className={`text-xs font-black px-4 py-2 rounded-xl transition-all flex items-center gap-2 shadow-sm ${saved ? 'bg-emerald-500 text-white' : 'bg-primary text-white hover:bg-blue-700 shadow-blue-500/20'
                             }`}
                     >
                         {saved ? (
@@ -173,7 +173,7 @@ export default function TicketConfig() {
     };
 
     return (
-        <div className="p-4 md:p-8 max-w-3xl mx-auto pb-24">
+        <div className="p-4 md:p-8 max-w-3xl mx-auto pb-48 md:pb-32">
             {/* Header */}
             <div className="mb-8 flex items-start justify-between">
                 <div>
@@ -342,8 +342,8 @@ export default function TicketConfig() {
                 )}
             </div>
 
-            {/* Barra de acciones fija */}
-            <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-white/90 backdrop-blur-lg border-t border-slate-200 p-4 flex gap-3 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+            {/* Barra de acciones fija - Elevada para que no tape el menú móvil (z-index mayor y más bottom) */}
+            <div className="fixed bottom-[80px] md:bottom-0 left-0 right-0 md:left-64 bg-white/95 backdrop-blur-md border-t border-slate-200 p-4 flex gap-3 z-[45] shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
                 <button
                     onClick={handleReset}
                     className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all active:scale-95 text-sm"
