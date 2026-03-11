@@ -41,10 +41,13 @@ const NetworkIndicator = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reconexión automática de impresora al cargar la app
+  return null;
+};
+
+// Componente para manejar reconexión de impresora una vez logueado
+const PrinterAutoConnect = () => {
   useEffect(() => {
     const tryAutoConnect = async () => {
-      // Si ya hay una instancia o no hay permiso, no hacemos nada
       if (window.__btPrinter) return;
 
       const savedName = getSavedPrinterName();
@@ -54,9 +57,8 @@ const NetworkIndicator = () => {
         const result = await autoConnectPrinter(savedName);
         if (result) {
           window.__btPrinter = result;
-          console.log('Impresora reconectada automáticamente:', result.device.name);
+          console.log('Impresora reconectada automáticamente tras login:', result.device.name);
           
-          // Escuchar desconexión
           result.device.addEventListener('gattserverdisconnected', () => {
             window.__btPrinter = null;
           });
@@ -66,13 +68,13 @@ const NetworkIndicator = () => {
       }
     };
 
-    // Pequeño delay para dejar que la app cargue
-    const timer = setTimeout(tryAutoConnect, 2000);
+    const timer = setTimeout(tryAutoConnect, 1500);
     return () => clearTimeout(timer);
   }, []);
 
   return null;
 };
+
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
@@ -286,6 +288,7 @@ function App() {
         <Login />
       ) : (
         <Router>
+          <PrinterAutoConnect />
           <div className="flex flex-col md:flex-row h-screen bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900">
             <MobileHeader 
               currentUser={currentUser} 
