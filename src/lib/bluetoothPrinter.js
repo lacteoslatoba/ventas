@@ -109,8 +109,12 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false, con
     // ==========================================
     // PLANTILLA: LACTEOS LA TOBA
     // ==========================================
+    // ==========================================
+    // PLANTILLA: LACTEOS LA TOBA (REDiseñada para ser robusta)
+    // ==========================================
     if (ticketTemplate === 'latoba') {
-        const LAT_SEP = '-'.repeat(LINE_WIDTH) + '\n';
+        const LAT_WIDTH = config.paperWidth === 80 ? 48 : 32;
+        const LAT_SEP = '-'.repeat(LAT_WIDTH) + '\n';
         
         add(CMD.INIT);
         if (useFontB) add([0x1B, 0x4D, 0x01]);
@@ -118,97 +122,114 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false, con
         // Encabezado
         add(CMD.ALIGN_CENTER);
         add(CMD.DOUBLE_SIZE);
+        add(CMD.BOLD_ON);
         add((businessName || 'LACTEOS LA TOBA').toUpperCase() + '\n');
+        add(CMD.BOLD_OFF);
         add(CMD.NORMAL_SIZE);
-        add('\n');
         
         if (subtitle) add(subtitle.toUpperCase() + '\n');
         if (showAddress && address) add(address.toUpperCase() + '\n');
         if (showPhone && phone) add(`TEL: ${phone}\n`);
         
+        if (extraLine1) add(extraLine1.toUpperCase() + '\n');
+        if (extraLine2) add(extraLine2.toUpperCase() + '\n');
+
         add(CMD.ALIGN_LEFT);
         add(LAT_SEP);
         
-        // Info de cabecera
-        const dateStr = new Date(ticket.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '').toUpperCase();
-        const timeStr = new Date(ticket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
+        // Info de cabecera (Fecha y Hora)
+        const dateObj = ticket.date ? new Date(ticket.date) : new Date();
+        const dateStr = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '').toUpperCase();
+        const timeStr = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
         
         if (showDate && showTime) {
-            const spacesDt = Math.max(1, LINE_WIDTH - dateStr.length - timeStr.length);
+            const spacesDt = Math.max(1, LAT_WIDTH - dateStr.length - timeStr.length);
             add(`${dateStr}${' '.repeat(spacesDt)}${timeStr}\n`);
         } else {
             if (showDate) add(dateStr + '\n');
             if (showTime) add(timeStr + '\n');
         }
         
-        const tNum = `#${ticket.id.slice(-6).toUpperCase()}`;
-        add(`${'Numero de ticket'.padEnd(LINE_WIDTH - tNum.length)}${tNum}\n`);
+        const tNum = `#${(ticket.id || '').slice(-6).toUpperCase()}`;
+        add(`${'Numero de ticket'.padEnd(LAT_WIDTH - tNum.length)}${tNum}\n`);
         
         if (showCustomer) {
-            const cName = (client?.name || 'General').slice(0, LINE_WIDTH - 8);
-            add(`${'Cliente'.padEnd(LINE_WIDTH - cName.length)}${cName}\n`);
+            const cName = (client?.name || 'General').toUpperCase().slice(0, LAT_WIDTH - 8);
+            add(`${'Cliente'.padEnd(LAT_WIDTH - cName.length)}${cName}\n`);
         }
         if (showSeller) {
-            const sName = (user?.name || 'Administrador').slice(0, LINE_WIDTH - 7);
-            add(`${'Cajero'.padEnd(LINE_WIDTH - sName.length)}${sName}\n`);
+            const sName = (user?.name || 'Vendedor').toUpperCase().slice(0, LAT_WIDTH - 7);
+            add(`${'Cajero'.padEnd(LAT_WIDTH - sName.length)}${sName}\n`);
         }
         
         add(LAT_SEP);
-        add(`${'ITEM'.padEnd(LINE_WIDTH - 6)}PRECIO\n`);
+        add(CMD.BOLD_ON);
+        add(`${'ITEM'.padEnd(LAT_WIDTH - 6)}PRECIO\n`);
+        add(CMD.BOLD_OFF);
         add(LAT_SEP);
         
         // Productos
         const items = ticket.items || [];
+        if (items.length === 0) {
+            add('SIN PRODUCTOS REGISTRADOS\n');
+        }
+
         items.forEach(item => {
             const name = (item.name || 'Producto').toUpperCase();
+            add(CMD.BOLD_ON);
             add(name + '\n');
+            add(CMD.BOLD_OFF);
             
-            const qtyStr = `${item.quantity} ${item.unit === 'Kg' ? 'kg' : 'x'} x $${item.price.toFixed(2)}/${item.unit === 'Kg' ? 'kg' : 'u'}`;
+            const unitSuffix = item.unit === 'Kg' ? 'kg' : 'pza';
+            const qtyStr = `${item.quantity} ${unitSuffix} x $${item.price.toFixed(2)}`;
             const priceVal = item.price * item.quantity;
             const priceStr = `$${priceVal.toFixed(2)}`;
-            const spacesItem = Math.max(1, LINE_WIDTH - qtyStr.length - priceStr.length);
+            const spacesItem = Math.max(1, LAT_WIDTH - qtyStr.length - priceStr.length);
             
             add(`${qtyStr}${' '.repeat(spacesItem)}${priceStr}\n\n`);
         });
         
-        add(`Numero de articulos: ${items.length}\n\n`);
+        add(LAT_SEP);
         
-        // Total
-        const tStr = `$${ticket.total.toFixed(2)}`;
-        const subTxt = `Subtotal: ${tStr}`;
-        add(`${' '.repeat(Math.max(0, LINE_WIDTH - subTxt.length))}${subTxt}\n\n`);
+        // Totales
+        const totalVal = Number(ticket.total) || 0;
+        const tStr = `$${totalVal.toFixed(2)}`;
+        const subTxt = `SUBTOTAL: ${tStr}`;
+        add(`${' '.repeat(Math.max(0, LAT_WIDTH - subTxt.length))}${subTxt}\n\n`);
         
         add(CMD.ALIGN_CENTER);
         add(CMD.DOUBLE_SIZE);
+        add(CMD.BOLD_ON);
         add(`TOTAL ${tStr}\n`);
+        add(CMD.BOLD_OFF);
         add(CMD.NORMAL_SIZE);
         
         add(CMD.ALIGN_LEFT);
-        add(LAT_SEP);
+        add('\n' + LAT_SEP);
         
-        // Pago (Simulado efectivo exacto por ahora, o tomando total)
-        add(`${'Efectivo:'.padEnd(LINE_WIDTH - tStr.length)}${tStr}\n`);
-        add(`${'Cambio:'.padEnd(LINE_WIDTH - 5)}$0.00\n`);
+        // Pago
+        add(`${'EFECTIVO:'.padEnd(LAT_WIDTH - tStr.length)}${tStr}\n`);
+        add(`${'CAMBIO:'.padEnd(LAT_WIDTH - 5)}$0.00\n`);
         
         add(LAT_SEP);
         add('\n');
         
         add(CMD.ALIGN_CENTER);
-        if (footerLine1) add(footerLine1 + '\n');
-        if (footerLine2) add(footerLine2 + '\n');
+        if (footerLine1) add(footerLine1.toUpperCase() + '\n');
+        if (footerLine2) add(footerLine2.toUpperCase() + '\n');
 
         if (showSignature) {
-            add('\nFirma: ________________________\n\n');
+            add('\n\nFIRMA: ________________________\n\n');
         }
 
         // Corte
-        add(CMD.FEED, CMD.CUT);
+        add(CMD.FEED, CMD.FEED, CMD.CUT);
         
-        const total = chunks.reduce((n, c) => n + c.length, 0);
-        const buffer = new Uint8Array(total);
+        const totalBufferLen = chunks.reduce((n, c) => n + c.length, 0);
+        const finalBuffer = new Uint8Array(totalBufferLen);
         let offset = 0;
-        chunks.forEach(c => { buffer.set(c, offset); offset += c.length; });
-        return buffer;
+        chunks.forEach(c => { finalBuffer.set(c, offset); offset += c.length; });
+        return finalBuffer;
     }
 
     // ==========================================
