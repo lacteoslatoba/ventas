@@ -270,15 +270,32 @@ function App() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const { currentUser, isSyncing } = useStore();
 
-  // Forzar Fullscreen al primer toque si es PWA
+  // Forzar Fullscreen estricto (oculta botones nav de sistema en Android)
   useEffect(() => {
-    const enableFullscreen = () => {
-      if (!document.fullscreenElement && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches)) {
-        document.documentElement.requestFullscreen().catch(() => {});
+    const enableFullscreen = async () => {
+      // Solo forzar en móviles y si no está en fullscreen ya
+      if (window.innerWidth >= 768 || document.fullscreenElement) return;
+
+      // Intentar pedir fullscreen nativo del OS (Oculta botones triangulo/circulo/cuadrado)
+      try {
+        const docElm = document.documentElement;
+        if (docElm.requestFullscreen) {
+          await docElm.requestFullscreen();
+        }
+      } catch (err) {
+        // Ignorar errores silenciados
       }
     };
-    window.addEventListener('click', enableFullscreen, { once: true });
-    return () => window.removeEventListener('click', enableFullscreen);
+
+    // Intentar agresivamente en cada interacción del usuario para que los comandos
+    // del sistema no le roben enfoque o pantalla permanentemente.
+    document.addEventListener('click', enableFullscreen, { passive: true });
+    document.addEventListener('touchstart', enableFullscreen, { passive: true });
+
+    return () => {
+      document.removeEventListener('click', enableFullscreen);
+      document.removeEventListener('touchstart', enableFullscreen);
+    };
   }, []);
 
   return (
