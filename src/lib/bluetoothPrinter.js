@@ -98,12 +98,122 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false, con
         showSeller = true,
         showCustomer = true,
         useFontB = false, // Fuente más pequeña si la soporta
+        ticketTemplate = 'standard', // 'standard' o 'latoba'
     } = config;
+
 
 
     const chunks = [];
     const add = (...parts) => chunks.push(toBytes(...parts));
 
+    // ==========================================
+    // PLANTILLA: LACTEOS LA TOBA
+    // ==========================================
+    if (ticketTemplate === 'latoba') {
+        const LAT_SEP = '-'.repeat(LINE_WIDTH) + '\n';
+        
+        add(CMD.INIT);
+        if (useFontB) add([0x1B, 0x4D, 0x01]);
+
+        // Encabezado
+        add(CMD.ALIGN_CENTER);
+        add(CMD.DOUBLE_SIZE);
+        add((businessName || 'LACTEOS LA TOBA').toUpperCase() + '\n');
+        add(CMD.NORMAL_SIZE);
+        add('\n');
+        
+        if (subtitle) add(subtitle.toUpperCase() + '\n');
+        if (showAddress && address) add(address.toUpperCase() + '\n');
+        if (showPhone && phone) add(`TEL: ${phone}\n`);
+        
+        add(CMD.ALIGN_LEFT);
+        add(LAT_SEP);
+        
+        // Info de cabecera
+        const dateStr = new Date(ticket.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '').toUpperCase();
+        const timeStr = new Date(ticket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
+        
+        if (showDate && showTime) {
+            const spacesDt = Math.max(1, LINE_WIDTH - dateStr.length - timeStr.length);
+            add(`${dateStr}${' '.repeat(spacesDt)}${timeStr}\n`);
+        } else {
+            if (showDate) add(dateStr + '\n');
+            if (showTime) add(timeStr + '\n');
+        }
+        
+        const tNum = `#${ticket.id.slice(-6).toUpperCase()}`;
+        add(`${'Numero de ticket'.padEnd(LINE_WIDTH - tNum.length)}${tNum}\n`);
+        
+        if (showCustomer) {
+            const cName = (client?.name || 'General').slice(0, LINE_WIDTH - 8);
+            add(`${'Cliente'.padEnd(LINE_WIDTH - cName.length)}${cName}\n`);
+        }
+        if (showSeller) {
+            const sName = (user?.name || 'Administrador').slice(0, LINE_WIDTH - 7);
+            add(`${'Cajero'.padEnd(LINE_WIDTH - sName.length)}${sName}\n`);
+        }
+        
+        add(LAT_SEP);
+        add(`${'ITEM'.padEnd(LINE_WIDTH - 6)}PRECIO\n`);
+        add(LAT_SEP);
+        
+        // Productos
+        const items = ticket.items || [];
+        items.forEach(item => {
+            const name = (item.name || 'Producto').toUpperCase();
+            add(name + '\n');
+            
+            const qtyStr = `${item.quantity} ${item.unit === 'Kg' ? 'kg' : 'x'} x $${item.price.toFixed(2)}/${item.unit === 'Kg' ? 'kg' : 'u'}`;
+            const priceVal = item.price * item.quantity;
+            const priceStr = `$${priceVal.toFixed(2)}`;
+            const spacesItem = Math.max(1, LINE_WIDTH - qtyStr.length - priceStr.length);
+            
+            add(`${qtyStr}${' '.repeat(spacesItem)}${priceStr}\n\n`);
+        });
+        
+        add(`Numero de articulos: ${items.length}\n\n`);
+        
+        // Total
+        const tStr = `$${ticket.total.toFixed(2)}`;
+        const subTxt = `Subtotal: ${tStr}`;
+        add(`${' '.repeat(Math.max(0, LINE_WIDTH - subTxt.length))}${subTxt}\n\n`);
+        
+        add(CMD.ALIGN_CENTER);
+        add(CMD.DOUBLE_SIZE);
+        add(`TOTAL ${tStr}\n`);
+        add(CMD.NORMAL_SIZE);
+        
+        add(CMD.ALIGN_LEFT);
+        add(LAT_SEP);
+        
+        // Pago (Simulado efectivo exacto por ahora, o tomando total)
+        add(`${'Efectivo:'.padEnd(LINE_WIDTH - tStr.length)}${tStr}\n`);
+        add(`${'Cambio:'.padEnd(LINE_WIDTH - 5)}$0.00\n`);
+        
+        add(LAT_SEP);
+        add('\n');
+        
+        add(CMD.ALIGN_CENTER);
+        if (footerLine1) add(footerLine1 + '\n');
+        if (footerLine2) add(footerLine2 + '\n');
+
+        if (showSignature) {
+            add('\nFirma: ________________________\n\n');
+        }
+
+        // Corte
+        add(CMD.FEED, CMD.CUT);
+        
+        const total = chunks.reduce((n, c) => n + c.length, 0);
+        const buffer = new Uint8Array(total);
+        let offset = 0;
+        chunks.forEach(c => { buffer.set(c, offset); offset += c.length; });
+        return buffer;
+    }
+
+    // ==========================================
+    // PLANTILLA: ESTÁNDAR
+    // ==========================================
     // Inicializar
     add(CMD.INIT);
     
@@ -199,6 +309,7 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false, con
     chunks.forEach(c => { buffer.set(c, offset); offset += c.length; });
     return buffer;
 }
+
 
 
 // ─── Enviar datos en chunks (BT tiene límite de MTU ~20 bytes) ───────────────

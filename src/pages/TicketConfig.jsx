@@ -15,11 +15,73 @@ function TicketPreview({ config }) {
         footerLine1, footerLine2, showSignature,
         titleAlignment = 'center', showAddress = true, showPhone = true,
         showDate = true, showTime = true, showSeller = true, showCustomer = true,
-        useFontB = false
+        useFontB = false,
+        ticketTemplate = 'standard'
     } = config;
 
     const alignClass = titleAlignment === 'left' ? 'text-left' : titleAlignment === 'right' ? 'text-right' : 'text-center';
     const fontClass = useFontB ? 'text-[8.5px]' : 'text-[10px]';
+
+    if (ticketTemplate === 'latoba') {
+        const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '').toUpperCase();
+        const timeStr = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
+        
+        return (
+            <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-4 flex justify-center">
+                <div
+                    className={`font-mono leading-snug text-black bg-white ${fontClass} uppercase`}
+                    style={{ width: '200px', minHeight: '300px' }}
+                >
+                    <div className="text-center font-bold text-[13px] mb-0.5 leading-tight">
+                        {businessName || 'LACTEOS LA TOBA'}
+                    </div>
+                    {subtitle && <div className="text-center">{subtitle}</div>}
+                    {showAddress && address && <div className="text-center">{address}</div>}
+                    {showPhone && phone && <div className="text-center">TEL: {phone}</div>}
+
+                    <div className="border-t border-dashed border-black my-1" />
+
+                    <div className="flex justify-between">
+                        {showDate && <span>{dateStr}</span>}
+                        {showTime && <span>{timeStr}</span>}
+                    </div>
+                    <div className="flex justify-between">
+                        <span>NUMERO DE TICKET</span><span>#A1B2C3</span>
+                    </div>
+                    
+                    {showCustomer && <div className="flex justify-between"><span>CLIENTE</span><span>TIENDA LA FE</span></div>}
+                    {showSeller && <div className="flex justify-between"><span>CAJERO</span><span>JUAN PEREZ</span></div>}
+
+                    <div className="border-t border-dashed border-black my-1" />
+                    <div className="flex justify-between"><span>ITEM</span><span>PRECIO</span></div>
+                    <div className="border-t border-dashed border-black my-1" />
+
+                    <div className="mb-2">
+                        <div>QUESO OAXACA</div>
+                        <div className="flex justify-between"><span>2 kg x $60.00/kg</span><span>$120.00</span></div>
+                    </div>
+                    <div className="mb-2">
+                        <div>REQUESON</div>
+                        <div className="flex justify-between"><span>1 x $45.00/u</span><span>$45.00</span></div>
+                    </div>
+
+                    <div>NUMERO DE ARTICULOS: 2</div>
+                    
+                    <div className="text-right mt-2 font-bold">SUBTOTAL: $165.00</div>
+                    <div className="text-center font-bold text-[14px] leading-[14px] mt-2 mb-1">TOTAL $165.00</div>
+
+                    <div className="border-t border-dashed border-black my-1" />
+                    <div className="flex justify-between"><span>EFECTIVO:</span><span>$165.00</span></div>
+                    <div className="flex justify-between"><span>CAMBIO:</span><span>$0.00</span></div>
+                    <div className="border-t border-dashed border-black my-1" />
+
+                    <div className="text-center mt-2">{footerLine1 || '¡GRACIAS POR SU COMPRA!'}</div>
+                    {footerLine2 && <div className="text-center">{footerLine2}</div>}
+                    {showSignature && <div className="mt-3">FIRMA: ________________________</div>}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-4 flex justify-center">
@@ -189,6 +251,7 @@ export default function TicketConfig() {
             showSeller: true,
             showCustomer: true,
             useFontB: false,
+            ticketTemplate: 'standard',
         };
 
         setForm(defaults);
@@ -222,8 +285,37 @@ export default function TicketConfig() {
                 {/* Formulario */}
                 <div className="space-y-5">
 
+                    {/* Diseño Template */}
+                    <Section title="Estilo Base del Ticket" icon={FileText} onSave={handleSave} saved={saved}>
+                        <div className="grid grid-cols-2 gap-3">
+                            {[
+                                { value: 'standard', label: 'Estándar', desc: 'Diseño clásico' },
+                                { value: 'latoba', label: 'Ticket La Toba', desc: 'Adaptado p/ báscula' },
+                            ].map(opt => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setForm(prev => ({ ...prev, ticketTemplate: opt.value }))}
+                                    className={`p-4 rounded-2xl border-2 text-left transition-all ${form.ticketTemplate === opt.value
+                                        ? 'border-primary bg-primary/5 shadow-sm'
+                                        : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                                >
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className={`font-black text-sm md:text-base ${form.ticketTemplate === opt.value ? 'text-primary' : 'text-slate-700'}`}>
+                                            {opt.label}
+                                        </span>
+                                        {form.ticketTemplate === opt.value && (
+                                            <CheckCheck size={18} className="text-primary" />
+                                        )}
+                                    </div>
+                                    <span className="text-[11px] text-slate-400 font-medium leading-none">{opt.desc}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </Section>
+
                     {/* Identificación del negocio */}
-                    <Section title="Datos del Negocio" icon={Building2} onSave={handleSave} saved={saved}>
+                    <Section title="Datos del Negocio" icon={Building2}>
                         <Field
                             id="businessName"
                             label="Nombre del Negocio"
