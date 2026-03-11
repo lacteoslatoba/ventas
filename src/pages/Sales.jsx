@@ -427,25 +427,30 @@ export default function Sales() {
 
             {/* Seleccionar Cantidad Modal (Desktop & Mobile) */}
             {selectedProductDialog && (
-                <div className="fixed inset-0 z-[60] flex items-start md:items-center justify-center p-4 pt-8 md:pt-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto no-scrollbar">
-                    <div className="bg-white rounded-[2rem] w-full max-w-sm shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-200 mb-auto md:my-0 border border-white/20 flex flex-col shrink-0">
-                        <div className="p-5 md:p-6 border-b border-slate-100 relative shrink-0">
+                <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelectedProductDialog(null)}>
+                    <div 
+                        onClick={e => e.stopPropagation()}
+                        className="bg-white rounded-t-[2rem] md:rounded-[2rem] w-full max-w-sm shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.3)] md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom-full md:zoom-in-95 duration-200 border-t md:border border-white/20 flex flex-col shrink-0 max-h-[95vh]"
+                    >
+                        <div className="p-5 flex flex-row items-start justify-between border-b border-slate-100 shrink-0">
+                            <div>
+                                <h3 className="font-black text-xl md:text-2xl text-slate-800 pr-2 leading-tight tracking-tight">{selectedProductDialog.name}</h3>
+                                <p className="text-primary font-black text-xl md:text-2xl mt-0.5 tracking-tighter">${selectedProductDialog.price}</p>
+                            </div>
                             <button
                                 onClick={() => setSelectedProductDialog(null)}
-                                className="absolute right-4 top-4 p-2 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full transition-all active:scale-90"
+                                className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full transition-all active:scale-90 shrink-0"
                             >
                                 <X size={20} />
                             </button>
-                            <h3 className="font-black text-xl md:text-2xl text-slate-800 pr-8 leading-tight tracking-tight">{selectedProductDialog.name}</h3>
-                            <p className="text-primary font-black text-2xl mt-1 tracking-tighter">${selectedProductDialog.price}</p>
                         </div>
 
-                        <div className="p-5 md:p-6 shrink-0">
-                            <div className="space-y-4 md:space-y-5 mb-6 md:mb-8">
+                        <div className="p-5 md:p-6 overflow-y-auto shrink-0 touch-pan-y">
+                            <div className="flex flex-row gap-3 mb-5 md:mb-6">
                                 {/* Campo Cantidad */}
-                                <div>
-                                    <label className="block text-center text-slate-500 font-bold mb-2 uppercase text-xs tracking-wider">
-                                        Cantidad ({selectedProductDialog.unit || 'u'})
+                                <div className="flex-1">
+                                    <label className="block text-center text-slate-500 font-bold mb-2 uppercase text-[10px] md:text-xs tracking-wider">
+                                        Cantidad <span className="text-slate-400 lowercase">({selectedProductDialog.unit || 'u'})</span>
                                     </label>
                                     <div className="relative">
                                         <input
@@ -456,19 +461,18 @@ export default function Sales() {
                                             min="0.01"
                                             value={selectedQuantity}
                                             onChange={(e) => setSelectedQuantity(e.target.value)}
-                                            className="w-full text-center text-3xl md:text-4xl font-black text-primary bg-blue-50/50 border-[3px] border-blue-100 focus:border-primary focus:ring-0 rounded-[1.25rem] py-3.5 md:py-5 px-4 outline-none transition-all placeholder:text-blue-200 shadow-inner"
-                                            placeholder="0.00"
+                                            className="w-full text-center text-2xl md:text-4xl font-black text-primary bg-blue-50/50 border-[3px] border-blue-100 focus:border-primary focus:ring-0 rounded-[1.25rem] py-3 md:py-5 px-2 outline-none transition-all placeholder:text-blue-200 shadow-inner"
+                                            placeholder="0"
                                             autoFocus
                                         />
-                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-blue-400 font-black text-lg select-none">{selectedProductDialog.unit || 'u'}</div>
                                     </div>
                                 </div>
 
                                 {/* Campo Piezas */}
-                                <div>
-                                    <label className="block text-center text-amber-600 font-bold mb-2 uppercase text-xs tracking-wider flex items-center justify-center gap-1.5">
-                                        <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-                                        Piezas (opcional)
+                                <div className="flex-1">
+                                    <label className="block text-center text-amber-600 font-bold mb-2 uppercase text-[10px] md:text-xs tracking-wider flex items-center justify-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+                                        Piezas <span className="text-amber-400 lowercase">(opc)</span>
                                     </label>
                                     <div className="relative">
                                         <input
@@ -479,19 +483,18 @@ export default function Sales() {
                                             min="0"
                                             value={selectedPieces}
                                             onChange={(e) => setSelectedPieces(e.target.value)}
-                                            className="w-full text-center text-3xl md:text-4xl font-black text-amber-600 bg-amber-50/50 border-[3px] border-amber-100/80 focus:border-amber-400 focus:ring-0 rounded-[1.25rem] py-3.5 md:py-5 px-4 outline-none transition-all placeholder:text-amber-200 shadow-inner"
+                                            className="w-full text-center text-2xl md:text-4xl font-black text-amber-600 bg-amber-50/50 border-[3px] border-amber-100/80 focus:border-amber-400 focus:ring-0 rounded-[1.25rem] py-3 md:py-5 px-2 outline-none transition-all placeholder:text-amber-200 shadow-inner"
                                             placeholder="0"
                                         />
-                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-amber-400 font-black text-sm select-none">pzas</div>
                                     </div>
                                 </div>
                             </div>
 
                             <button
                                 onClick={confirmAddToCart}
-                                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-[1.25rem] shadow-xl shadow-slate-900/20 active:scale-95 transition-all text-lg flex justify-center gap-3 items-center group"
+                                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-[1.25rem] shadow-[0_8px_20px_rgba(0,0,0,0.15)] active:scale-95 transition-all text-base md:text-lg flex justify-center gap-2 items-center group mb-2 md:mb-0"
                             >
-                                <ShoppingCart size={22} className="group-hover:-rotate-12 transition-transform" />
+                                <ShoppingCart size={20} className="group-hover:-rotate-12 transition-transform" />
                                 Al Carrito • <span className="text-blue-400">${(selectedProductDialog.price * (parseFloat(selectedQuantity) || 0)).toFixed(2)}</span>
                             </button>
                         </div>
