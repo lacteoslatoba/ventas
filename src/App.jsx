@@ -267,6 +267,20 @@ function App() {
                       </div>
                     </Link>
 
+                    <Link
+                      to="/clientes"
+                      onClick={() => setIsConfigOpen(false)}
+                      className="flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-slate-50 hover:bg-blue-50 hover:text-primary transition-all active:scale-[0.98]"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-cheese-100 flex items-center justify-center">
+                        <Store size={20} className="text-cheese-600" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800 text-sm">Alta de Clientes</p>
+                        <p className="text-xs text-slate-400 font-medium">Registrar nuevo local o tienda</p>
+                      </div>
+                    </Link>
+
                     {currentUser?.role === 'admin' && (
                       <Link
                         to="/ticket"
@@ -339,10 +353,16 @@ function App() {
                   </button>
                 </>
               ) : (
-                <button onClick={() => useStore.getState().logout()} className="flex flex-col items-center gap-1 text-slate-400 focus:text-red-500 transition-colors">
-                  <RefreshCw size={20} className="rotate-45" />
-                  <span className="text-[10px] font-bold uppercase tracking-tighter">Salir</span>
-                </button>
+                <>
+                  <Link to="/clientes" className="flex flex-col items-center gap-1 text-slate-400 focus:text-primary active:text-primary transition-colors">
+                    <Store size={20} />
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">Clientes</span>
+                  </Link>
+                  <button onClick={() => useStore.getState().logout()} className="flex flex-col items-center gap-1 text-slate-400 focus:text-red-500 transition-colors">
+                    <RefreshCw size={20} className="rotate-45" />
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">Salir</span>
+                  </button>
+                </>
               )}
             </div>
           </div>
