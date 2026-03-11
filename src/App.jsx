@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Warehouse, Users, Store, ShoppingCart, FileBarChart, Menu, X, Cloud, RefreshCw, PrinterIcon, FileText, Settings2, LogOut, Bluetooth, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Package, Warehouse, Users, Store, ShoppingCart, FileBarChart, Menu, X, Cloud, RefreshCw, PrinterIcon, FileText, Settings2, LogOut, Bluetooth, ArrowLeft, Home, Tag, Plus, Banknote, LayoutGrid } from 'lucide-react';
 import { useStore } from './store';
 import { autoConnectPrinter, getSavedPrinterName } from './lib/bluetoothPrinter';
 
@@ -293,6 +293,44 @@ const MobileHeader = ({ currentUser, isSyncing, setIsSidebarOpen, setIsConfigOpe
   );
 };
 
+const BottomNavigation = ({ currentUser, setIsSidebarOpen }) => {
+  const location = useLocation();
+  const isActive = (path) => location.pathname === path;
+
+  // Componente interno para botón
+  const NavItem = ({ to, icon: Icon, label, active }) => (
+    <Link to={to} className={`flex flex-col items-center justify-end gap-1 w-16 pt-2 pb-1 transition-colors ${active ? 'text-primary' : 'text-slate-500'}`}>
+      <Icon size={24} fill="currentColor" strokeWidth={1.5} />
+      <span className="text-[11px] font-medium tracking-tight leading-none mt-1">{label}</span>
+    </Link>
+  );
+
+  return (
+    <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 sm:px-4 h-[68px] flex justify-between items-center z-30 shadow-[0_-8px_20px_rgba(0,0,0,0.08)] pb-safe select-none`}>
+      <NavItem to="/" icon={Home} label="Inicio" active={isActive('/')} />
+      
+      {currentUser?.role === 'admin' && (
+        <NavItem to="/productos" icon={Tag} label="Productos" active={isActive('/productos')} />
+      )}
+
+      {/* Botón Central Elevado - Nueva Venta */}
+      <Link to="/ventas" className={`flex flex-col items-center justify-end w-20 transition-all ${isActive('/ventas') ? 'text-primary' : 'text-slate-500'} relative -top-5`}>
+        <div className={`rounded-full w-14 h-14 flex items-center justify-center text-white transition-all duration-300 ${isActive('/ventas') ? 'bg-primary shadow-[0_8px_16px_rgba(var(--primary-rgb),0.4)] scale-110' : 'bg-slate-500 shadow-md'}`}>
+          <Plus size={28} strokeWidth={3} />
+        </div>
+        <span className="text-[11px] font-medium tracking-tight mt-1 absolute -bottom-4 whitespace-nowrap">Nueva Venta</span>
+      </Link>
+
+      <NavItem to="/reportes" icon={Banknote} label={currentUser?.role === 'admin' ? "Ventas" : "Reportes"} active={isActive('/reportes')} />
+
+      <button onClick={() => setIsSidebarOpen(true)} className={`flex flex-col items-center justify-end gap-1 w-16 pt-2 pb-1 transition-colors text-slate-500`}>
+        <LayoutGrid size={24} fill="currentColor" strokeWidth={1.5} />
+        <span className="text-[11px] font-medium tracking-tight leading-none mt-1">Menú</span>
+      </button>
+    </div>
+  );
+};
+
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -419,27 +457,7 @@ function App() {
             </main>
 
             {/* MENÚ INFERIOR */}
-            <div className={`${currentUser?.role === 'admin' ? 'md:hidden' : ''} fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-slate-200 px-6 py-2 flex justify-between items-center z-30 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]`}>
-              <Link to="/ventas" className="flex flex-col items-center gap-1 text-slate-400 focus:text-primary active:text-primary transition-colors">
-                <ShoppingCart size={20} />
-                <span className="text-[10px] font-bold uppercase tracking-tighter">Venta</span>
-              </Link>
-              <Link to="/reportes" className="flex flex-col items-center gap-1 text-slate-400 focus:text-primary active:text-primary transition-colors">
-                <FileBarChart size={20} />
-                <span className="text-[10px] font-bold uppercase tracking-tighter">Reportes</span>
-              </Link>
-              {currentUser?.role === 'admin' ? (
-                <button onClick={() => setIsSidebarOpen(true)} className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors">
-                  <Menu size={20} />
-                  <span className="text-[10px] font-bold uppercase tracking-tighter">Más</span>
-                </button>
-              ) : (
-                <button onClick={() => useStore.getState().logout()} className="flex flex-col items-center gap-1 text-slate-400 focus:text-red-500 transition-colors">
-                  <RefreshCw size={20} className="rotate-45" />
-                  <span className="text-[10px] font-bold uppercase tracking-tighter">Salir</span>
-                </button>
-              )}
-            </div>
+            <BottomNavigation currentUser={currentUser} setIsSidebarOpen={setIsSidebarOpen} />
           </div>
         </Router>
       )}
