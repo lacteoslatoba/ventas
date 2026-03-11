@@ -20,10 +20,13 @@ export default function Reports() {
     const handleBTPrint = async (sale) => {
         const btPrinter = window.__btPrinter;
         if (!btPrinter) return;
-        const user = users.find(u => u.id === sale.userId);
-        const client = clients.find(c => c.id === sale.clientId);
+
         setBtPrinting(true);
         try {
+            // Asegurar que encontramos el nombre del repartidor y cliente
+            const user = sale.userId === 'admin' ? { name: 'Administrador' } : users.find(u => u.id === sale.userId);
+            const client = clients.find(c => c.id === sale.clientId) || { name: 'General' };
+
             await printTicket({
                 ticket: sale,
                 user,
@@ -33,7 +36,8 @@ export default function Reports() {
                 config: ticketConfig,
             });
         } catch (err) {
-            alert('Error al imprimir: ' + err.message);
+            console.error('Error reimprimiendo:', err);
+            alert('No se pudo imprimir el ticket. Verifica la conexión.');
         } finally {
             setBtPrinting(false);
         }
@@ -308,44 +312,42 @@ export default function Reports() {
 
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
 
-                        <div>Ticket : #{selectedSale.id.slice(-6)}</div>
+                        <div>Ticket : #{selectedSale.id.slice(-6).toUpperCase()}</div>
                         <div>Fecha  : {new Date(selectedSale.date).toLocaleDateString('es-MX')}</div>
                         <div>Hora   : {new Date(selectedSale.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
 
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
 
-                        <div>Repartidor: {selectedSale.userId === 'admin' ? 'Administrador' : (users.find(u => u.id === selectedSale.userId)?.name || 'Admin')}</div>
+                        <div>Repartidor: {selectedSale.userId === 'admin' ? 'Administrador' : (users.find(u => u.id === selectedSale.userId)?.name || 'Repartidor')}</div>
                         <div>Cliente   : {clients.find(c => c.id === selectedSale.clientId)?.name || 'General'}</div>
 
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
 
-                        <div style={{ fontWeight: 'bold' }}>Cant Concepto     Importe</div>
+                        <div style={{ fontWeight: 'bold' }}>CANT CONCEPTO         IMPORTE</div>
                         <div style={{ borderTop: '1px dashed #000', margin: '2px 0' }} />
                         {selectedSale.items.map((item, idx) => (
-                            <div key={idx}>
+                            <div key={idx} style={{ marginBottom: '4px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>{item.quantity}{item.unit || 'u'} {item.name.slice(0, 14)}</span>
+                                    <span>{item.quantity}{item.unit === 'Kg' ? 'kg' : 'x'} {item.name.slice(0, 16)}</span>
                                     <span>${(item.price * item.quantity).toFixed(2)}</span>
                                 </div>
-                                {item.pieces > 0 && (
-                                    <div style={{ fontSize: '7pt', color: '#b45309' }}>└ {item.pieces} pza{item.pieces !== 1 ? 's' : ''}</div>
-                                )}
-                                <div style={{ textAlign: 'right', color: '#555', fontSize: '7pt' }}>@ ${item.price.toFixed(2)}/u</div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '7pt' }}>
+                                    <span style={{ color: '#666' }}>@ ${item.price.toFixed(2)}/u {item.pieces > 0 ? `[${item.pieces} pzas]` : ''}</span>
+                                </div>
                             </div>
                         ))}
 
                         <div style={{ borderTop: '2px solid #000', margin: '3px 0' }} />
 
-                        <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '12pt' }}>
+                        <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '13pt' }}>
                             TOTAL ${selectedSale.total.toFixed(2)}
                         </div>
 
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
 
-                        <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                        <div style={{ textAlign: 'center', marginTop: '4px', fontSize: '8pt' }}>
                             {ticketConfig.footerLine1 && <div>{ticketConfig.footerLine1}</div>}
                             {ticketConfig.footerLine2 && <div>{ticketConfig.footerLine2}</div>}
-                            <div style={{ fontSize: '6pt', marginTop: '2px', color: '#888' }}>Copia de historial</div>
                         </div>
 
                         {ticketConfig.showSignature && (

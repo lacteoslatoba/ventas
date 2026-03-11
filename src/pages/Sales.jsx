@@ -89,8 +89,8 @@ export default function Sales() {
     };
 
     if (generatedTicket) {
-        const user = users.find(u => u.id === generatedTicket.userId);
-        const client = clients.find(c => c.id === generatedTicket.clientId);
+        const user = generatedTicket.userId === 'admin' ? { name: 'Administrador' } : users.find(u => u.id === generatedTicket.userId);
+        const client = clients.find(c => c.id === generatedTicket.clientId) || { name: 'General' };
 
         // ── Imprimir Ticket (BT si hay impresora, si no sistema) ──────────────
         const handlePrint = async () => {
@@ -211,28 +211,32 @@ export default function Sales() {
                             {ticketConfig.phone && <div>Tel: {ticketConfig.phone}</div>}
                         </div>
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
-                        <div>Ticket : #{generatedTicket.id.slice(-6)}</div>
+                        <div>Ticket : #{generatedTicket.id.slice(-6).toUpperCase()}</div>
                         <div>Fecha  : {new Date(generatedTicket.date).toLocaleDateString('es-MX')}</div>
                         <div>Hora   : {new Date(generatedTicket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
+                        
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
-                        <div>Repartidor: {user?.name || 'Admin'}</div>
+                        <div>Repartidor: {user?.name || 'Administrador'}</div>
                         <div>Cliente   : {client?.name || 'General'}</div>
+                        
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
-                        <div style={{ fontWeight: 'bold' }}>Cant Concepto     Importe</div>
+                        <div style={{ fontWeight: 'bold' }}>CANT CONCEPTO         IMPORTE</div>
                         <div style={{ borderTop: '1px dashed #000', margin: '2px 0' }} />
                         {generatedTicket.items.map((item, idx) => (
-                            <div key={idx}>
+                            <div key={idx} style={{ marginBottom: '4px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>{item.quantity}{item.unit || 'u'} {item.name.slice(0, 14)}</span>
+                                    <span>{item.quantity}{item.unit === 'Kg' ? 'kg' : 'x'} {item.name.slice(0, 16)}</span>
                                     <span>${(item.price * item.quantity).toFixed(2)}</span>
                                 </div>
-                                {item.pieces > 0 && <div style={{ fontSize: '7pt', color: '#b45309' }}>└ {item.pieces} pzas</div>}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '7pt' }}>
+                                    <span style={{ color: '#666' }}>@ ${item.price.toFixed(2)}/u {item.pieces > 0 ? `[${item.pieces} pzas]` : ''}</span>
+                                </div>
                             </div>
                         ))}
                         <div style={{ borderTop: '2px solid #000', margin: '3px 0' }} />
-                        <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '12pt' }}>TOTAL ${generatedTicket.total.toFixed(2)}</div>
+                        <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '13pt' }}>TOTAL ${generatedTicket.total.toFixed(2)}</div>
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
-                        <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                        <div style={{ textAlign: 'center', marginTop: '4px', fontSize: '8pt' }}>
                             {ticketConfig.footerLine1 && <div>{ticketConfig.footerLine1}</div>}
                             {ticketConfig.footerLine2 && <div>{ticketConfig.footerLine2}</div>}
                         </div>

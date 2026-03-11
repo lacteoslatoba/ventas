@@ -109,29 +109,37 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false, con
     add(SEP);
 
     // Repartidor y cliente
-    add(`Repartidor: ${(user?.name || 'Admin').slice(0, 20)}\n`);
-    add(`Cliente   : ${(client?.name || 'General').slice(0, 20)}\n`);
+    add(`Repartidor: ${user?.name || 'Administrador'}\n`);
+    add(`Cliente   : ${client?.name || 'General'}\n`);
     add(SEP);
 
     // Cabecera tabla
     add(CMD.BOLD_ON);
-    add('CANT  CONCEPTO       IMPORTE\n');
+    add('CANT CONCEPTO         IMPORTE\n');
     add(CMD.BOLD_OFF);
     add(SEP);
 
     // Items
     ticket.items.forEach(item => {
         const importe = `$${(item.price * item.quantity).toFixed(2)}`;
-        const concepto = item.name.slice(0, 14).padEnd(14);
-        const cant = `${item.quantity}${item.unit || 'u'}`.slice(0, 5).padEnd(5);
+        const namePart = item.name.slice(0, 16);
+        const qtyPart = `${item.quantity}${item.unit === 'Kg' ? 'kg' : 'x'}`.padEnd(5);
+        
+        // Fila principal: [Cant][Nombre]...[Importe]
+        // Usamos align left pero construimos el string con padding manual para spacing exacto
+        const totalLen = LINE_WIDTH; // 32
+        const spaceRemaining = totalLen - qtyPart.length - importe.length;
+        const conceptPart = namePart.padEnd(spaceRemaining);
+        
         add(CMD.ALIGN_LEFT);
-        add(`${cant}${concepto}${importe}\n`);
+        add(`${qtyPart}${conceptPart}${importe}\n`);
+        
+        // Detalles debajo (Precio unitario y piezas)
+        add(`  @ $${item.price.toFixed(2)}/u`);
         if (item.pieces > 0) {
-            add(`  └ ${item.pieces} pieza${item.pieces !== 1 ? 's' : ''}\n`);
+            add(`  [${item.pieces} pzas]`);
         }
-        add(CMD.ALIGN_RIGHT);
-        add(`@ $${item.price.toFixed(2)}/u\n`);
-        add(CMD.ALIGN_LEFT);
+        add('\n');
     });
 
     // Total
