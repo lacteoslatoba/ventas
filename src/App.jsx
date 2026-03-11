@@ -293,40 +293,43 @@ const MobileHeader = ({ currentUser, isSyncing, setIsSidebarOpen, setIsConfigOpe
   );
 };
 
-const BottomNavigation = ({ currentUser, setIsSidebarOpen }) => {
+const BottomNavigation = ({ currentUser }) => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
+  const logout = useStore(state => state.logout);
 
   // Componente interno para botón
-  const NavItem = ({ to, icon: Icon, label, active }) => (
-    <Link to={to} className={`flex flex-col items-center justify-end gap-1 w-16 pt-2 pb-1 transition-colors ${active ? 'text-primary' : 'text-slate-500'}`}>
-      <Icon size={24} fill="currentColor" strokeWidth={1.5} />
-      <span className="text-[11px] font-medium tracking-tight leading-none mt-1">{label}</span>
-    </Link>
-  );
+  const NavItem = ({ to, icon: Icon, label, active, onClick }) => {
+    const content = (
+      <div className={`flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 transition-colors ${active ? 'text-primary' : 'text-slate-500'}`}>
+        <Icon size={22} fill={active ? "currentColor" : "none"} strokeWidth={2} />
+        <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">{label}</span>
+      </div>
+    );
+
+    if (onClick) {
+      return <button onClick={onClick} className="focus:outline-none">{content}</button>;
+    }
+
+    return <Link to={to} className="focus:outline-none">{content}</Link>;
+  };
 
   return (
-    <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 sm:px-4 h-[68px] flex justify-between items-center z-30 shadow-[0_-8px_20px_rgba(0,0,0,0.08)] pb-safe select-none`}>
-      <NavItem to="/" icon={Home} label="Inicio" active={isActive('/')} />
-      
+    <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 h-[68px] flex justify-around items-center z-30 shadow-[0_-8px_25px_rgba(0,0,0,0.05)] pb-safe select-none`}>
       {currentUser?.role === 'admin' && (
         <NavItem to="/productos" icon={Tag} label="Productos" active={isActive('/productos')} />
       )}
+      
+      <NavItem to="/ventas" icon={ShoppingCart} label="Vender" active={isActive('/ventas') || isActive('/')} />
+      
+      <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
 
-      {/* Botón Central Elevado - Nueva Venta */}
-      <Link to="/ventas" className={`flex flex-col items-center justify-end w-20 transition-all ${isActive('/ventas') ? 'text-primary' : 'text-slate-500'} relative -top-5`}>
-        <div className={`rounded-full w-14 h-14 flex items-center justify-center text-white transition-all duration-300 ${isActive('/ventas') ? 'bg-primary shadow-[0_8px_16px_rgba(var(--primary-rgb),0.4)] scale-110' : 'bg-slate-500 shadow-md'}`}>
-          <Plus size={28} strokeWidth={3} />
-        </div>
-        <span className="text-[11px] font-medium tracking-tight mt-1 absolute -bottom-4 whitespace-nowrap">Nueva Venta</span>
-      </Link>
-
-      <NavItem to="/reportes" icon={Banknote} label={currentUser?.role === 'admin' ? "Ventas" : "Reportes"} active={isActive('/reportes')} />
-
-      <button onClick={() => setIsSidebarOpen(true)} className={`flex flex-col items-center justify-end gap-1 w-16 pt-2 pb-1 transition-colors text-slate-500`}>
-        <LayoutGrid size={24} fill="currentColor" strokeWidth={1.5} />
-        <span className="text-[11px] font-medium tracking-tight leading-none mt-1">Menú</span>
-      </button>
+      <NavItem 
+        onClick={() => logout()} 
+        icon={LogOut} 
+        label="Salir" 
+        active={false} 
+      />
     </div>
   );
 };
