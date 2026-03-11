@@ -89,73 +89,78 @@ export function buildTicketBuffer({ ticket, user, client, isReprint = false, con
     // Inicializar
     add(CMD.INIT);
 
-    // Encabezado del negocio
-    add(CMD.ALIGN_CENTER, CMD.BOLD_ON, CMD.DOUBLE_SIZE);
-    add(businessName.toUpperCase().slice(0, 16) + '\n');
-    add(CMD.NORMAL_SIZE, CMD.BOLD_OFF);
+    // Encabezado del negocio (CENTRADO)
+    add(CMD.BOLD_ON);
+    add(centerText(businessName.toUpperCase(), LINE_WIDTH) + '\n');
+    add(CMD.BOLD_OFF);
+    
     if (subtitle) add(centerText(subtitle, LINE_WIDTH) + '\n');
     if (address) add(centerText(address, LINE_WIDTH) + '\n');
     if (phone) add(centerText(`Tel: ${phone}`, LINE_WIDTH) + '\n');
     if (extraLine1) add(centerText(extraLine1, LINE_WIDTH) + '\n');
     if (extraLine2) add(centerText(extraLine2, LINE_WIDTH) + '\n');
-    if (isReprint) add(CMD.BOLD_ON, centerText('** REIMPRESION **', LINE_WIDTH) + '\n', CMD.BOLD_OFF);
+
+    if (isReprint) {
+        add(CMD.BOLD_ON);
+        add(centerText('** REIMPRESION **', LINE_WIDTH) + '\n');
+        add(CMD.BOLD_OFF);
+    }
+    
     add(SEP);
 
     // Info del ticket
-    add(CMD.ALIGN_LEFT);
-    add(`Ticket : #${ticket.id.slice(-6)}\n`);
+    add(`Ticket : #${ticket.id.slice(-6).toUpperCase()}\n`);
     add(`Fecha  : ${new Date(ticket.date).toLocaleDateString('es-MX')}\n`);
     add(`Hora   : ${new Date(ticket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}\n`);
+    
     add(SEP);
 
-    // Repartidor y cliente
+    // Repartidor y cliente (Soberbio y claro)
     add(`Repartidor: ${user?.name || 'Administrador'}\n`);
     add(`Cliente   : ${client?.name || 'General'}\n`);
+    
     add(SEP);
 
-    // Cabecera tabla
+    // Cabecera tabla (MAYUSCULAS CENTRADAS O ALINEADAS)
     add(CMD.BOLD_ON);
     add('CANT CONCEPTO         IMPORTE\n');
     add(CMD.BOLD_OFF);
     add(SEP);
 
     // Items
-    ticket.items.forEach(item => {
-        const importe = `$${(item.price * item.quantity).toFixed(2)}`;
-        const namePart = item.name.slice(0, 16);
-        const qtyPart = `${item.quantity}${item.unit === 'Kg' ? 'kg' : 'x'}`.padEnd(5);
+    const items = ticket.items || [];
+    items.forEach(item => {
+        const name = (item.name || 'Producto').slice(0, 16);
+        const qty = `${item.quantity}${item.unit === 'Kg' ? 'kg' : 'x'}`.padEnd(5);
+        const price = `$${(item.price * item.quantity).toFixed(2)}`;
         
-        // Fila principal: [Cant][Nombre]...[Importe]
-        // Usamos align left pero construimos el string con padding manual para spacing exacto
-        const totalLen = LINE_WIDTH; // 32
-        const spaceRemaining = totalLen - qtyPart.length - importe.length;
-        const conceptPart = namePart.padEnd(spaceRemaining);
+        // Espaciado dinámico para que el importe quede a la derecha
+        const spaces = LINE_WIDTH - qty.length - price.length;
+        const concept = name.padEnd(spaces);
         
-        add(CMD.ALIGN_LEFT);
-        add(`${qtyPart}${conceptPart}${importe}\n`);
+        add(`${qty}${concept}${price}\n`);
         
-        // Detalles debajo (Precio unitario y piezas)
-        add(`  @ $${item.price.toFixed(2)}/u`);
-        if (item.pieces > 0) {
-            add(`  [${item.pieces} pzas]`);
-        }
-        add('\n');
+        // Detalle secundario (Precio unitario y piezas)
+        let detail = `  @ $${item.price.toFixed(2)}/u`;
+        if (item.pieces > 0) detail += ` [${item.pieces} pzas]`;
+        add(detail + '\n');
     });
 
-    // Total
+    // Total (DESTACADO)
     add(SEP2);
-    add(CMD.ALIGN_RIGHT, CMD.BOLD_ON, CMD.DOUBLE_SIZE);
-    add(`TOTAL $${ticket.total.toFixed(2)}\n`);
-    add(CMD.NORMAL_SIZE, CMD.BOLD_OFF);
+    const totalStr = `TOTAL $${ticket.total.toFixed(2)}`;
+    add(CMD.BOLD_ON);
+    // Intentamos centrado manual del total para que luzca mejor
+    add(centerText(totalStr, LINE_WIDTH) + '\n');
+    add(CMD.BOLD_OFF);
     add(SEP);
 
-    // Pie de página
-    add(CMD.ALIGN_CENTER);
+    // Pie de página (CENTRADO)
     if (footerLine1) add(centerText(footerLine1, LINE_WIDTH) + '\n');
     if (footerLine2) add(centerText(footerLine2, LINE_WIDTH) + '\n');
     add('\n');
+
     if (showSignature) {
-        add(CMD.ALIGN_LEFT);
         add('Firma: ________________________\n\n');
     }
 
