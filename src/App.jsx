@@ -342,27 +342,15 @@ function App() {
                 <span className="text-[10px] font-bold uppercase tracking-tighter">Reportes</span>
               </Link>
               {currentUser?.role === 'admin' ? (
-                <>
-                  <Link to="/clientes" className="flex flex-col items-center gap-1 text-slate-400 focus:text-primary active:text-primary transition-colors">
-                    <Store size={20} />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Clientes</span>
-                  </Link>
-                  <button onClick={() => setIsSidebarOpen(true)} className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors">
-                    <Menu size={20} />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Más</span>
-                  </button>
-                </>
+                <button onClick={() => setIsSidebarOpen(true)} className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors">
+                  <Menu size={20} />
+                  <span className="text-[10px] font-bold uppercase tracking-tighter">Más</span>
+                </button>
               ) : (
-                <>
-                  <Link to="/clientes" className="flex flex-col items-center gap-1 text-slate-400 focus:text-primary active:text-primary transition-colors">
-                    <Store size={20} />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Clientes</span>
-                  </Link>
-                  <button onClick={() => useStore.getState().logout()} className="flex flex-col items-center gap-1 text-slate-400 focus:text-red-500 transition-colors">
-                    <RefreshCw size={20} className="rotate-45" />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Salir</span>
-                  </button>
-                </>
+                <button onClick={() => useStore.getState().logout()} className="flex flex-col items-center gap-1 text-slate-400 focus:text-red-500 transition-colors">
+                  <RefreshCw size={20} className="rotate-45" />
+                  <span className="text-[10px] font-bold uppercase tracking-tighter">Salir</span>
+                </button>
               )}
             </div>
           </div>
