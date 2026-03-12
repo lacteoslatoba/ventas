@@ -288,9 +288,6 @@ export default function TicketConfig() {
             <div className="mb-8 flex items-start justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
-                        <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
-                            <ArrowLeft size={24} />
-                        </button>
                         <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
                             <FileText size={20} className="text-primary" />
                         </div>
