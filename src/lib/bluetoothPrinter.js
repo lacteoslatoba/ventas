@@ -65,7 +65,65 @@ function alignTextStr(text, align, width = 31) {
     return text;
 }
 
-export function buildTicketBuffer({ ticket, user, client, config = {} }) {
+async function processImage(url, maxWidth = 200) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Redimensionar manteniendo proporción
+            const ratio = img.width / img.height;
+            const width = Math.min(maxWidth, img.width);
+            const height = Math.round(width / ratio);
+            
+            // Ancho debe ser múltiplo de 8 para ESC/POS
+            const finalWidth = Math.ceil(width / 8) * 8;
+            
+            canvas.width = finalWidth;
+            canvas.height = height;
+            
+            // Dibujar en blanco y negro (umbral simple)
+            ctx.drawImage(img, 0, 0, finalWidth, height);
+            const imageData = ctx.getImageData(0, 0, finalWidth, height);
+            const data = imageData.data;
+            
+            const pixels = new Uint8Array(finalWidth * height);
+            for (let i = 0; i < data.length; i += 4) {
+                const avg = (data[i] + data[i+1] + data[i+2]) / 3;
+                pixels[i / 4] = avg < 128 ? 1 : 0; // Negro si es oscuro
+            }
+            
+            // Empacar bits en bytes
+            const bytesWidth = finalWidth / 8;
+            const buffer = new Uint8Array(8 + bytesWidth * height);
+            
+            // Comando GS v 0
+            buffer[0] = 0x1D; buffer[1] = 0x76; buffer[2] = 0x30; buffer[3] = 0;
+            buffer[4] = bytesWidth & 0xFF; buffer[5] = (bytesWidth >> 8) & 0xFF;
+            buffer[6] = height & 0xFF; buffer[7] = (height >> 8) & 0xFF;
+            
+            let pos = 8;
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < bytesWidth; x++) {
+                    let b = 0;
+                    for (let bit = 0; bit < 8; bit++) {
+                        if (pixels[y * finalWidth + (x * 8 + bit)]) {
+                            b |= (1 << (7 - bit));
+                        }
+                    }
+                    buffer[pos++] = b;
+                }
+            }
+            resolve(buffer);
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+    });
+}
+
+export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
     const {
         businessName = 'LACTEOS LA TOBA',
         subtitle = '', address = '', phone = '',
@@ -77,7 +135,8 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
         showSeller = true, showCustomer = true,
         ticketTemplate = 'standard',
         metadataUppercase = false,
-        metadataSize = 10
+        metadataSize = 10,
+        logoUrl = null
     } = config;
 
     const chunks = [];
@@ -96,7 +155,15 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
     };
 
     if (ticketTemplate === 'latoba') {
-        add(CMD.INIT, CMD.ALIGN_CENTER, CMD.BOLD_ON);
+        add(CMD.INIT, CMD.ALIGN_CENTER);
+
+        // Procesar Logo si existe
+        if (logoUrl) {
+            const logoBytes = await processImage(logoUrl, WIDTH * 8);
+            if (logoBytes) add(logoBytes, '\r\n');
+        }
+
+        add(CMD.BOLD_ON);
         
         if (config.businessNameSize > 16) {
             add(CMD.DOUBLE_SIZE);
@@ -190,7 +257,15 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
 
     } else {
         // Estándar muy robusto
-        add(CMD.INIT, CMD.ALIGN_CENTER, 'TICKET DE VENTA\r\n');
+        add(CMD.INIT, CMD.ALIGN_CENTER);
+
+        // Procesar Logo si existe
+        if (logoUrl) {
+            const logoBytes = await processImage(logoUrl, WIDTH * 8);
+            if (logoBytes) add(logoBytes, '\r\n');
+        }
+
+        add('TICKET DE VENTA\r\n');
         
         if (config.businessNameSize > 16) add(CMD.DOUBLE_SIZE);
         add(businessName.toUpperCase() + '\r\n');
@@ -288,7 +363,7 @@ export async function autoConnectPrinter(lastDeviceName) {
 }
 
 export async function printTicket({ ticket, user, client, characteristic, config }) {
-    const buffer = buildTicketBuffer({ ticket, user, client, config });
+    const buffer = await buildTicketBuffer({ ticket, user, client, config });
     await sendInChunks(characteristic, buffer);
 
     if (config?.printCopy) {

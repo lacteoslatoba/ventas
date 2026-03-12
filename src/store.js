@@ -42,6 +42,7 @@ export const useStore = create(
                 businessNameSize: 13,
                 metadataSize: 10,
                 metadataUppercase: false,
+                logoUrl: null,
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));

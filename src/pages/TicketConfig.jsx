@@ -3,7 +3,8 @@ import { useStore } from '../store';
 import {
     Settings2, Save, FileText, Building2, Phone,
     MapPin, AlignCenter, CheckCheck, Printer, Eye, EyeOff,
-    ChevronRight, Info, AlignLeft, AlignRight, Type, Calendar, User, Eye as EyeIcon, ArrowLeft
+    ChevronRight, Info, AlignLeft, AlignRight, Type, Calendar, User, Eye as EyeIcon, ArrowLeft,
+    Image as ImageIcon, Upload, Trash2
 } from 'lucide-react';
 
 // ─── Preview del ticket (HTML) ───────────────────────────────────────────────
@@ -23,6 +24,7 @@ function TicketPreview({ config }) {
         businessNameSize = 13,
         metadataSize = 10,
         metadataUppercase = false,
+        logoUrl = null,
     } = config;
 
     const alignClass = titleAlignment === 'left' ? 'text-left' : titleAlignment === 'right' ? 'text-right' : 'text-center';
@@ -42,6 +44,11 @@ function TicketPreview({ config }) {
                     className={`font-mono leading-snug text-black bg-white`}
                     style={{ width: '200px', minHeight: '300px', fontSize: `${useFontB ? 8.5 : 10}px` }}
                 >
+                    {logoUrl && (
+                        <div className="flex justify-center mb-2">
+                            <img src={logoUrl} alt="Logo" className="max-w-[100px] max-h-[60px] object-contain grayscale" />
+                        </div>
+                    )}
                     <div className="text-center font-bold mb-0.5 leading-tight uppercase" style={{ fontSize: `${businessNameSize}px` }}>
                         {businessName || 'LACTEOS LA TOBA'}
                     </div>
@@ -109,6 +116,11 @@ function TicketPreview({ config }) {
                 className={`font-mono leading-snug text-black bg-white`}
                 style={{ width: '200px', minHeight: '300px', fontSize: `${useFontB ? 8.5 : 10}px` }}
             >
+                {logoUrl && (
+                    <div className="flex justify-center mb-2">
+                        <img src={logoUrl} alt="Logo" className="max-w-[100px] max-h-[60px] object-contain grayscale" />
+                    </div>
+                )}
                 {/* Encabezado */}
                 <div className={`${alignClass} font-bold mb-0.5 leading-tight`} style={{ fontSize: `${businessNameSize}px` }}>
                     {businessName || 'MI NEGOCIO'}
@@ -258,6 +270,21 @@ export default function TicketConfig() {
 
     const update = (field) => (value) => setForm(prev => ({ ...prev, [field]: value }));
 
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            update('logoUrl')(reader.result);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleRemoveLogo = () => {
+        update('logoUrl')(null);
+    };
+
     const handleSave = () => {
         updateTicketConfig(form);
         setSaved(true);
@@ -323,6 +350,51 @@ export default function TicketConfig() {
 
                     {/* Identificación del negocio */}
                     <Section title="Datos del Negocio" icon={Building2}>
+                        <div className="mb-6">
+                            <label className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
+                                <ImageIcon size={14} /> Logo del Negocio
+                            </label>
+                            
+                            <div className="flex items-center gap-4">
+                                <div className="relative w-24 h-24 bg-slate-100 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden group">
+                                    {form.logoUrl ? (
+                                        <>
+                                            <img src={form.logoUrl} alt="Logo preview" className="w-full h-full object-contain p-2" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                <button 
+                                                    onClick={handleRemoveLogo}
+                                                    className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                                                    title="Eliminar logo"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-slate-300">
+                                            <ImageIcon size={32} />
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="flex-1 space-y-2">
+                                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 cursor-pointer transition-all shadow-sm">
+                                        <Upload size={16} className="text-primary" />
+                                        {form.logoUrl ? 'Cambiar Logo' : 'Subir Logo'}
+                                        <input 
+                                            type="file" 
+                                            className="hidden" 
+                                            accept="image/*" 
+                                            onChange={handleLogoChange} 
+                                        />
+                                    </label>
+                                    <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                                        Se recomienda una imagen cuadrada o rectangular (máx 1MB). Aparecerá en la parte superior del ticket.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         <Field
                             id="businessName"
                             label="Nombre del Negocio"
