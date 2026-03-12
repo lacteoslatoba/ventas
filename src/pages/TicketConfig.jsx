@@ -311,7 +311,7 @@ export default function TicketConfig() {
                 <div className="space-y-5">
 
                     {/* Diseño Template */}
-                    <Section title="Estilo Base del Ticket" icon={FileText} onSave={handleSave} saved={saved}>
+                    <Section title="Estilo Base del Ticket" icon={FileText}>
                         <div className="grid grid-cols-2 gap-3">
                             {[
                                 { value: 'standard', label: 'Estándar', desc: 'Diseño clásico' },
@@ -340,7 +340,7 @@ export default function TicketConfig() {
                     </Section>
 
                     {/* Identificación del negocio */}
-                    <Section title="Datos del Negocio" icon={Building2} onSave={handleSave} saved={saved}>
+                    <Section title="Datos del Negocio" icon={Building2}>
                         <Field
                             id="businessName"
                             label="Nombre del Negocio"
@@ -381,7 +381,7 @@ export default function TicketConfig() {
                     </Section>
 
                     {/* Campos Visibles */}
-                    <Section title="Campos Visibles" icon={EyeIcon} onSave={handleSave} saved={saved}>
+                    <Section title="Campos Visibles" icon={EyeIcon}>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                             <Toggle
                                 id="showAddress"
@@ -437,7 +437,7 @@ export default function TicketConfig() {
                     </Section>
 
                     {/* Diseño y Apariencia */}
-                    <Section title="Diseño y Apariencia" icon={Type} onSave={handleSave} saved={saved}>
+                    <Section title="Diseño y Apariencia" icon={Type}>
                         <div className="space-y-6">
                             <div>
                                 <label className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
@@ -509,7 +509,7 @@ export default function TicketConfig() {
 
                     {/* Líneas extra */}
 
-                    <Section title="Líneas Adicionales del Encabezado" icon={AlignCenter} onSave={handleSave} saved={saved}>
+                    <Section title="Líneas Adicionales del Encabezado" icon={AlignCenter}>
                         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex gap-2 text-xs text-blue-600">
                             <Info size={14} className="shrink-0 mt-0.5" />
                             <span>Estas líneas aparecen debajo del teléfono. Puedes dejarlas vacías.</span>
@@ -533,7 +533,7 @@ export default function TicketConfig() {
                     </Section>
 
                     {/* Pie de página */}
-                    <Section title="Pie de Página" icon={Settings2} onSave={handleSave} saved={saved}>
+                    <Section title="Pie de Página" icon={Settings2}>
                         <Field
                             id="footerLine1"
                             label="Mensaje de despedida 1"
@@ -562,7 +562,7 @@ export default function TicketConfig() {
                     </Section>
 
                     {/* Papel */}
-                    <Section title="Tamaño de Papel" icon={Printer} onSave={handleSave} saved={saved}>
+                    <Section title="Tamaño de Papel" icon={Printer}>
                         <div className="grid grid-cols-2 gap-3">
                             {[
                                 { value: 58, label: '58 mm', desc: 'Estándar móvil' },
@@ -593,6 +593,27 @@ export default function TicketConfig() {
                             Selecciona el ancho de papel de tu impresora térmica
                         </p>
                     </Section>
+                    
+                    {/* Botón único de guardado al final */}
+                    <div className="pt-4 pb-8">
+                        <button
+                            onClick={handleSave}
+                            className={`w-full py-5 rounded-[2rem] font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-3 ${
+                                saved 
+                                ? 'bg-emerald-500 text-white shadow-emerald-500/30' 
+                                : 'bg-primary text-white shadow-primary/30 hover:bg-blue-700'
+                            }`}
+                        >
+                            {saved ? (
+                                <><CheckCheck size={22} /> ¡Configuración Guardada!</>
+                            ) : (
+                                <><Save size={22} /> Guardar Cambios</>
+                            )}
+                        </button>
+                        <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-4">
+                            Toca para aplicar cambios en todos los tickets
+                        </p>
+                    </div>
                 </div>
 
                 {/* Vista previa (sticky) */}
