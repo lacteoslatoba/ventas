@@ -232,6 +232,11 @@ export async function autoConnectPrinter(lastDeviceName) {
 export async function printTicket({ ticket, user, client, characteristic, config }) {
     const buffer = buildTicketBuffer({ ticket, user, client, config });
     await sendInChunks(characteristic, buffer);
+
+    if (config?.printCopy) {
+        await new Promise(r => setTimeout(r, 1500)); // Pausa de 1.5s entre tickets
+        await sendInChunks(characteristic, buffer);
+    }
 }
 
 export async function printTestPage(characteristic) {

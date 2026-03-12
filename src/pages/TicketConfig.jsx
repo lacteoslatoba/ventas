@@ -258,6 +258,7 @@ export default function TicketConfig() {
             useFontB: false,
             ticketTemplate: 'standard',
             showItemsHeader: true,
+            printCopy: false,
         };
 
         setForm(defaults);
@@ -445,6 +446,15 @@ export default function TicketConfig() {
                                 </div>
                             </div>
                             
+                            <div className="pt-2 border-t border-slate-100">
+                                <Toggle
+                                    id="printCopy"
+                                    label="Imprimir Doble Copia"
+                                    desc="Imprime el ticket automáticamente dos veces (uno para ti, uno para el cliente)"
+                                    checked={form.printCopy}
+                                    onChange={update('printCopy')}
+                                />
+                            </div>
                             <div className="pt-2 border-t border-slate-100">
                                 <Toggle
                                     id="useFontB"

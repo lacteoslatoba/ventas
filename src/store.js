@@ -34,6 +34,7 @@ export const useStore = create(
                 useFontB: false,
                 ticketTemplate: 'standard', // 'standard' o 'latoba'
                 showItemsHeader: true,
+                printCopy: false,
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));
