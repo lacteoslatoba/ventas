@@ -48,6 +48,8 @@ function TicketPreview({ config }) {
                     {subtitle && <div className="text-center">{subtitle}</div>}
                     {showAddress && address && <div className="text-center">{address}</div>}
                     {showPhone && phone && <div className="text-center">TEL: {phone}</div>}
+                    {extraLine1 && <div className="text-center">{extraLine1}</div>}
+                    {extraLine2 && <div className="text-center">{extraLine2}</div>}
 
                     <div className="border-t border-dashed border-black my-1" />
 
