@@ -18,6 +18,7 @@ function TicketPreview({ config }) {
         ticketTemplate = 'standard',
         showItemsHeader = true,
         spaceBetweenItems = false,
+        showCashAndChange = true,
     } = config;
 
     const alignClass = titleAlignment === 'left' ? 'text-left' : titleAlignment === 'right' ? 'text-right' : 'text-center';
@@ -75,9 +76,13 @@ function TicketPreview({ config }) {
                     <div className="text-right mt-2 font-bold">SUBTOTAL: $165.00</div>
                     <div className="text-center font-bold text-[14px] leading-[14px] mt-2 mb-1">TOTAL $165.00</div>
 
-                    <div className="border-t border-dashed border-black my-1" />
-                    <div className="flex justify-between"><span>EFECTIVO:</span><span>$165.00</span></div>
-                    <div className="flex justify-between"><span>CAMBIO:</span><span>$0.00</span></div>
+                    {showCashAndChange && (
+                        <>
+                            <div className="border-t border-dashed border-black my-1" />
+                            <div className="flex justify-between"><span>EFECTIVO:</span><span>$165.00</span></div>
+                            <div className="flex justify-between"><span>CAMBIO:</span><span>$0.00</span></div>
+                        </>
+                    )}
                     <div className="border-t border-dashed border-black my-1" />
 
                     <div className="text-center mt-2">{footerLine1 || '¡GRACIAS POR SU COMPRA!'}</div>
@@ -135,6 +140,14 @@ function TicketPreview({ config }) {
                 <div className="border-t-2 border-black my-0.5" />
                 <div className="text-right font-bold text-[12px]">TOTAL $165.00</div>
                 <div className="border-t border-dashed border-black my-0.5" />
+
+                {showCashAndChange && (
+                    <>
+                        <div className="flex justify-between text-[11px]"><span>Efectivo:</span><span>$165.00</span></div>
+                        <div className="flex justify-between text-[11px]"><span>Cambio:</span><span>$0.00</span></div>
+                        <div className="border-t border-dashed border-black my-0.5" />
+                    </>
+                )}
 
                 {/* Pie */}
                 <div className="text-center mt-1 text-[9px]">
@@ -261,6 +274,7 @@ export default function TicketConfig() {
             showItemsHeader: true,
             printCopy: false,
             spaceBetweenItems: false,
+            showCashAndChange: true,
         };
 
         setForm(defaults);
@@ -412,6 +426,13 @@ export default function TicketConfig() {
                                 checked={form.showItemsHeader}
                                 onChange={update('showItemsHeader')}
                                 desc="Muestra u oculta los títulos ITEM y PRECIO arriba de los productos"
+                            />
+                            <Toggle
+                                id="showCashAndChange"
+                                label="Efectivo y Cambio"
+                                checked={form.showCashAndChange}
+                                onChange={update('showCashAndChange')}
+                                desc="Muestra u oculta un desglose del pago en efectivo y el cambio"
                             />
                         </div>
                     </Section>

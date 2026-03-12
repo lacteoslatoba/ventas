@@ -149,8 +149,12 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
         add(col2('TOTAL:', finalTot));
         add(CMD.BOLD_OFF, SEP);
 
-        add(col2('EFECTIVO:', finalTot));
-        add(col2('CAMBIO:', '$0.00'));
+        if (config.showCashAndChange !== false) {
+            add(col2('EFECTIVO:', finalTot));
+            add(col2('CAMBIO:', '$0.00'));
+            add(SEP);
+        }
+        
         add('\r\n', CMD.ALIGN_CENTER);
         
         if (footerLine1) add(footerLine1.toUpperCase() + '\r\n');
