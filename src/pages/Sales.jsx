@@ -210,14 +210,19 @@ export default function Sales() {
                                 </>
                             )}
 
-                            <div style={{ borderTop: '2px dashed #cbd5e1', margin: '14px 0' }} />
-                            
-                            <div className="flex justify-between text-[11px] font-bold mb-2">
-                                <span>ITEM</span>
-                                <span>PRECIO</span>
-                            </div>
-
-                            <div style={{ borderTop: '1px dashed #e2e8f0', margin: '10px 0' }} />
+                            {ticketConfig.showItemsHeader !== false && (
+                                <>
+                                    <div style={{ borderTop: '2px dashed #cbd5e1', margin: '14px 0' }} />
+                                    <div className="flex justify-between text-[11px] font-bold mb-2">
+                                        <span>ITEM</span>
+                                        <span>PRECIO</span>
+                                    </div>
+                                    <div style={{ borderTop: '1px dashed #e2e8f0', margin: '10px 0' }} />
+                                </>
+                            )}
+                            {ticketConfig.showItemsHeader === false && (
+                                <div style={{ borderTop: '2px dashed #cbd5e1', margin: '14px 0' }} />
+                            )}
 
                             <div className="space-y-3">
                                 {generatedTicket.items.map((item, idx) => (
@@ -413,7 +418,12 @@ export default function Sales() {
             {/* Products Left Side */}
             <div className="flex-1 flex flex-col pb-8 lg:pb-0">
                 <div className="mb-6 px-1">
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Venta Rápida</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
+                            <ArrowLeft size={24} />
+                        </button>
+                        Venta Rápida
+                    </h1>
                     <p className="text-slate-500 font-medium text-sm mt-1">Selecciona productos para armar el pedido</p>
                 </div>
 

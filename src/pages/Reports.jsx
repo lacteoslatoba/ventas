@@ -45,7 +45,12 @@ export default function Reports() {
 
     return (
         <div className="p-4 md:p-8">
-            <h1 className="text-3xl font-bold text-slate-800 mb-6">Reportes de Venta</h1>
+            <h1 className="text-3xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
+                    <ArrowLeft size={24} />
+                </button>
+                Reportes de Venta
+            </h1>
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
                 {isAdmin ? (

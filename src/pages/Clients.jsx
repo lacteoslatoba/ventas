@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArrowLeft } from 'lucide-react';
 
 export default function Clients() {
     const { clients, users, currentUser, addClient, deleteClient, updateClient } = useStore();
@@ -45,7 +45,12 @@ export default function Clients() {
     return (
         <div className="p-4 md:p-8">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-slate-800">Clientes</h1>
+                <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
+                    <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
+                        <ArrowLeft size={24} />
+                    </button>
+                    Clientes
+                </h1>
                 <button
                     onClick={() => { setEditId(null); setFormData({ name: '', phone: '', address: '', userId: currentUser?.role !== 'admin' ? currentUser?.id : '' }); setIsFormOpen(!isFormOpen); }}
                     className="bg-cheese-500 hover:bg-cheese-600 text-slate-900 font-semibold px-4 py-2 rounded-xl shadow flex items-center gap-2"

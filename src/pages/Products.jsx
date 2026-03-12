@@ -29,7 +29,12 @@ export default function Products() {
     return (
         <div className="p-4 md:p-8 animate-in fade-in duration-500">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight drop-shadow-sm">Productos</h1>
+                <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight drop-shadow-sm flex items-center gap-2">
+                    <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
+                        <ArrowLeft size={24} />
+                    </button>
+                    Productos
+                </h1>
                 <button
                     onClick={() => { setEditId(null); setFormData({ name: '', price: '', unit: 'Pieza', code: '' }); setIsFormOpen(!isFormOpen); }}
                     className="bg-gradient-to-r from-cheese-400 to-cheese-500 hover:from-cheese-500 hover:to-cheese-600 text-slate-900 font-bold px-5 py-2.5 rounded-2xl shadow-lg shadow-cheese-500/30 flex items-center gap-2 active:scale-95 transition-all"

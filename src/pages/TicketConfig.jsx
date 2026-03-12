@@ -3,8 +3,7 @@ import { useStore } from '../store';
 import {
     Settings2, Save, RotateCcw, FileText, Building2, Phone,
     MapPin, AlignCenter, CheckCheck, Printer, Eye, EyeOff,
-    ChevronRight, Info, AlignLeft, AlignRight, Type, Calendar, User, Eye as EyeIcon
-
+    ChevronRight, Info, AlignLeft, AlignRight, Type, Calendar, User, Eye as EyeIcon, ArrowLeft
 } from 'lucide-react';
 
 // ─── Preview del ticket (HTML) ───────────────────────────────────────────────
@@ -16,14 +15,15 @@ function TicketPreview({ config }) {
         titleAlignment = 'center', showAddress = true, showPhone = true,
         showDate = true, showTime = true, showSeller = true, showCustomer = true,
         useFontB = false,
-        ticketTemplate = 'standard'
+        ticketTemplate = 'standard',
+        showItemsHeader = true
     } = config;
 
     const alignClass = titleAlignment === 'left' ? 'text-left' : titleAlignment === 'right' ? 'text-right' : 'text-center';
     const fontClass = useFontB ? 'text-[8.5px]' : 'text-[10px]';
 
     if (ticketTemplate === 'latoba') {
-        const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '').toUpperCase();
+        const dateStr = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
         const timeStr = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
         
         return (
@@ -52,9 +52,13 @@ function TicketPreview({ config }) {
                     {showCustomer && <div className="flex justify-between"><span>CLIENTE</span><span>TIENDA LA FE</span></div>}
                     {showSeller && <div className="flex justify-between"><span>CAJERO</span><span>JUAN PEREZ</span></div>}
 
-                    <div className="border-t border-dashed border-black my-1" />
-                    <div className="flex justify-between"><span>ITEM</span><span>PRECIO</span></div>
-                    <div className="border-t border-dashed border-black my-1" />
+                    {showItemsHeader && (
+                        <>
+                            <div className="border-t border-dashed border-black my-1" />
+                            <div className="flex justify-between"><span>ITEM</span><span>PRECIO</span></div>
+                            <div className="border-t border-dashed border-black my-1" />
+                        </>
+                    )}
 
                     <div className="mb-2">
                         <div>QUESO OAXACA</div>
@@ -117,9 +121,12 @@ function TicketPreview({ config }) {
                 )}
 
 
-                {/* Tabla */}
-                <div className="font-bold">CANT  CONCEPTO    IMPORTE</div>
-                <div className="border-t border-dashed border-black my-0.5" />
+                {showItemsHeader && (
+                    <>
+                        <div className="font-bold">CANT  CONCEPTO    IMPORTE</div>
+                        <div className="border-t border-dashed border-black my-0.5" />
+                    </>
+                )}
                 <div>2x    Queso Oax.  $120.00</div>
                 <div className="text-right text-[9px]">@ $60.00/u</div>
                 <div>1x    Requesón    $45.00</div>
@@ -221,8 +228,6 @@ export default function TicketConfig() {
     const [saved, setSaved] = useState(false);
     const [showPreview, setShowPreview] = useState(true);
 
-
-
     const update = (field) => (value) => setForm(prev => ({ ...prev, [field]: value }));
 
     const handleSave = () => {
@@ -263,6 +268,9 @@ export default function TicketConfig() {
             <div className="mb-8 flex items-start justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
+                        <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
+                            <ArrowLeft size={24} />
+                        </button>
                         <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
                             <FileText size={20} className="text-primary" />
                         </div>
@@ -393,6 +401,12 @@ export default function TicketConfig() {
                                 label="Cliente"
                                 checked={form.showCustomer}
                                 onChange={update('showCustomer')}
+                            />
+                            <Toggle
+                                id="showItemsHeader"
+                                label="Encabezado de Productos (ITEM)"
+                                checked={form.showItemsHeader}
+                                onChange={update('showItemsHeader')}
                             />
                         </div>
                     </Section>

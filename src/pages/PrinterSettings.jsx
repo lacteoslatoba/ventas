@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
     Bluetooth, BluetoothConnected, BluetoothOff, BluetoothSearching,
-    Printer, CheckCircle2, AlertCircle, Trash2, Zap, Info, ChevronRight
+    Printer, CheckCircle2, AlertCircle, Trash2, Zap, Info, ChevronRight, ArrowLeft, FileText
 } from 'lucide-react';
 import {
-    connectPrinter, printTestPage,
+    connectPrinter, printTestPage, printTicket,
     savePrinterName, getSavedPrinterName, clearSavedPrinter
 } from '../lib/bluetoothPrinter';
+import { useStore } from '../store';
 
 import { useBTPrinter } from '../lib/useBTPrinter';
 
 export default function PrinterSettings() {
     const { printer, setPrinter } = useBTPrinter();
+    const { ticketConfig } = useStore();
     const [status, setStatus] = useState('idle'); // idle | connecting | connected | error | disconnected
     const [statusMsg, setStatusMsg] = useState('');
     const [isTesting, setIsTesting] = useState(false);
@@ -81,6 +83,34 @@ export default function PrinterSettings() {
         }
     };
 
+    const handleTestReal = async () => {
+        if (!printer?.characteristic) return;
+        setIsTesting(true);
+        try {
+            const dummySale = {
+                id: 'TEST123',
+                date: new Date().toISOString(),
+                total: 165.00,
+                items: [
+                    { name: 'QUESO OAXACA', quantity: 2, price: 60.00, unit: 'Kg' },
+                    { name: 'REQUESON', quantity: 1, price: 45.00, unit: 'pza' }
+                ]
+            };
+            await printTicket({
+                ticket: dummySale,
+                user: { name: 'SISTEMA' },
+                client: { name: 'TIENDA DE PRUEBA' },
+                characteristic: printer.characteristic,
+                config: ticketConfig
+            });
+            setStatusMsg('✓ Ticket de prueba enviado');
+        } catch (err) {
+            setStatusMsg(`Error: ${err.message}`);
+        } finally {
+            setIsTesting(false);
+        }
+    };
+
     const isConnected = status === 'connected' && printer;
 
     return (
@@ -88,6 +118,9 @@ export default function PrinterSettings() {
             {/* Header */}
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
+                    <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
+                        <ArrowLeft size={24} />
+                    </button>
                     <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
                         <Bluetooth size={22} className="text-primary" />
                     </div>
@@ -175,13 +208,25 @@ export default function PrinterSettings() {
                         <button
                             onClick={handleTest}
                             disabled={isTesting}
-                            className="w-full flex items-center justify-between bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all"
+                            className="w-full flex items-center justify-between bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all mb-3"
                         >
                             <div className="flex items-center gap-3">
                                 <Printer size={22} />
-                                <span>{isTesting ? 'Imprimiendo...' : 'Imprimir Página de Prueba'}</span>
+                                <span>{isTesting ? 'Imprimiendo...' : 'Página de Prueba (Simple)'}</span>
                             </div>
                             <Zap size={18} className="opacity-70" />
+                        </button>
+
+                        <button
+                            onClick={handleTestReal}
+                            disabled={isTesting}
+                            className="w-full flex items-center justify-between bg-primary hover:bg-blue-700 disabled:opacity-60 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all"
+                        >
+                            <div className="flex items-center gap-3">
+                                <FileText size={22} className="text-white" />
+                                <span>{isTesting ? 'Imprimiendo...' : 'Imprimir Ticket de Venta Real'}</span>
+                            </div>
+                            <CheckCircle2 size={18} className="opacity-70" />
                         </button>
 
                         <button

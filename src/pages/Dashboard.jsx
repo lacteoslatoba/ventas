@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../store';
-import { Package, Users as UsersIcon, Store, ShoppingCart, TrendingUp, Activity, ShoppingBag } from 'lucide-react';
+import { Package, Users as UsersIcon, Store, ShoppingCart, TrendingUp, Activity, ShoppingBag, ArrowLeft } from 'lucide-react';
 
 export default function Dashboard() {
     const { products, users, clients, sales } = useStore();
@@ -21,7 +21,12 @@ export default function Dashboard() {
             <div className="flex flex-col gap-6">
                 {/* Title Section */}
                 <div className="flex flex-col gap-1">
-                    <h2 className="text-2xl font-bold tracking-tight text-slate-900">Panel de Control</h2>
+                    <h2 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                        <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
+                            <ArrowLeft size={24} />
+                        </button>
+                        Panel de Control
+                    </h2>
                     <p className="text-slate-500 dark:text-slate-400 text-sm">Resumen general de tu negocio hoy.</p>
                 </div>
 
