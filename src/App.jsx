@@ -129,18 +129,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   const navGroups = [
     {
-      label: 'Operación',
+      label: 'Administración',
       items: [
+        { name: 'Menú Principal', path: '/menu', icon: LayoutGrid },
         { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-        { name: 'Venta Rápida', path: '/ventas', icon: ShoppingCart },
-        { name: 'Reportes', path: '/reportes', icon: FileBarChart },
-        { name: 'Clientes', path: '/clientes', icon: Store },
-      ],
-    },
-    {
-      label: 'Inventario',
-      items: [
-        { name: 'Productos', path: '/productos', icon: Package },
         { name: 'Inventario', path: '/inventario', icon: Warehouse },
         { name: 'Repartidores', path: '/usuarios', icon: Users },
       ],

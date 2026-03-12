@@ -12,22 +12,10 @@ export default function Menu() {
   const { currentUser, ticketConfig } = useStore();
 
   const menuItems = [
-    { icon: ShoppingBag, label: 'Compras y Gastos', color: 'text-purple-600', path: '#' },
-    { icon: Truck, label: 'Proveedores', color: 'text-sky-500', path: '#' },
     { icon: DollarSign, label: 'Ventas', color: 'text-emerald-500', path: '/ventas' },
-    { icon: FileText, label: 'Cotizaciones', color: 'text-emerald-600', path: '#' },
-    { icon: FileText, label: 'Facturas', color: 'text-emerald-600', path: '#' },
-    { icon: LayoutList, label: 'Facturas Globales', color: 'text-emerald-700', path: '#' },
     { icon: Tag, label: 'Productos', color: 'text-orange-500', path: '/productos' },
-    { icon: ArrowRightLeft, label: 'Traspasos', color: 'text-orange-600', path: '#' },
-    { icon: Inbox, label: 'Caja Actual', color: 'text-amber-600', path: '#' },
-    { icon: CalendarDays, label: 'Cortes Históricos', color: 'text-orange-600', path: '#' },
     { icon: Users, label: 'Clientes', color: 'text-teal-600', path: '/clientes' },
-    { icon: UserCircle, label: 'Portal de Clientes', color: 'text-blue-600', path: '#' },
-    { icon: Palette, label: 'Catálogo en Línea', color: 'text-fuchsia-600', path: '#' },
     { icon: BarChart2, label: 'Reportes', color: 'text-blue-500', path: '/reportes' },
-    { icon: Factory, label: 'Fabricación', color: 'text-pink-600', path: '#' },
-    { icon: PlayCircle, label: 'Videos Tutoriales', color: 'text-red-500', path: '#' },
   ];
 
   return (
