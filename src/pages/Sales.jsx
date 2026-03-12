@@ -316,7 +316,7 @@ export default function Sales() {
                             </div>
                         ))}
                         <div style={{ borderTop: '2px solid #000', margin: '3px 0' }} />
-                        <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '13pt' }}>TOTAL ${generatedTicket.total.toFixed(2)}</div>
+                        <div style={{ textAlign: ticketConfig.centerTotal ? 'center' : 'right', fontWeight: 'bold', fontSize: '13pt' }}>TOTAL ${generatedTicket.total.toFixed(2)}</div>
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
                         <div style={{ textAlign: 'center', marginTop: '4px', fontSize: '8pt' }}>
                             {ticketConfig.footerLine1 && <div>{ticketConfig.footerLine1}</div>}

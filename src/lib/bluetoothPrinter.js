@@ -146,7 +146,11 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
         add(col2('SUBTOTAL:', finalTot));
         
         add(CMD.BOLD_ON);
-        add(col2('TOTAL:', finalTot));
+        if (config.centerTotal) {
+            add(CMD.ALIGN_CENTER, `TOTAL: ${finalTot}\r\n`, CMD.ALIGN_LEFT);
+        } else {
+            add(col2('TOTAL:', finalTot));
+        }
         add(CMD.BOLD_OFF, SEP);
 
         if (config.showCashAndChange !== false) {
@@ -179,7 +183,7 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
             if (config.spaceBetweenItems) add('\r\n');
         });
         
-        add(SEP, CMD.ALIGN_RIGHT, CMD.BOLD_ON);
+        add(SEP, config.centerTotal ? CMD.ALIGN_CENTER : CMD.ALIGN_RIGHT, CMD.BOLD_ON);
         add(`TOTAL: $${Number(ticket.total).toFixed(2)}\r\n`);
         add(CMD.BOLD_OFF, '\r\n\r\n\r\n\r\n');
     }

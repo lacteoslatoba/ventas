@@ -317,7 +317,7 @@ export default function Reports() {
 
                         <div style={{ borderTop: '2px solid #000', margin: '3px 0' }} />
 
-                        <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '13pt' }}>
+                        <div style={{ textAlign: ticketConfig.centerTotal ? 'center' : 'right', fontWeight: 'bold', fontSize: '13pt' }}>
                             TOTAL ${selectedSale.total.toFixed(2)}
                         </div>
 

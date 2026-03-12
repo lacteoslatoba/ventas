@@ -19,6 +19,7 @@ function TicketPreview({ config }) {
         showItemsHeader = true,
         spaceBetweenItems = false,
         showCashAndChange = true,
+        centerTotal = false,
     } = config;
 
     const alignClass = titleAlignment === 'left' ? 'text-left' : titleAlignment === 'right' ? 'text-right' : 'text-center';
@@ -74,7 +75,7 @@ function TicketPreview({ config }) {
                     <div>NUMERO DE ARTICULOS: 2</div>
                     
                     <div className="text-right mt-2 font-bold">SUBTOTAL: $165.00</div>
-                    <div className="text-center font-bold text-[14px] leading-[14px] mt-2 mb-1">TOTAL $165.00</div>
+                    <div className={`${centerTotal ? 'text-center' : 'text-right'} font-bold text-[14px] leading-[14px] mt-2 mb-1`}>TOTAL $165.00</div>
 
                     {showCashAndChange && (
                         <>
@@ -138,7 +139,7 @@ function TicketPreview({ config }) {
                 <div>1x    Requesón    $45.00</div>
                 <div className={`text-right text-[9px] ${spaceBetweenItems ? 'mb-3' : ''}`}>@ $45.00/u</div>
                 <div className="border-t-2 border-black my-0.5" />
-                <div className="text-right font-bold text-[12px]">TOTAL $165.00</div>
+                <div className={`${centerTotal ? 'text-center' : 'text-right'} font-bold text-[12px]`}>TOTAL $165.00</div>
                 <div className="border-t border-dashed border-black my-0.5" />
 
                 {showCashAndChange && (
@@ -275,6 +276,7 @@ export default function TicketConfig() {
             printCopy: false,
             spaceBetweenItems: false,
             showCashAndChange: true,
+            centerTotal: false,
         };
 
         setForm(defaults);
@@ -485,6 +487,15 @@ export default function TicketConfig() {
                                     desc="Añade un salto de línea adicional entre cada producto para facilitar la lectura"
                                     checked={form.spaceBetweenItems}
                                     onChange={update('spaceBetweenItems')}
+                                />
+                            </div>
+                            <div className="pt-2 border-t border-slate-100">
+                                <Toggle
+                                    id="centerTotal"
+                                    label="Total Centrado"
+                                    desc="Muestra el importe TOTAL centrado en el ticket en lugar de alinearlo a la derecha"
+                                    checked={form.centerTotal}
+                                    onChange={update('centerTotal')}
                                 />
                             </div>
                             <div className="pt-2 border-t border-slate-100">

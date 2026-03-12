@@ -37,6 +37,7 @@ export const useStore = create(
                 printCopy: false,
                 spaceBetweenItems: false,
                 showCashAndChange: true,
+                centerTotal: false,
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));
