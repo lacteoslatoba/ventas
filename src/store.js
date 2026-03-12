@@ -147,8 +147,20 @@ export const useStore = create(
                     // Sincronización especial de Ticket Config
                     if (state.ticketConfig && !state.ticketConfig.synced) {
                         const { synced: _synced, ...payload } = state.ticketConfig;
-                        // Forzamos un id único para configuraciones globales
-                        const { error } = await supabase.from('ticket_config').upsert({ id: 'main', ...payload });
+                        
+                        // ─── Sincronización Inteligente para Ticket Config ───
+                        const knownCols = state.cloudColumns?.['ticket_config'];
+                        let safePayload = { id: 'main', ...payload };
+                        
+                        if (knownCols) {
+                            const filtered = { id: 'main' };
+                            knownCols.forEach(col => {
+                                if (payload[col] !== undefined) filtered[col] = payload[col];
+                            });
+                            safePayload = filtered;
+                        }
+
+                        const { error } = await supabase.from('ticket_config').upsert(safePayload);
                         if (!error) {
                             set(s => ({ ticketConfig: { ...s.ticketConfig, synced: true } }));
                         } else {
@@ -168,20 +180,25 @@ export const useStore = create(
                 if (!get().isOnline || !supabase) return;
                 set({ isSyncing: true });
                 try {
-                    const tablesToSync = ['products', 'users', 'clients'];
+                    const tablesToPull = ['products', 'users', 'clients'];
+                    const tablesToCheckCols = ['inventory', 'sales'];
                     const freshData = {};
-                    const cloudColumns = {}; // Guardar qué columnas existen realmente en la nube
+                    const cloudColumns = {};
 
-                    for (const tableName of tablesToSync) {
+                    // 1. Descargar datos de tablas maestras y detectar sus columnas
+                    for (const tableName of tablesToPull) {
                         const { data, error } = await supabase.from(tableName).select('*');
                         if (!error && data) {
-                            // Mapear los datos de bajada para que la app sepa que ya están sincronizados
                             freshData[tableName] = data.map(item => ({ ...item, synced: true }));
-                            
-                            // Detectar columnas existentes
-                            if (data.length > 0) {
-                                cloudColumns[tableName] = Object.keys(data[0]);
-                            }
+                            if (data.length > 0) cloudColumns[tableName] = Object.keys(data[0]);
+                        }
+                    }
+
+                    // 2. Solo detectar columnas de tablas transaccionales (sin bajar todos los datos)
+                    for (const tableName of tablesToCheckCols) {
+                        const { data, error } = await supabase.from(tableName).select('*').limit(1);
+                        if (!error && data && data.length > 0) {
+                            cloudColumns[tableName] = Object.keys(data[0]);
                         }
                     }
 
