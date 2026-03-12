@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
 import {
-    Settings2, Save, RotateCcw, FileText, Building2, Phone,
+    Settings2, Save, FileText, Building2, Phone,
     MapPin, AlignCenter, CheckCheck, Printer, Eye, EyeOff,
     ChevronRight, Info, AlignLeft, AlignRight, Type, Calendar, User, Eye as EyeIcon, ArrowLeft
 } from 'lucide-react';
@@ -249,37 +249,6 @@ export default function TicketConfig() {
         updateTicketConfig(form);
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
-    };
-
-    const handleReset = () => {
-        const defaults = {
-            businessName: 'QUESOS EL BUEN SABOR',
-            subtitle: '',
-            address: '',
-            phone: '',
-            extraLine1: '',
-            extraLine2: '',
-            footerLine1: '¡Gracias por su compra!',
-            footerLine2: '',
-            showSignature: true,
-            paperWidth: 58,
-            titleAlignment: 'center',
-            showAddress: true,
-            showPhone: true,
-            showDate: true,
-            showTime: true,
-            showSeller: true,
-            showCustomer: true,
-            useFontB: false,
-            ticketTemplate: 'standard',
-            showItemsHeader: true,
-            printCopy: false,
-            spaceBetweenItems: false,
-            showCashAndChange: true,
-            centerTotal: false,
-        };
-
-        setForm(defaults);
     };
 
     return (
@@ -605,9 +574,9 @@ export default function TicketConfig() {
                             }`}
                         >
                             {saved ? (
-                                <><CheckCheck size={22} /> ¡Configuración Guardada!</>
+                                <><CheckCheck size={22} /> ¡CAMBIOS GUARDADOS!</>
                             ) : (
-                                <><Save size={22} /> Guardar Cambios</>
+                                <><Save size={22} /> GUARDAR LOS CAMBIOS</>
                             )}
                         </button>
                         <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-4">
