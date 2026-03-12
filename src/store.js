@@ -251,8 +251,16 @@ export const useStore = create(
                         set(s => {
                             // Solo sobreescribimos si no tenemos cambios locales sin sincronizar
                             if (s.ticketConfig?.synced) {
+                                // Limpiamos campos nulos o vacíos para no sobreescribir con basura de la nube
+                                const cleanData = {};
+                                Object.keys(configData).forEach(key => {
+                                    if (configData[key] !== null && configData[key] !== undefined && configData[key] !== '') {
+                                        cleanData[key] = configData[key];
+                                    }
+                                });
+
                                 return { 
-                                    ticketConfig: { ...configData, synced: true },
+                                    ticketConfig: { ...s.ticketConfig, ...cleanData, synced: true },
                                     cloudColumns: { ...s.cloudColumns, ticket_config: Object.keys(configData) }
                                 };
                             }
@@ -391,6 +399,7 @@ export const useStore = create(
         }),
         {
             name: 'ventas-quesos-storage',
+            version: 2,
         }
     )
 );
