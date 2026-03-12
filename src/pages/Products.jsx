@@ -48,24 +48,18 @@ export default function Products() {
     if (isFormOpen) {
         return (
             <div className="min-h-screen bg-slate-50 dark:bg-slate-900 animate-in fade-in slide-in-from-right-8 duration-300">
-                {/* Header de Edición con Botón Guardar */}
-                <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 h-16 flex items-center justify-between sticky top-0 z-40">
-                    <button onClick={resetForm} className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">
+                {/* Header de Edición simple con retroceso */}
+                <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 h-16 flex items-center sticky top-0 z-40">
+                    <button onClick={resetForm} className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors shrink-0">
                         <ArrowLeft size={24} />
                     </button>
-                    <h2 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">
+                    <h2 className="flex-1 text-center mr-8 text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">
                         {editId ? 'Configurar Producto' : 'Nuevo Producto'}
                     </h2>
-                    <button 
-                        onClick={handleSubmit}
-                        className="bg-primary text-white px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all"
-                    >
-                        Guardar
-                    </button>
                 </div>
 
-                <div className="p-4 max-w-2xl mx-auto pb-40">
-                    <form className="space-y-6">
+                <div className="p-4 max-w-2xl mx-auto pb-24">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Datos Generales */}
                         <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700">
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Información Básica</label>
@@ -134,26 +128,26 @@ export default function Products() {
                             </div>
                         </div>
 
-                        {editId && (
+                        {/* Botones de Acción al final del formulario */}
+                        <div className="flex flex-col sm:flex-row gap-3">
                             <button 
-                                type="button" 
-                                onClick={() => { if(window.confirm('¿Eliminar producto permanentemente?')) { deleteProduct(editId); resetForm(); } }} 
-                                className="w-full p-5 text-red-500 bg-white border border-red-100 rounded-[2rem] font-black uppercase text-[10px] tracking-widest hover:bg-red-50 transition-all"
+                                type="submit" 
+                                className="flex-1 bg-primary text-white py-5 rounded-[2rem] shadow-xl shadow-primary/20 font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all text-sm"
                             >
-                                <Trash2 size={16} className="inline mr-2" /> Eliminar del Catálogo
+                                <Save size={20} /> Guardar Producto
                             </button>
-                        )}
+                            
+                            {editId && (
+                                <button 
+                                    type="button" 
+                                    onClick={() => { if(window.confirm('¿Eliminar producto permanentemente?')) { deleteProduct(editId); resetForm(); } }} 
+                                    className="p-5 text-red-500 bg-white border border-red-100 rounded-[2rem] font-black uppercase text-[10px] tracking-widest hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Trash2 size={18} /> Eliminar
+                                </button>
+                            )}
+                        </div>
                     </form>
-                </div>
-
-                {/* Botón de Guardar Inferior (como respaldo, sin la línea azul de conflicto) */}
-                <div className="md:hidden fixed bottom-20 left-4 right-4 z-40">
-                    <button 
-                        onClick={handleSubmit}
-                        className="w-full bg-slate-900 text-white py-5 rounded-[2rem] shadow-2xl shadow-slate-900/40 font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all text-xs border border-white/10"
-                    >
-                        <Save size={18} /> Guardar Todos los Cambios
-                    </button>
                 </div>
             </div>
         );
