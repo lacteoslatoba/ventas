@@ -257,6 +257,7 @@ export default function TicketConfig() {
             showCustomer: true,
             useFontB: false,
             ticketTemplate: 'standard',
+            showItemsHeader: true,
         };
 
         setForm(defaults);
@@ -404,9 +405,10 @@ export default function TicketConfig() {
                             />
                             <Toggle
                                 id="showItemsHeader"
-                                label="Encabezado de Productos (ITEM)"
+                                label="Encabezado ITEM / PRECIO"
                                 checked={form.showItemsHeader}
                                 onChange={update('showItemsHeader')}
+                                desc="Muestra u oculta los títulos ITEM y PRECIO arriba de los productos"
                             />
                         </div>
                     </Section>
