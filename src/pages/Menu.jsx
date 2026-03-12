@@ -11,7 +11,6 @@ export default function Menu() {
   const { currentUser, ticketConfig, logout } = useStore();
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', color: 'text-blue-600', path: '/' },
     { icon: DollarSign, label: 'Ventas', color: 'text-emerald-500', path: '/ventas' },
     { icon: Tag, label: 'Productos', color: 'text-orange-500', path: '/productos' },
     { icon: Warehouse, label: 'Inventario', color: 'text-blue-500', path: '/inventario' },

@@ -174,11 +174,9 @@ const BottomNavigation = ({ currentUser }) => {
 
   return (
     <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 h-[68px] flex justify-around items-center z-30 shadow-[0_-8px_25px_rgba(0,0,0,0.05)] pb-safe select-none`}>
-      {currentUser?.role === 'admin' && (
-        <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
-      )}
+      <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
       
-      <NavItem to="/ventas" icon={ShoppingCart} label="Vender" active={isActive('/ventas') || isActive('/')} />
+      <NavItem to="/" icon={ShoppingCart} label="Vender" active={isActive('/') || isActive('/ventas')} />
       
       <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
 
@@ -218,7 +216,7 @@ function App() {
             <main className="flex-1 overflow-x-hidden w-full relative h-[calc(100dvh-64px)] md:h-screen scroll-smooth">
               <div className="h-full overflow-y-auto pb-24 md:pb-8 relative custom-scrollbar">
                 <Routes>
-                  <Route path="/" element={currentUser.role === 'admin' ? <Dashboard /> : <Sales />} />
+                  <Route path="/" element={<Sales />} />
                   <Route path="/menu" element={<MenuPage />} />
                   <Route path="/ventas" element={<Sales />} />
                   <Route path="/productos" element={<Products />} />
