@@ -264,12 +264,19 @@ function Section({ title, icon: Icon, children, onSave, saved }) {
 // ─── Componente Principal ─────────────────────────────────────────────────────
 export default function TicketConfig() {
     const { ticketConfig, updateTicketConfig } = useStore();
-    const [form, setForm] = useState({ ...ticketConfig });
+    const [form, setForm] = useState(ticketConfig);
     const [saved, setSaved] = useState(false);
     const [showPreview, setShowPreview] = useState(true);
 
     React.useEffect(() => {
-        setForm({ ...ticketConfig });
+        if (ticketConfig) {
+            setForm(prev => ({ 
+                ...prev, 
+                ...ticketConfig,
+                // Si el logoUrl del store es diferente al del form, lo actualizamos
+                logoUrl: ticketConfig.logoUrl 
+            }));
+        }
     }, [ticketConfig]);
 
     const update = (field) => (value) => setForm(prev => ({ ...prev, [field]: value }));
