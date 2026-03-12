@@ -12,7 +12,7 @@ import { useStore } from '../store';
 import { useBTPrinter } from '../lib/useBTPrinter';
 
 export default function PrinterSettings() {
-    const { printer, setPrinter } = useBTPrinter();
+    const { printer, setPrinter, isReconnecting } = useBTPrinter();
     const { ticketConfig } = useStore();
     const [status, setStatus] = useState('idle'); // idle | connecting | connected | error | disconnected
     const [statusMsg, setStatusMsg] = useState('');
@@ -30,11 +30,14 @@ export default function PrinterSettings() {
         if (printer) {
             setStatus('connected');
             setStatusMsg(`Conectado a: ${printer.device.name || 'Impresora BT'}`);
+        } else if (isReconnecting) {
+            setStatus('connecting');
+            setStatusMsg('Intentando reconexión automática...');
         } else if (status === 'connected') {
             setStatus('disconnected');
             setStatusMsg('Se perdió la conexión.');
         }
-    }, [printer]);
+    }, [printer, isReconnecting]);
 
     const handleConnect = async () => {
         setStatus('connecting');
