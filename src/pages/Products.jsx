@@ -43,9 +43,6 @@ export default function Products() {
         <div className="p-4 md:p-8 animate-in fade-in duration-500">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight drop-shadow-sm flex items-center gap-2">
-                    <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
-                        <ArrowLeft size={24} />
-                    </button>
                     Productos
                 </h1>
                 <button
@@ -117,7 +114,7 @@ export default function Products() {
                                 <tr key={p.id} className="border-b border-slate-100/50 hover:bg-white/60 transition-colors">
                                     <td className="py-4 px-5 font-bold text-slate-800 text-[15px]">{p.name} <span className="text-xs text-slate-400 font-semibold ml-1 bg-slate-100 px-2 py-1 rounded-md">({p.unit})</span></td>
                                     <td className="py-4 px-5 text-slate-500 font-mono text-sm font-semibold">{p.code || '-'}</td>
-                                    <td className="py-4 px-5"><span className={`px-3 py-1.5 rounded-xl text-sm font-black shadow-sm ${p.stock > 10 ? 'bg-green-100 text-green-700' : p.stock > 0 ? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-red-50 text-red-600 border border-red-100'}`}>{p.stock || 0}</span></td>
+                                    <td className="py-4 px-5"><span className={`px-3 py-1.5 rounded-xl text-sm font-black shadow-sm ${p.stock > 10 ? 'bg-green-100 text-green-700' : p.stock > 0 ? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-red-50 text-red-600 border border-red-100'}`}>{Number(p.stock || 0).toFixed(2)}</span></td>
                                     <td className="py-4 px-5 text-slate-900 font-bold text-[14px]">${Number(p.priceA || p.price).toFixed(2)}</td>
                                     <td className="py-4 px-5 text-slate-600 font-medium text-[14px]">${Number(p.priceB || 0).toFixed(2)}</td>
                                     <td className="py-4 px-5 text-slate-600 font-medium text-[14px]">${Number(p.priceC || 0).toFixed(2)}</td>

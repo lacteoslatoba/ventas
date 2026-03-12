@@ -44,9 +44,6 @@ export default function Users() {
         <div className="p-4 md:p-8">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
-                    <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
-                        <ArrowLeft size={24} />
-                    </button>
                     Repartidores
                 </h1>
                 <button

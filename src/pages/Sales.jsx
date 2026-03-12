@@ -230,7 +230,7 @@ export default function Sales() {
                                 <div style={{ borderTop: '2px dashed #cbd5e1', margin: '14px 0' }} />
                             )}
 
-                            <div className="space-y-3">
+                            <div className={ticketConfig.spaceBetweenItems ? 'space-y-4' : 'space-y-3'}>
                                 {generatedTicket.items.map((item, idx) => (
                                     <div key={idx} className="text-[11px]">
                                         <div className="font-bold uppercase truncate">{item.name}</div>
@@ -242,11 +242,19 @@ export default function Sales() {
                                 ))}
                             </div>
 
-                            <div style={{ borderTop: '2px solid #1e293b', margin: '14px 0 10px 0' }} />
+                             <div style={{ borderTop: '2px solid #1e293b', margin: '14px 0 10px 0' }} />
                             
                             <div className="text-right text-[11px] font-bold mb-1">SUBTOTAL: ${generatedTicket.total.toFixed(2)}</div>
-                            <div className="text-center font-black text-[17px] mt-3 mb-4 tracking-tighter">TOTAL ${generatedTicket.total.toFixed(2)}</div>
+                            <div className={`${ticketConfig.centerTotal ? 'text-center' : 'text-right'} font-black text-[17px] mt-3 mb-4 tracking-tighter`}>TOTAL ${generatedTicket.total.toFixed(2)}</div>
 
+                            {ticketConfig.showCashAndChange !== false && (
+                                <>
+                                    <div style={{ borderTop: '1px dashed #cbd5e1', margin: '12px 0' }} />
+                                    <div className="flex justify-between text-[11px]"><span>EFECTIVO:</span><span>${generatedTicket.total.toFixed(2)}</span></div>
+                                    <div className="flex justify-between text-[11px]"><span>CAMBIO:</span><span>$0.00</span></div>
+                                </>
+                            )}
+                            
                             <div style={{ borderTop: '1px dashed #cbd5e1', margin: '12px 0' }} />
                             
                             <div style={{ textAlign: 'center', fontSize: '10px', marginTop: '16px' }}>
@@ -425,9 +433,6 @@ export default function Sales() {
             <div className="flex-1 flex flex-col pb-8 lg:pb-0">
                 <div className="mb-6 px-1">
                     <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                        <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
-                            <ArrowLeft size={24} />
-                        </button>
                         Venta Rápida
                     </h1>
                     <p className="text-slate-500 font-medium text-sm mt-1">Selecciona productos para armar el pedido</p>

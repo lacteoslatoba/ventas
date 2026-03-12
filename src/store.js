@@ -10,6 +10,7 @@ export const useStore = create(
             users: [],
             clients: [],
             sales: [],
+            cloudColumns: {}, // Historial de columnas conocidas en Supabase
 
             // Configuración del Ticket
             ticketConfig: {
@@ -105,13 +106,27 @@ export const useStore = create(
                                 return rest;
                             });
 
-                            const { error } = await supabase.from(tableName).upsert(payload);
+                            // ─── Sincronización Inteligente (Filtrado de columnas) ───
+                            const safePayload = payload.map(item => {
+                                const knownCols = state.cloudColumns?.[tableName];
+                                if (!knownCols) return item; // Si no conocemos las columnas, probamos suerte
+
+                                // Solo dejamos los campos que existen en la nube
+                                const filtered = {};
+                                knownCols.forEach(col => {
+                                    if (item[col] !== undefined) filtered[col] = item[col];
+                                });
+                                return filtered;
+                            });
+
+                            const { error } = await supabase.from(tableName).upsert(safePayload);
                             if (error) {
                                 console.error(`Error Syncing ${tableName}:`, error.message);
-                                if (error.message.includes('column')) {
-                                    alert(`ERROR DE NUBE: La tabla "${tableName}" no está actualizada. Falta una columna (como el PIN). Por favor comunícate para añadirla en Supabase.`);
+                                // Si falló por columnas y no teníamos guardado el esquema, avisamos una vez
+                                if (error.message.includes('column') && !state.cloudColumns?.[tableName]) {
+                                    console.warn(`Esquema desactualizado en ${tableName}. Refrescando columnas...`);
+                                    get().fetchFromSupabase(); // Intentar aprender el esquema real
                                 }
-                                // Mantenemos registro del error pero continuamos con las demás tablas
                             } else {
                                 successTables.push(tableName);
                             }
@@ -155,12 +170,18 @@ export const useStore = create(
                 try {
                     const tablesToSync = ['products', 'users', 'clients'];
                     const freshData = {};
+                    const cloudColumns = {}; // Guardar qué columnas existen realmente en la nube
 
                     for (const tableName of tablesToSync) {
                         const { data, error } = await supabase.from(tableName).select('*');
                         if (!error && data) {
                             // Mapear los datos de bajada para que la app sepa que ya están sincronizados
                             freshData[tableName] = data.map(item => ({ ...item, synced: true }));
+                            
+                            // Detectar columnas existentes
+                            if (data.length > 0) {
+                                cloudColumns[tableName] = Object.keys(data[0]);
+                            }
                         }
                     }
 
@@ -187,7 +208,8 @@ export const useStore = create(
                             ...state,
                             products: mergeState('products'),
                             users: mergeState('users'),
-                            clients: mergeState('clients')
+                            clients: mergeState('clients'),
+                            cloudColumns: { ...state.cloudColumns, ...cloudColumns } // Persistir conocimiento de la estructura
                         };
                     });
 
@@ -197,7 +219,10 @@ export const useStore = create(
                         set(s => {
                             // Solo sobreescribimos si no tenemos cambios locales sin sincronizar
                             if (s.ticketConfig?.synced) {
-                                return { ticketConfig: { ...configData, synced: true } };
+                                return { 
+                                    ticketConfig: { ...configData, synced: true },
+                                    cloudColumns: { ...s.cloudColumns, ticket_config: Object.keys(configData) }
+                                };
                             }
                             return {};
                         });

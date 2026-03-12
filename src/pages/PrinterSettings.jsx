@@ -118,9 +118,6 @@ export default function PrinterSettings() {
             {/* Header */}
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
-                    <button onClick={() => window.history.back()} className="md:hidden p-2 -ml-2 text-primary hover:bg-slate-100 rounded-xl transition-colors">
-                        <ArrowLeft size={24} />
-                    </button>
                     <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
                         <Bluetooth size={22} className="text-primary" />
                     </div>
