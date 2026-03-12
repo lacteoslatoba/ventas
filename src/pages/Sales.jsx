@@ -61,7 +61,13 @@ export default function Sales() {
         const rawPieces = (selectedPieces || "0").toString().trim();
         const numPieces = parseInt(rawPieces) || 0;
 
-        const productPrice = Number(selectedProductDialog.price) || 0;
+        // Obtener el precio dinámico basado en la lista del usuario
+        let productPrice = Number(selectedProductDialog.price) || 0;
+        const userPriceList = currentUser?.priceList || 'A';
+        
+        if (userPriceList === 'A') productPrice = Number(selectedProductDialog.priceA || selectedProductDialog.price) || 0;
+        else if (userPriceList === 'B') productPrice = Number(selectedProductDialog.priceB || selectedProductDialog.price) || 0;
+        else if (userPriceList === 'C') productPrice = Number(selectedProductDialog.priceC || selectedProductDialog.price) || 0;
 
         setCart(currentCart => {
             const existing = currentCart.find(item => item.productId === selectedProductDialog.id);
@@ -506,7 +512,13 @@ export default function Sales() {
                                 </div>
                                 <div>
                                     <h3 className="font-black text-lg text-slate-800 leading-tight">{selectedProductDialog.name}</h3>
-                                    <p className="text-primary font-bold text-sm">${selectedProductDialog.price} / {selectedProductDialog.unit || 'u'}</p>
+                                    <p className="text-primary font-bold text-sm">
+                                        Precio Lista {currentUser?.priceList || 'A'}: ${
+                                            currentUser?.priceList === 'B' ? (selectedProductDialog.priceB || selectedProductDialog.price) : 
+                                            currentUser?.priceList === 'C' ? (selectedProductDialog.priceC || selectedProductDialog.price) : 
+                                            (selectedProductDialog.priceA || selectedProductDialog.price)
+                                        } / {selectedProductDialog.unit || 'u'}
+                                    </p>
                                 </div>
                             </div>
                             <button
@@ -566,7 +578,11 @@ export default function Sales() {
                                 className="w-full bg-slate-900 text-white font-black h-16 rounded-2xl shadow-xl mt-4 active:scale-95 transition-all text-lg flex justify-center gap-3 items-center group shrink-0"
                             >
                                 <ShoppingCart size={22} className="group-hover:-rotate-12 transition-transform" />
-                                AGREGAR • <span className="text-blue-400 font-black">${(selectedProductDialog.price * (parseFloat(selectedQuantity) || 0)).toFixed(2)}</span>
+                                AGREGAR • <span className="text-blue-400 font-black">${((
+                                    currentUser?.priceList === 'B' ? (selectedProductDialog.priceB || selectedProductDialog.price) : 
+                                    currentUser?.priceList === 'C' ? (selectedProductDialog.priceC || selectedProductDialog.price) : 
+                                    (selectedProductDialog.priceA || selectedProductDialog.price)
+                                ) * (parseFloat(selectedQuantity) || 0)).toFixed(2)}</span>
                             </button>
                         </div>
                     </div>

@@ -212,11 +212,34 @@ export const useStore = create(
 
             // Productos
             addProduct: (product) => {
-                set((state) => ({ products: [...state.products, { ...product, id: Date.now().toString(), synced: false }] }));
+                const newProduct = { 
+                    ...product, 
+                    id: crypto.randomUUID(), 
+                    synced: false,
+                    priceA: Number(product.priceA) || 0,
+                    priceB: Number(product.priceB) || 0,
+                    priceC: Number(product.priceC) || 0,
+                    price: Number(product.priceA) || 0 // Por compatibilidad
+                };
+                set((state) => ({ products: [...state.products, newProduct] }));
                 get().syncToSupabase();
             },
-            updateProduct: (id, product) => {
-                set((state) => ({ products: state.products.map(p => p.id === id ? { ...p, ...product, synced: false } : p) }));
+            updateProduct: (id, data) => {
+                set((state) => ({
+                    products: state.products.map((p) => {
+                        if (p.id === id) {
+                            const updated = { ...p, ...data, synced: false };
+                            if (data.priceA !== undefined) {
+                                updated.priceA = Number(data.priceA);
+                                updated.price = Number(data.priceA); // Sincronizar legacy price
+                            }
+                            if (data.priceB !== undefined) updated.priceB = Number(data.priceB);
+                            if (data.priceC !== undefined) updated.priceC = Number(data.priceC);
+                            return updated;
+                        }
+                        return p;
+                    }),
+                }));
                 get().syncToSupabase();
             },
             deleteProduct: async (id) => {
@@ -246,19 +269,24 @@ export const useStore = create(
 
             // Usuarios
             addUser: (user) => {
-                set((state) => ({ users: [...state.users, { ...user, id: Date.now().toString(), synced: false }] }));
+                const newUser = {
+                    ...user,
+                    id: crypto.randomUUID(),
+                    synced: false,
+                    priceList: user.priceList || 'A'
+                };
+                set((state) => ({ users: [...state.users, newUser] }));
                 get().syncToSupabase();
             },
-            updateUser: (id, user) => {
-                set((state) => ({ users: state.users.map(u => u.id === id ? { ...u, ...user, synced: false } : u) }));
+            updateUser: (id, data) => {
+                set((state) => ({
+                    users: state.users.map((u) => (u.id === id ? { ...u, ...data, synced: false } : u)),
+                }));
                 get().syncToSupabase();
             },
-            deleteUser: async (id) => {
-                set((state) => ({ users: state.users.filter(u => u.id !== id) }));
-                if (get().isOnline && supabase) {
-                    const { error } = await supabase.from('users').delete().eq('id', id);
-                    if (error) console.error("Error Delete User:", error);
-                }
+            deleteUser: (id) => {
+                set((state) => ({ users: state.users.filter((u) => u.id !== id) }));
+                // Considerar soft delete si se sincroniza con servidor
             },
 
             // Clientes

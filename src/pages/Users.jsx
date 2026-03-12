@@ -5,7 +5,7 @@ import { Plus, Edit2, Trash2, ArrowLeft } from 'lucide-react';
 export default function Users() {
     const { users, addUser, deleteUser, updateUser } = useStore();
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [formData, setFormData] = useState({ name: '', phone: '', vehicle: '', pin: '' });
+    const [formData, setFormData] = useState({ name: '', phone: '', vehicle: '', pin: '', priceList: 'A' });
     const [editId, setEditId] = useState(null);
 
     const handleSubmit = (e) => {
@@ -13,7 +13,7 @@ export default function Users() {
         try {
             if (editId) updateUser(editId, formData);
             else addUser(formData);
-            setFormData({ name: '', phone: '', vehicle: '', pin: '' });
+            setFormData({ name: '', phone: '', vehicle: '', pin: '', priceList: 'A' });
             setEditId(null);
             setIsFormOpen(false);
             alert("✅ Guardado correctamente en el sistema.");
@@ -29,7 +29,13 @@ export default function Users() {
     };
 
     const edit = (user) => {
-        setFormData({ name: user.name, phone: user.phone || '', vehicle: user.vehicle || '', pin: user.pin || '' });
+        setFormData({ 
+            name: user.name, 
+            phone: user.phone || '', 
+            vehicle: user.vehicle || '', 
+            pin: user.pin || '',
+            priceList: user.priceList || 'A'
+        });
         setEditId(user.id);
         setIsFormOpen(true);
     };
@@ -44,7 +50,7 @@ export default function Users() {
                     Repartidores
                 </h1>
                 <button
-                    onClick={() => { setEditId(null); setFormData({ name: '', phone: '', vehicle: '', pin: '' }); setIsFormOpen(!isFormOpen); }}
+                    onClick={() => { setEditId(null); setFormData({ name: '', phone: '', vehicle: '', pin: '', priceList: 'A' }); setIsFormOpen(!isFormOpen); }}
                     className="bg-cheese-500 hover:bg-cheese-600 text-slate-900 font-semibold px-4 py-2 rounded-xl shadow flex items-center gap-2"
                 >
                     <Plus size={20} /> <span className="hidden sm:inline">Nuevo Repartidor</span>
@@ -71,6 +77,14 @@ export default function Users() {
                             <label className="block text-sm font-medium text-slate-500 mb-1">Contraseña de Acceso</label>
                             <input type="text" maxLength="20" value={formData.pin} onChange={e => setFormData({ ...formData, pin: e.target.value })} className="w-full border border-slate-200 rounded-lg p-2 outline-none font-mono" placeholder="Ej. clave123" />
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-500 mb-1">Lista de Precios</label>
+                            <select value={formData.priceList} onChange={e => setFormData({ ...formData, priceList: e.target.value })} className="w-full border border-slate-200 rounded-lg p-2 outline-none">
+                                <option value="A">Lista A (Normal)</option>
+                                <option value="B">Lista B (Mayoreo)</option>
+                                <option value="C">Lista C (Especial)</option>
+                            </select>
+                        </div>
                         <div className="md:col-span-4 flex justify-end gap-3 mt-2">
                             <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg font-medium">Cancelar</button>
                             <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-lg shadow font-medium">Guardar</button>
@@ -88,6 +102,7 @@ export default function Users() {
                             <th className="py-3 px-4 font-medium text-slate-500">Contraseña</th>
                             <th className="py-3 px-4 font-medium text-slate-500">Teléfono</th>
                             <th className="py-3 px-4 font-medium text-slate-500">Vehículo</th>
+                            <th className="py-3 px-4 font-medium text-slate-500">Lista</th>
                             <th className="py-3 px-4 font-medium text-slate-500 text-right">Acciones</th>
                         </tr>
                     </thead>
@@ -99,6 +114,11 @@ export default function Users() {
                                 <td className="py-3 px-4"><span className="bg-slate-100 text-slate-600 font-mono px-2 py-1 rounded text-sm">{u.pin || 'Sin Clave'}</span></td>
                                 <td className="py-3 px-4 text-slate-600">{u.phone || '-'}</td>
                                 <td className="py-3 px-4 text-slate-600">{u.vehicle || '-'}</td>
+                                <td className="py-3 px-4 text-slate-600">
+                                    <span className={`px-2 py-1 rounded text-xs font-black ${u.priceList === 'A' ? 'bg-blue-50 text-blue-600' : u.priceList === 'B' ? 'bg-orange-50 text-orange-600' : 'bg-purple-50 text-purple-600'}`}>
+                                        LISTA {u.priceList || 'A'}
+                                    </span>
+                                </td>
                                 <td className="py-3 px-4 flex justify-end gap-2">
                                     <button onClick={() => edit(u)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg" title="Editar"><Edit2 size={16} /></button>
                                     <button onClick={() => handleDelete(u.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Eliminar"><Trash2 size={16} /></button>
@@ -119,6 +139,7 @@ export default function Users() {
                                 <h3 className="font-black text-slate-800 text-lg leading-tight mb-1">{u.name}</h3>
                                 <div className="flex flex-wrap gap-2">
                                     <span className="bg-slate-100 text-slate-600 font-mono px-2 py-0.5 rounded-lg text-xs font-bold ring-1 ring-slate-200">Clave: {u.pin || '---'}</span>
+                                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black tracking-widest ${u.priceList === 'A' ? 'bg-blue-50 text-blue-600' : u.priceList === 'B' ? 'bg-orange-50 text-orange-600' : 'bg-purple-50 text-purple-600'}`}>LISTA {u.priceList || 'A'}</span>
                                     {u.phone && <span className="text-slate-500 text-xs font-semibold flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100">{u.phone}</span>}
                                 </div>
                             </div>

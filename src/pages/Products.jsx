@@ -5,23 +5,36 @@ import { Plus, Trash2, Edit2 } from 'lucide-react';
 export default function Products() {
     const { products, addProduct, deleteProduct, updateProduct } = useStore();
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [formData, setFormData] = useState({ name: '', price: '', unit: 'Pieza', code: '' });
+    const [formData, setFormData] = useState({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '' });
     const [editId, setEditId] = useState(null);
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        const productData = {
+            ...formData,
+            priceA: Number(formData.priceA) || 0,
+            priceB: Number(formData.priceB) || 0,
+            priceC: Number(formData.priceC) || 0
+        };
         if (editId) {
-            updateProduct(editId, { ...formData, price: Number(formData.price) });
+            updateProduct(editId, productData);
         } else {
-            addProduct({ ...formData, price: Number(formData.price), stock: 0 });
+            addProduct({ ...productData, stock: 0 });
         }
-        setFormData({ name: '', price: '', unit: 'Pieza', code: '' });
+        setFormData({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '' });
         setEditId(null);
         setIsFormOpen(false);
     };
 
     const edit = (product) => {
-        setFormData({ name: product.name, price: product.price, unit: product.unit || 'Pieza', code: product.code || '' });
+        setFormData({ 
+            name: product.name, 
+            priceA: product.priceA || product.price || '', 
+            priceB: product.priceB || '', 
+            priceC: product.priceC || '', 
+            unit: product.unit || 'Pieza', 
+            code: product.code || '' 
+        });
         setEditId(product.id);
         setIsFormOpen(true);
     };
@@ -36,7 +49,7 @@ export default function Products() {
                     Productos
                 </h1>
                 <button
-                    onClick={() => { setEditId(null); setFormData({ name: '', price: '', unit: 'Pieza', code: '' }); setIsFormOpen(!isFormOpen); }}
+                    onClick={() => { setEditId(null); setFormData({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '' }); setIsFormOpen(!isFormOpen); }}
                     className="bg-gradient-to-r from-cheese-400 to-cheese-500 hover:from-cheese-500 hover:to-cheese-600 text-slate-900 font-bold px-5 py-2.5 rounded-2xl shadow-lg shadow-cheese-500/30 flex items-center gap-2 active:scale-95 transition-all"
                 >
                     <Plus size={22} /> <span className="hidden sm:inline">Nuevo Producto</span>
@@ -56,8 +69,16 @@ export default function Products() {
                             <input type="text" value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} className="w-full border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-cheese-400 outline-none" placeholder="OAX-500G" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-500 mb-1">Precio Unitario ($)</label>
-                            <input required type="number" step="0.01" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="w-full border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-cheese-400 outline-none" placeholder="100.00" />
+                            <label className="block text-sm font-medium text-slate-500 mb-1">Precio A ($)</label>
+                            <input required type="number" step="0.01" value={formData.priceA} onChange={e => setFormData({ ...formData, priceA: e.target.value })} className="w-full border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-cheese-400 outline-none" placeholder="100.00" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-500 mb-1">Precio B ($)</label>
+                            <input required type="number" step="0.01" value={formData.priceB} onChange={e => setFormData({ ...formData, priceB: e.target.value })} className="w-full border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-cheese-400 outline-none" placeholder="95.00" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-500 mb-1">Precio C ($)</label>
+                            <input required type="number" step="0.01" value={formData.priceC} onChange={e => setFormData({ ...formData, priceC: e.target.value })} className="w-full border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-cheese-400 outline-none" placeholder="90.00" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-500 mb-1">Unidad</label>
@@ -84,7 +105,9 @@ export default function Products() {
                                 <th className="py-4 px-5 font-bold text-slate-500 uppercase tracking-wider text-sm">Producto</th>
                                 <th className="py-4 px-5 font-bold text-slate-500 uppercase tracking-wider text-sm">Cod</th>
                                 <th className="py-4 px-5 font-bold text-slate-500 uppercase tracking-wider text-sm">Stock</th>
-                                <th className="py-4 px-5 font-bold text-slate-500 uppercase tracking-wider text-sm">Precio</th>
+                                <th className="py-4 px-5 font-bold text-slate-500 uppercase tracking-wider text-sm">Pr. A</th>
+                                <th className="py-4 px-5 font-bold text-slate-500 uppercase tracking-wider text-sm">Pr. B</th>
+                                <th className="py-4 px-5 font-bold text-slate-500 uppercase tracking-wider text-sm">Pr. C</th>
                                 <th className="py-4 px-5 font-bold text-slate-500 uppercase tracking-wider text-sm text-right">Acciones</th>
                             </tr>
                         </thead>
@@ -95,7 +118,9 @@ export default function Products() {
                                     <td className="py-4 px-5 font-bold text-slate-800 text-[15px]">{p.name} <span className="text-xs text-slate-400 font-semibold ml-1 bg-slate-100 px-2 py-1 rounded-md">({p.unit})</span></td>
                                     <td className="py-4 px-5 text-slate-500 font-mono text-sm font-semibold">{p.code || '-'}</td>
                                     <td className="py-4 px-5"><span className={`px-3 py-1.5 rounded-xl text-sm font-black shadow-sm ${p.stock > 10 ? 'bg-green-100 text-green-700' : p.stock > 0 ? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-red-50 text-red-600 border border-red-100'}`}>{p.stock || 0}</span></td>
-                                    <td className="py-4 px-5 text-slate-900 font-black text-[15px]">${Number(p.price).toFixed(2)}</td>
+                                    <td className="py-4 px-5 text-slate-900 font-bold text-[14px]">${Number(p.priceA || p.price).toFixed(2)}</td>
+                                    <td className="py-4 px-5 text-slate-600 font-medium text-[14px]">${Number(p.priceB || 0).toFixed(2)}</td>
+                                    <td className="py-4 px-5 text-slate-600 font-medium text-[14px]">${Number(p.priceC || 0).toFixed(2)}</td>
                                     <td className="py-4 px-5 flex justify-end gap-2">
                                         <button onClick={() => edit(p)} className="p-2.5 text-blue-500 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-colors active:scale-95"><Edit2 size={18} /></button>
                                         <button onClick={() => deleteProduct(p.id)} className="p-2.5 text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-700 rounded-xl transition-colors active:scale-95"><Trash2 size={18} /></button>
@@ -116,8 +141,9 @@ export default function Products() {
                             <div className="flex-1 pr-4">
                                 <h3 className="font-black text-slate-800 text-lg leading-tight mb-1">{p.name}</h3>
                                 <div className="flex flex-wrap gap-2">
-                                    <span className="text-primary font-black text-sm">${Number(p.price).toFixed(2)} <span className="text-[10px] text-slate-400 uppercase">/{p.unit}</span></span>
-                                    {p.code && <span className="text-slate-500 text-[10px] font-mono font-bold bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100">#{p.code}</span>}
+                                    <span className="text-primary font-black text-sm">A: ${Number(p.priceA || p.price).toFixed(2)}</span>
+                                    <span className="text-slate-600 font-bold text-sm">B: ${Number(p.priceB || 0).toFixed(2)}</span>
+                                    <span className="text-slate-600 font-bold text-sm">C: ${Number(p.priceC || 0).toFixed(2)}</span>
                                 </div>
                             </div>
                             <div className="flex gap-2">
