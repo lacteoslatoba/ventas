@@ -116,14 +116,12 @@ const MobileHeader = ({ currentUser, isSyncing }) => {
     <div className="md:hidden flex-shrink-0 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 no-print z-20">
       {/* Izquierda: Regresar o Hamburger */}
       <div className="w-10">
-        {!isHome && (
-          <button 
-            onClick={() => navigate(-1)} 
-            className="p-2 -ml-2 rounded-xl text-primary bg-primary/5 active:scale-90 transition-all"
-          >
-            <ArrowLeft size={24} />
-          </button>
-        )}
+        <button 
+          onClick={() => isHome ? navigate('/menu') : navigate(-1)} 
+          className="p-2 -ml-2 rounded-xl text-primary bg-primary/5 active:scale-90 transition-all"
+        >
+          <ArrowLeft size={24} />
+        </button>
       </div>
 
       {/* Centro: nombre usuario */}
