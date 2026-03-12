@@ -91,7 +91,17 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
 
     if (ticketTemplate === 'latoba') {
         add(CMD.INIT, CMD.ALIGN_CENTER, CMD.BOLD_ON);
+        
+        if (config.businessNameSize > 16) {
+            add(CMD.DOUBLE_SIZE);
+        }
+        
         add((businessName || 'LACTEOS LA TOBA').toUpperCase() + '\r\n');
+        
+        if (config.businessNameSize > 16) {
+            add(CMD.NORMAL_SIZE);
+        }
+        
         add(CMD.BOLD_OFF);
         
         if (subtitle) add(subtitle.toUpperCase() + '\r\n');
@@ -117,7 +127,7 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
         }
         if (showSeller) {
             const sName = (user?.name || 'VENDEDOR').toUpperCase().slice(0, 15);
-            add(col2('CAJERO', sName));
+            add(col2('REPARTIDOR', sName));
         }
 
         if (config.showItemsHeader !== false) {
@@ -171,6 +181,10 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
         // Estándar muy robusto
         add(CMD.INIT, CMD.ALIGN_CENTER, 'TICKET DE VENTA\r\n');
         add(businessName.toUpperCase() + '\r\n', SEP, CMD.ALIGN_LEFT);
+
+        if (showSeller) add(`Repartidor: ${user?.name || 'Vendedor'}\r\n`);
+        if (showCustomer) add(`Cliente: ${client?.name || 'General'}\r\n`);
+        if (showSeller || showCustomer) add(SEP);
         
         if (config.showItemsHeader !== false) {
             add(col2('CANT/ITEM', 'IMPORTE'));

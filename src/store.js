@@ -39,6 +39,7 @@ export const useStore = create(
                 spaceBetweenItems: false,
                 showCashAndChange: true,
                 centerTotal: false,
+                businessNameSize: 13,
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));

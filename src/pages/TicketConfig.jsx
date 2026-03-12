@@ -20,6 +20,7 @@ function TicketPreview({ config }) {
         spaceBetweenItems = false,
         showCashAndChange = true,
         centerTotal = false,
+        businessNameSize = 13,
     } = config;
 
     const alignClass = titleAlignment === 'left' ? 'text-left' : titleAlignment === 'right' ? 'text-right' : 'text-center';
@@ -35,7 +36,7 @@ function TicketPreview({ config }) {
                     className={`font-mono leading-snug text-black bg-white ${fontClass} uppercase`}
                     style={{ width: '200px', minHeight: '300px' }}
                 >
-                    <div className="text-center font-bold text-[13px] mb-0.5 leading-tight">
+                    <div className="text-center font-bold mb-0.5 leading-tight" style={{ fontSize: `${businessNameSize}px` }}>
                         {businessName || 'LACTEOS LA TOBA'}
                     </div>
                     {subtitle && <div className="text-center">{subtitle}</div>}
@@ -53,7 +54,7 @@ function TicketPreview({ config }) {
                     </div>
                     
                     {showCustomer && <div className="flex justify-between"><span>CLIENTE</span><span>TIENDA LA FE</span></div>}
-                    {showSeller && <div className="flex justify-between"><span>CAJERO</span><span>JUAN PEREZ</span></div>}
+                    {showSeller && <div className="flex justify-between"><span>REPARTIDOR</span><span>JUAN PEREZ</span></div>}
 
                     {showItemsHeader && (
                         <>
@@ -75,7 +76,7 @@ function TicketPreview({ config }) {
                     <div>NUMERO DE ARTICULOS: 2</div>
                     
                     <div className="text-right mt-2 font-bold">SUBTOTAL: $165.00</div>
-                    <div className={`${centerTotal ? 'text-center' : 'text-right'} font-bold text-[14px] leading-[14px] mt-2 mb-1`}>TOTAL $165.00</div>
+                    <div className={`${centerTotal ? 'text-center' : 'text-right'} font-bold text-[14px] leading-[14px] mt-2 mb-1`} style={{ fontSize: '14px' }}>TOTAL $165.00</div>
 
                     {showCashAndChange && (
                         <>
@@ -101,7 +102,7 @@ function TicketPreview({ config }) {
                 style={{ width: '200px', minHeight: '300px' }}
             >
                 {/* Encabezado */}
-                <div className={`${alignClass} font-bold text-[13px] mb-0.5 leading-tight`}>
+                <div className={`${alignClass} font-bold mb-0.5 leading-tight`} style={{ fontSize: `${businessNameSize}px` }}>
                     {businessName || 'MI NEGOCIO'}
                 </div>
                 {subtitle && <div className={`${alignClass} ${useFontB ? 'text-[7px]' : 'text-[9px]'}`}>{subtitle}</div>}
@@ -320,6 +321,26 @@ export default function TicketConfig() {
                             maxLength={20}
                             hint="Aparece grande en la parte superior del ticket"
                         />
+                        
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <label className="flex items-center justify-between text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
+                                <span className="flex items-center gap-2"><Type size={14} /> Tamaño de Letra (Nombre)</span>
+                                <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.businessNameSize || 13}px</span>
+                            </label>
+                            <input 
+                                type="range" 
+                                min="10" 
+                                max="24" 
+                                step="1"
+                                value={form.businessNameSize || 13}
+                                onChange={(e) => update('businessNameSize')(parseInt(e.target.value))}
+                                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                            />
+                            <div className="flex justify-between mt-1 px-1">
+                                <span className="text-[10px] text-slate-400 font-bold uppercase">Chico</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase">Grande</span>
+                            </div>
+                        </div>
                         <Field
                             id="subtitle"
                             label="Subtítulo / Giro"
