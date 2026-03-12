@@ -290,6 +290,12 @@ export const useStore = create(
                     await supabase.from('products').delete().eq('id', id);
                 }
             },
+            resetAllStock: () => {
+                set((state) => ({
+                    products: state.products.map(p => ({ ...p, stock: 0, synced: false }))
+                }));
+                get().syncToSupabase();
+            },
 
             // Inventario (Entradas/Salidas)
             addInventory: (item) => {

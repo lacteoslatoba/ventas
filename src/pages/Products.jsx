@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { Plus, Trash2, Edit2, ArrowLeft, Save, ChevronRight } from 'lucide-react';
 
 export default function Products() {
-    const { products, addProduct, deleteProduct, updateProduct } = useStore();
+    const { products, addProduct, deleteProduct, updateProduct, resetAllStock } = useStore();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [formData, setFormData] = useState({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '', stock: '' });
     const [editId, setEditId] = useState(null);
@@ -156,12 +156,20 @@ export default function Products() {
                     <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight leading-none uppercase">Productos</h1>
                     <p className="text-slate-400 text-[10px] font-black mt-2 uppercase tracking-widest">{products.length} Registrados</p>
                 </div>
-                <button
-                    onClick={() => { setEditId(null); setFormData({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '', stock: '' }); setIsFormOpen(true); }}
-                    className="bg-primary text-white p-4 rounded-3xl shadow-xl shadow-primary/20 active:scale-90 transition-all"
-                >
-                    <Plus size={24} />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => { if(window.confirm('¿Poner TODOS los stocks en 0?')) resetAllStock(); }}
+                        className="bg-red-50 text-red-600 px-4 py-2 rounded-2xl border border-red-100 font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-sm"
+                    >
+                        Stock 0
+                    </button>
+                    <button
+                        onClick={() => { setEditId(null); setFormData({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '', stock: '' }); setIsFormOpen(true); }}
+                        className="bg-primary text-white p-4 rounded-3xl shadow-xl shadow-primary/20 active:scale-90 transition-all"
+                    >
+                        <Plus size={24} />
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
