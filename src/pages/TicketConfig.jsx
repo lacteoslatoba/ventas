@@ -268,6 +268,10 @@ export default function TicketConfig() {
     const [saved, setSaved] = useState(false);
     const [showPreview, setShowPreview] = useState(true);
 
+    React.useEffect(() => {
+        setForm({ ...ticketConfig });
+    }, [ticketConfig]);
+
     const update = (field) => (value) => setForm(prev => ({ ...prev, [field]: value }));
 
     const handleLogoChange = (e) => {

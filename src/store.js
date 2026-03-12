@@ -42,7 +42,7 @@ export const useStore = create(
                 businessNameSize: 13,
                 metadataSize: 10,
                 metadataUppercase: false,
-                logoUrl: null,
+                logoUrl: 'https://i.ibb.co/8gXK65WT/logo-termico.png',
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));
