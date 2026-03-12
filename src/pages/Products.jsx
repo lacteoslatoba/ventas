@@ -154,22 +154,22 @@ export default function Products() {
             <div className="flex justify-between items-center mb-8 px-2">
                 <div>
                     <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight leading-none uppercase">Productos</h1>
-                    <p className="text-slate-400 text-[10px] font-black mt-2 uppercase tracking-widest">{products.length} Registrados</p>
+                    <div className="flex flex-col gap-3 mt-2">
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{products.length} Registrados</p>
+                        <button
+                            onClick={() => { if(window.confirm('¿Poner TODOS los stocks en 0?')) resetAllStock(); }}
+                            className="w-fit bg-red-50 text-red-600 px-3 py-1.5 rounded-xl border border-red-100 font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-sm"
+                        >
+                            Stock 0
+                        </button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => { if(window.confirm('¿Poner TODOS los stocks en 0?')) resetAllStock(); }}
-                        className="bg-red-50 text-red-600 px-4 py-2 rounded-2xl border border-red-100 font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-sm"
-                    >
-                        Stock 0
-                    </button>
-                    <button
-                        onClick={() => { setEditId(null); setFormData({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '', stock: '' }); setIsFormOpen(true); }}
-                        className="bg-primary text-white p-4 rounded-3xl shadow-xl shadow-primary/20 active:scale-90 transition-all"
-                    >
-                        <Plus size={24} />
-                    </button>
-                </div>
+                <button
+                    onClick={() => { setEditId(null); setFormData({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '', stock: '' }); setIsFormOpen(true); }}
+                    className="bg-primary text-white p-4 rounded-3xl shadow-xl shadow-primary/20 active:scale-90 transition-all shrink-0"
+                >
+                    <Plus size={24} />
+                </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
