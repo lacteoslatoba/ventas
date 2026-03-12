@@ -40,6 +40,8 @@ export const useStore = create(
                 showCashAndChange: true,
                 centerTotal: false,
                 businessNameSize: 13,
+                metadataSize: 10,
+                metadataUppercase: false,
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));

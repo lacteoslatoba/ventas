@@ -21,10 +21,16 @@ function TicketPreview({ config }) {
         showCashAndChange = true,
         centerTotal = false,
         businessNameSize = 13,
+        metadataSize = 10,
+        metadataUppercase = false,
     } = config;
 
     const alignClass = titleAlignment === 'left' ? 'text-left' : titleAlignment === 'right' ? 'text-right' : 'text-center';
     const fontClass = useFontB ? 'text-[8.5px]' : 'text-[10px]';
+    const metaStyle = { 
+        fontSize: `${metadataSize}px`, 
+        textTransform: metadataUppercase ? 'uppercase' : 'none' 
+    };
 
     if (ticketTemplate === 'latoba') {
         const dateStr = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
@@ -33,8 +39,8 @@ function TicketPreview({ config }) {
         return (
             <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-4 flex justify-center">
                 <div
-                    className={`font-mono leading-snug text-black bg-white ${fontClass} uppercase`}
-                    style={{ width: '200px', minHeight: '300px' }}
+                    className={`font-mono leading-snug text-black bg-white uppercase`}
+                    style={{ width: '200px', minHeight: '300px', fontSize: `${useFontB ? 8.5 : 10}px` }}
                 >
                     <div className="text-center font-bold mb-0.5 leading-tight" style={{ fontSize: `${businessNameSize}px` }}>
                         {businessName || 'LACTEOS LA TOBA'}
@@ -45,16 +51,16 @@ function TicketPreview({ config }) {
 
                     <div className="border-t border-dashed border-black my-1" />
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between" style={metaStyle}>
                         {showDate && <span>{dateStr}</span>}
                         {showTime && <span>{timeStr}</span>}
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between" style={metaStyle}>
                         <span>NUMERO DE TICKET</span><span>#A1B2C3</span>
                     </div>
                     
-                    {showCustomer && <div className="flex justify-between"><span>CLIENTE</span><span>TIENDA LA FE</span></div>}
-                    {showSeller && <div className="flex justify-between"><span>REPARTIDOR</span><span>JUAN PEREZ</span></div>}
+                    {showCustomer && <div className="flex justify-between" style={metaStyle}><span>CLIENTE</span><span>TIENDA LA FE</span></div>}
+                    {showSeller && <div className="flex justify-between" style={metaStyle}><span>REPARTIDOR</span><span>JUAN PEREZ</span></div>}
 
                     {showItemsHeader && (
                         <>
@@ -98,8 +104,8 @@ function TicketPreview({ config }) {
     return (
         <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-4 flex justify-center">
             <div
-                className={`font-mono leading-snug text-black bg-white ${fontClass}`}
-                style={{ width: '200px', minHeight: '300px' }}
+                className={`font-mono leading-snug text-black bg-white`}
+                style={{ width: '200px', minHeight: '300px', fontSize: `${useFontB ? 8.5 : 10}px` }}
             >
                 {/* Encabezado */}
                 <div className={`${alignClass} font-bold mb-0.5 leading-tight`} style={{ fontSize: `${businessNameSize}px` }}>
@@ -114,16 +120,20 @@ function TicketPreview({ config }) {
                 <div className="border-t border-dashed border-black my-1" />
 
                 {/* Info ticket */}
-                <div>Ticket : #A1B2C3</div>
-                {showDate && <div>Fecha  : {new Date().toLocaleDateString('es-MX')}</div>}
-                {showTime && <div>Hora   : {new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>}
+                <div style={metaStyle}>
+                    <div>Ticket : #A1B2C3</div>
+                    {showDate && <div>Fecha  : {new Date().toLocaleDateString('es-MX')}</div>}
+                    {showTime && <div>Hora   : {new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>}
+                </div>
 
                 <div className="border-t border-dashed border-black my-1" />
                 
                 {(showSeller || showCustomer) && (
                     <>
-                        {showSeller && <div>Repartidor: Juan Pérez</div>}
-                        {showCustomer && <div>Cliente   : Tienda La Fe</div>}
+                        <div style={metaStyle}>
+                            {showSeller && <div>Repartidor: Juan Pérez</div>}
+                            {showCustomer && <div>Cliente   : Tienda La Fe</div>}
+                        </div>
                         <div className="border-t border-dashed border-black my-1" />
                     </>
                 )}
@@ -422,6 +432,32 @@ export default function TicketConfig() {
                                 checked={form.showCashAndChange}
                                 onChange={update('showCashAndChange')}
                                 desc="Muestra u oculta un desglose del pago en efectivo y el cambio"
+                            />
+                        </div>
+
+                        <div className="mt-6 pt-6 border-t border-slate-100 space-y-4">
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <label className="flex items-center justify-between text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
+                                    <span className="flex items-center gap-2"><Type size={14} /> Tamaño de Datos (Fecha, Ticket, etc.)</span>
+                                    <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.metadataSize || 10}px</span>
+                                </label>
+                                <input 
+                                    type="range" 
+                                    min="7" 
+                                    max="14" 
+                                    step="1"
+                                    value={form.metadataSize || 10}
+                                    onChange={(e) => update('metadataSize')(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                />
+                            </div>
+                            
+                            <Toggle
+                                id="metadataUppercase"
+                                label="Texto en Mayúsculas"
+                                desc="Convierte automáticamente a mayúsculas la fecha, cliente y repartidor"
+                                checked={form.metadataUppercase}
+                                onChange={update('metadataUppercase')}
                             />
                         </div>
                     </Section>

@@ -21,6 +21,8 @@ const CMD = {
     BOLD_OFF:     [ESC, 0x45, 0x00],
     DOUBLE_SIZE:  [GS, 0x21, 0x11], 
     NORMAL_SIZE:  [GS, 0x21, 0x00],
+    FONT_A:       [ESC, 0x4D, 0x00],
+    FONT_B:       [ESC, 0x4D, 0x01],
     CUT:          [GS, 0x56, 0x00],
     FEED:         [ESC, 0x64, 0x03],
 };
@@ -73,7 +75,9 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
         showSignature = true,
         showDate = true, showTime = true,
         showSeller = true, showCustomer = true,
-        ticketTemplate = 'standard'
+        ticketTemplate = 'standard',
+        metadataUppercase = false,
+        metadataSize = 10
     } = config;
 
     const chunks = [];
@@ -86,7 +90,9 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
     // Función auxiliar para formatear líneas de dos columnas
     const col2 = (l, r) => {
         const spaces = Math.max(1, WIDTH - l.length - r.length);
-        return l + ' '.repeat(spaces) + r + '\r\n';
+        const left = metadataUppercase ? l.toUpperCase() : l;
+        const right = metadataUppercase ? r.toUpperCase() : r;
+        return left + ' '.repeat(spaces) + right + '\r\n';
     };
 
     if (ticketTemplate === 'latoba') {
@@ -113,8 +119,11 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
         add(CMD.ALIGN_LEFT, SEP);
         
         const dateObj = new Date(ticket.date || Date.now());
-        const dStr = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+        const dStr = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
         const tStr = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        
+        // Aplicar fuente B si el tamaño es muy pequeño
+        if (metadataSize < 9) add(CMD.FONT_B);
         
         add(col2(dStr, tStr));
 
@@ -122,13 +131,15 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
         add(col2('TICKET', tId));
         
         if (showCustomer) {
-            const cName = (client?.name || 'GENERAL').toUpperCase().slice(0, 15);
+            const cName = (client?.name || 'GENERAL').slice(0, 15);
             add(col2('CLIENTE', cName));
         }
         if (showSeller) {
-            const sName = (user?.name || 'VENDEDOR').toUpperCase().slice(0, 15);
+            const sName = (user?.name || 'VENDEDOR').slice(0, 15);
             add(col2('REPARTIDOR', sName));
         }
+
+        if (metadataSize < 9) add(CMD.FONT_A); // Volver a fuente normal
 
         if (config.showItemsHeader !== false) {
             add(SEP, CMD.BOLD_ON);
@@ -180,11 +191,34 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
     } else {
         // Estándar muy robusto
         add(CMD.INIT, CMD.ALIGN_CENTER, 'TICKET DE VENTA\r\n');
-        add(businessName.toUpperCase() + '\r\n', SEP, CMD.ALIGN_LEFT);
+        
+        if (config.businessNameSize > 16) add(CMD.DOUBLE_SIZE);
+        add(businessName.toUpperCase() + '\r\n');
+        if (config.businessNameSize > 16) add(CMD.NORMAL_SIZE);
+        
+        add(SEP, CMD.ALIGN_LEFT);
 
-        if (showSeller) add(`Repartidor: ${user?.name || 'Vendedor'}\r\n`);
-        if (showCustomer) add(`Cliente: ${client?.name || 'General'}\r\n`);
-        if (showSeller || showCustomer) add(SEP);
+        if (metadataSize < 9) add(CMD.FONT_B);
+
+        const dateObj = new Date(ticket.date || Date.now());
+        const dStr = dateObj.toLocaleDateString('es-MX');
+        const tStr = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        const tId = `#${(ticket.id || '').toUpperCase().slice(-6)}`;
+
+        const lineDate = `FECHA: ${dStr} ${tStr}`;
+        const lineTicket = `TICKET: ${tId}`;
+        const lineSeller = `REPARTIDOR: ${user?.name || 'VENDEDOR'}`;
+        const lineCustomer = `CLIENTE: ${client?.name || 'GENERAL'}`;
+
+        add(metadataUppercase ? lineDate.toUpperCase() : lineDate, '\r\n');
+        add(metadataUppercase ? lineTicket.toUpperCase() : lineTicket, '\r\n');
+
+        if (showSeller) add(metadataUppercase ? lineSeller.toUpperCase() : lineSeller, '\r\n');
+        if (showCustomer) add(metadataUppercase ? lineCustomer.toUpperCase() : lineCustomer, '\r\n');
+        
+        if (metadataSize < 9) add(CMD.FONT_A);
+        
+        add(SEP);
         
         if (config.showItemsHeader !== false) {
             add(col2('CANT/ITEM', 'IMPORTE'));
