@@ -14,6 +14,7 @@ import Reports from './pages/Reports';
 import Login from './pages/Login';
 import PrinterSettings from './pages/PrinterSettings';
 import TicketConfig from './pages/TicketConfig';
+import MenuPage from './pages/Menu';
 
 const NetworkIndicator = () => {
   const { isOnline, setOnlineStatus, syncToSupabase } = useStore();
@@ -317,7 +318,7 @@ const BottomNavigation = ({ currentUser }) => {
   return (
     <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 h-[68px] flex justify-around items-center z-30 shadow-[0_-8px_25px_rgba(0,0,0,0.05)] pb-safe select-none`}>
       {currentUser?.role === 'admin' && (
-        <NavItem to="/productos" icon={Tag} label="Productos" active={isActive('/productos')} />
+        <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
       )}
       
       <NavItem to="/ventas" icon={ShoppingCart} label="Vender" active={isActive('/ventas') || isActive('/')} />
@@ -447,6 +448,7 @@ function App() {
               <div className="h-full overflow-y-auto pb-24 md:pb-8 relative custom-scrollbar">
                 <Routes>
                   <Route path="/" element={currentUser.role === 'admin' ? <Dashboard /> : <Sales />} />
+                  <Route path="/menu" element={<MenuPage />} />
                   <Route path="/ventas" element={<Sales />} />
                   <Route path="/productos" element={<Products />} />
                   <Route path="/inventario" element={<Inventory />} />
