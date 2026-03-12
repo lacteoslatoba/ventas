@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Warehouse, Users, Store, ShoppingCart, FileBarChart, Menu, X, Cloud, RefreshCw, PrinterIcon, FileText, Settings2, LogOut, Bluetooth, ArrowLeft, Home, Tag, Plus, Banknote, LayoutGrid } from 'lucide-react';
+import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut } from 'lucide-react';
 import { useStore } from './store';
 import { autoConnectPrinter, getSavedPrinterName } from './lib/bluetoothPrinter';
 
@@ -105,130 +105,9 @@ const PrinterAutoConnect = () => {
 };
 
 
-const Sidebar = ({ isOpen, setIsOpen }) => {
-  const location = useLocation();
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
 
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
 
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-    }
-  };
-
-  const navGroups = [
-    {
-      label: 'Acceso Directo',
-      items: [
-        { name: 'Menú Principal', path: '/menu', icon: LayoutGrid },
-        { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-        { name: 'Cerrar Sesión', path: '#logout', icon: LogOut, action: () => useStore.getState().logout() },
-      ],
-    },
-  ];
-
-  const handleLinkClick = () => setIsOpen(false);
-
-  const { currentUser, isSyncing } = useStore();
-  if (!currentUser || currentUser.role !== 'admin') return null;
-
-  return (
-    <>
-      {/* Black Overlay for Mobile */}
-      {isOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 transition-opacity"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      {/* Sidebar Navigation */}
-      <nav className={`
-        fixed inset-y-0 left-0 transform ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-40
-        w-[280px] md:w-64 bg-white text-slate-800 h-full no-print flex flex-col shadow-2xl md:shadow-none border-r border-slate-200
-      `}>
-        <div className="flex items-center justify-between md:justify-center h-16 md:h-20 px-4 md:px-0 border-b border-slate-100 bg-white">
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-primary flex items-center gap-2 md:gap-3">
-            QuesoApp
-            {isSyncing && <RefreshCw size={16} className="animate-spin text-slate-400" />}
-          </h1>
-          <button onClick={() => setIsOpen(false)} className="md:hidden p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
-            <X size={24} />
-          </button>
-        </div>
-
-        <div className="flex-1 px-3 py-4 overflow-y-auto custom-scrollbar space-y-4">
-          {navGroups.map((group) => (
-            <div key={group.label}>
-              <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 px-4 mb-1">{group.label}</p>
-              <div className="space-y-0.5">
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path === '#logout' ? '#' : item.path}
-                      onClick={(e) => {
-                        if (item.path === '#logout') {
-                          e.preventDefault();
-                          item.action();
-                        }
-                        handleLinkClick();
-                      }}
-                      className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all font-medium ${isActive
-                        ? 'bg-primary/10 text-primary shadow-sm'
-                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
-                    >
-                      <Icon size={18} className={isActive ? 'text-primary' : 'text-slate-400'} />
-                      <span className="text-sm">{item.name}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* PWA Install Button Prompter */}
-        {deferredPrompt && (
-          <div className="p-4 border-t border-slate-100 bg-white">
-            <button
-              onClick={handleInstallClick}
-              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md shadow-blue-500/20 active:scale-95 transition-all text-sm"
-            >
-              <Cloud size={18} />
-              Instalar App
-            </button>
-          </div>
-        )}
-        <div className="p-4 border-t border-slate-100 bg-white mt-auto">
-          <button
-            onClick={() => useStore.getState().logout()}
-            className="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl active:scale-95 transition-all text-sm"
-          >
-            Cerrar Sesión
-          </button>
-        </div>
-      </nav>
-    </>
-  );
-};
-
-const MobileHeader = ({ currentUser, isSyncing, setIsSidebarOpen }) => {
+const MobileHeader = ({ currentUser, isSyncing }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === '/' || (currentUser?.role !== 'admin' && location.pathname === '/ventas');
@@ -237,19 +116,13 @@ const MobileHeader = ({ currentUser, isSyncing, setIsSidebarOpen }) => {
     <div className="md:hidden flex-shrink-0 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 no-print z-20">
       {/* Izquierda: Regresar o Hamburger */}
       <div className="w-10">
-        {!isHome ? (
+        {!isHome && (
           <button 
             onClick={() => navigate(-1)} 
             className="p-2 -ml-2 rounded-xl text-primary bg-primary/5 active:scale-90 transition-all"
           >
             <ArrowLeft size={24} />
           </button>
-        ) : (
-          currentUser?.role === 'admin' ? (
-            <button onClick={() => setIsSidebarOpen(true)} className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors active:scale-95">
-              <Menu size={24} />
-            </button>
-          ) : null
         )}
       </div>
 
@@ -320,8 +193,6 @@ const BottomNavigation = ({ currentUser }) => {
 };
 
 function App() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const { currentUser, isSyncing } = useStore();
 
   // Ya no se fuerza Fullscreen porque el usuario prefiere su barra de navegación y para evitar bugs de teclado en Android.
@@ -338,12 +209,11 @@ function App() {
             <MobileHeader 
               currentUser={currentUser} 
               isSyncing={isSyncing} 
-              setIsSidebarOpen={setIsSidebarOpen} 
             />
 
 
 
-            <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+
 
             <main className="flex-1 overflow-x-hidden w-full relative h-[calc(100dvh-64px)] md:h-screen scroll-smooth">
               <div className="h-full overflow-y-auto pb-24 md:pb-8 relative custom-scrollbar">
@@ -363,7 +233,7 @@ function App() {
             </main>
 
             {/* MENÚ INFERIOR */}
-            <BottomNavigation currentUser={currentUser} setIsSidebarOpen={setIsSidebarOpen} />
+            <BottomNavigation currentUser={currentUser} />
           </div>
         </Router>
       )}
