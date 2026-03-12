@@ -138,6 +138,7 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
             const qtyStr = `${item.quantity || 0}${item.unit === 'Kg' ? 'kg' : 'x'} x $${Number(item.price || 0).toFixed(2)}`;
             const totStr = `$${(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}`;
             add(col2(qtyStr, totStr));
+            if (config.spaceBetweenItems) add('\r\n');
         });
 
         add(SEP);
@@ -171,6 +172,7 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
         (ticket.items || []).forEach(item => {
             const rowTotal = (Number(item.price) * Number(item.quantity)).toFixed(2);
             add(`${item.quantity} ${item.name.toUpperCase().slice(0, 10)} $${rowTotal}\r\n`);
+            if (config.spaceBetweenItems) add('\r\n');
         });
         
         add(SEP, CMD.ALIGN_RIGHT, CMD.BOLD_ON);

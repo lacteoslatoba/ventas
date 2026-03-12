@@ -16,7 +16,8 @@ function TicketPreview({ config }) {
         showDate = true, showTime = true, showSeller = true, showCustomer = true,
         useFontB = false,
         ticketTemplate = 'standard',
-        showItemsHeader = true
+        showItemsHeader = true,
+        spaceBetweenItems = false,
     } = config;
 
     const alignClass = titleAlignment === 'left' ? 'text-left' : titleAlignment === 'right' ? 'text-right' : 'text-center';
@@ -60,11 +61,11 @@ function TicketPreview({ config }) {
                         </>
                     )}
 
-                    <div className="mb-2">
+                    <div className={spaceBetweenItems ? 'mb-4' : 'mb-2'}>
                         <div>QUESO OAXACA</div>
                         <div className="flex justify-between"><span>2 kg x $60.00/kg</span><span>$120.00</span></div>
                     </div>
-                    <div className="mb-2">
+                    <div className={spaceBetweenItems ? 'mb-4' : 'mb-2'}>
                         <div>REQUESON</div>
                         <div className="flex justify-between"><span>1 x $45.00/u</span><span>$45.00</span></div>
                     </div>
@@ -128,9 +129,9 @@ function TicketPreview({ config }) {
                     </>
                 )}
                 <div>2x    Queso Oax.  $120.00</div>
-                <div className="text-right text-[9px]">@ $60.00/u</div>
+                <div className={`text-right text-[9px] ${spaceBetweenItems ? 'mb-3' : ''}`}>@ $60.00/u</div>
                 <div>1x    Requesón    $45.00</div>
-                <div className="text-right text-[9px]">@ $45.00/u</div>
+                <div className={`text-right text-[9px] ${spaceBetweenItems ? 'mb-3' : ''}`}>@ $45.00/u</div>
                 <div className="border-t-2 border-black my-0.5" />
                 <div className="text-right font-bold text-[12px]">TOTAL $165.00</div>
                 <div className="border-t border-dashed border-black my-0.5" />
@@ -259,6 +260,7 @@ export default function TicketConfig() {
             ticketTemplate: 'standard',
             showItemsHeader: true,
             printCopy: false,
+            spaceBetweenItems: false,
         };
 
         setForm(defaults);
@@ -453,6 +455,15 @@ export default function TicketConfig() {
                                     desc="Imprime el ticket automáticamente dos veces (uno para ti, uno para el cliente)"
                                     checked={form.printCopy}
                                     onChange={update('printCopy')}
+                                />
+                            </div>
+                            <div className="pt-2 border-t border-slate-100">
+                                <Toggle
+                                    id="spaceBetweenItems"
+                                    label="Espacio entre Productos"
+                                    desc="Añade un salto de línea adicional entre cada producto para facilitar la lectura"
+                                    checked={form.spaceBetweenItems}
+                                    onChange={update('spaceBetweenItems')}
                                 />
                             </div>
                             <div className="pt-2 border-t border-slate-100">
