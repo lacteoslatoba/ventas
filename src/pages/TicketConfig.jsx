@@ -598,10 +598,10 @@ export default function TicketConfig() {
                     <div className="pt-4 pb-8">
                         <button
                             onClick={handleSave}
-                            className={`w-full py-5 rounded-[2rem] font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-3 ${
+                            className={`w-full py-5 rounded-[2rem] font-black uppercase tracking-widest transition-all active:scale-[0.98] border-2 shadow-sm flex items-center justify-center gap-3 ${
                                 saved 
-                                ? 'bg-emerald-500 text-white shadow-emerald-500/30' 
-                                : 'bg-primary text-white shadow-primary/30 hover:bg-blue-700'
+                                ? 'bg-white border-emerald-500 text-emerald-500 shadow-emerald-500/10' 
+                                : 'bg-white border-primary text-primary hover:bg-blue-50 shadow-blue-500/10'
                             }`}
                         >
                             {saved ? (
