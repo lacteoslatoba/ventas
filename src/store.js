@@ -10,6 +10,8 @@ export const useStore = create(
             users: [],
             clients: [],
             sales: [],
+            cart: [],
+            selectedCartClient: '', // Cambiado de selectedClient para evitar confusión
             cloudColumns: {}, // Historial de columnas conocidas en Supabase
 
             // Configuración del Ticket
@@ -48,6 +50,15 @@ export const useStore = create(
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));
                 get().syncToSupabase();
             },
+
+            updateCart: (update) => {
+                if (typeof update === 'function') {
+                    set((state) => ({ cart: update(state.cart) }));
+                } else {
+                    set({ cart: update });
+                }
+            },
+            updateSelectedCartClient: (clientId) => set({ selectedCartClient: clientId }),
 
             // Autenticación y Roles
             currentUser: null,

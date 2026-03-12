@@ -5,9 +5,10 @@ import { printTicket } from '../lib/bluetoothPrinter';
 import { Link } from 'react-router-dom';
 
 export default function Sales() {
-    const { products, clients, users, addSale, currentUser, ticketConfig } = useStore();
-    const [cart, setCart] = useState([]);
-    const [selectedClient, setSelectedClient] = useState('');
+    const { 
+        products, clients, users, addSale, currentUser, ticketConfig,
+        cart, updateCart, selectedCartClient, updateSelectedCartClient 
+    } = useStore();
     const [generatedTicket, setGeneratedTicket] = useState(null);
     const [btPrinting, setBtPrinting] = useState(false);
     const [showVirtualTicket, setShowVirtualTicket] = useState(false);
@@ -70,7 +71,7 @@ export default function Sales() {
         else if (userPriceList === 'B') productPrice = Number(selectedProductDialog.priceB || selectedProductDialog.price) || 0;
         else if (userPriceList === 'C') productPrice = Number(selectedProductDialog.priceC || selectedProductDialog.price) || 0;
 
-        setCart(currentCart => {
+        updateCart(currentCart => {
             const existing = currentCart.find(item => item.productId === selectedProductDialog.id);
             if (existing) {
                 return currentCart.map(item => item.productId === selectedProductDialog.id
@@ -98,7 +99,7 @@ export default function Sales() {
     };
 
     const removeFromCart = (productId) => {
-        setCart(cart.filter(item => item.productId !== productId));
+        updateCart(cart.filter(item => item.productId !== productId));
         if (cart.length === 1) setMobileCartOpen(false); // Close if last item removed
     };
 
@@ -108,12 +109,12 @@ export default function Sales() {
         const effectiveUserId = currentUser?.id;
 
         if (!effectiveUserId) return alert('No hay usuario activo');
-        if (!selectedClient) return alert('Selecciona un cliente destino');
+        if (!selectedCartClient) return alert('Selecciona un cliente destino');
         if (cart.length === 0) return alert('El carrito está vacío');
 
         const sale = {
             userId: effectiveUserId,
-            clientId: selectedClient,
+            clientId: selectedCartClient,
             items: cart,
             total,
             date: new Date().toISOString()
@@ -121,15 +122,15 @@ export default function Sales() {
 
         addSale(sale);
         setGeneratedTicket({ ...sale, id: Date.now().toString() });
-        setCart([]);
-        setSelectedClient('');
+        updateCart([]);
+        updateSelectedCartClient('');
         setMobileCartOpen(false);
     };
 
     const clearCart = () => {
         if (cart.length === 0) return;
-        setCart([]);
-        setSelectedClient('');
+        updateCart([]);
+        updateSelectedCartClient('');
         setMobileCartOpen(false);
     };
 
@@ -367,7 +368,7 @@ export default function Sales() {
 
                 <div>
                     <label className="block text-slate-500 font-bold mb-1.5 uppercase text-xs tracking-wider">Cliente / Tienda</label>
-                    <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)} className="w-full bg-white border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 p-3 rounded-xl font-medium outline-none text-slate-800 transition-all shadow-sm">
+                    <select value={selectedCartClient} onChange={e => updateSelectedCartClient(e.target.value)} className="w-full bg-white border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 p-3 rounded-xl font-medium outline-none text-slate-800 transition-all shadow-sm">
                         <option value="">Selecciona dónde se deja...</option>
                         {clients
                             .filter(c => currentUser?.role === 'admin' ? true : c.userId === currentUser?.id)
