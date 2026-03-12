@@ -129,19 +129,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   const navGroups = [
     {
-      label: 'Administración',
+      label: 'Acceso Directo',
       items: [
         { name: 'Menú Principal', path: '/menu', icon: LayoutGrid },
         { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-        { name: 'Inventario', path: '/inventario', icon: Warehouse },
-        { name: 'Repartidores', path: '/usuarios', icon: Users },
-      ],
-    },
-    {
-      label: 'Configuración',
-      items: [
-        { name: 'Impresora BT', path: '/impresora', icon: PrinterIcon },
-        { name: 'Config. Ticket', path: '/ticket', icon: FileText },
+        { name: 'Cerrar Sesión', path: '#logout', icon: LogOut, action: () => useStore.getState().logout() },
       ],
     },
   ];
@@ -188,8 +180,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   return (
                     <Link
                       key={item.path}
-                      to={item.path}
-                      onClick={handleLinkClick}
+                      to={item.path === '#logout' ? '#' : item.path}
+                      onClick={(e) => {
+                        if (item.path === '#logout') {
+                          e.preventDefault();
+                          item.action();
+                        }
+                        handleLinkClick();
+                      }}
                       className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all font-medium ${isActive
                         ? 'bg-primary/10 text-primary shadow-sm'
                         : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
@@ -230,7 +228,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   );
 };
 
-const MobileHeader = ({ currentUser, isSyncing, setIsSidebarOpen, setIsConfigOpen }) => {
+const MobileHeader = ({ currentUser, isSyncing, setIsSidebarOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === '/' || (currentUser?.role !== 'admin' && location.pathname === '/ventas');
@@ -265,7 +263,7 @@ const MobileHeader = ({ currentUser, isSyncing, setIsSidebarOpen, setIsConfigOpe
         </h1>
       </div>
 
-      {/* Derecha: avatar + botón configuración */}
+      {/* Derecha: avatar + icono red */}
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs border border-primary/20 relative">
           {currentUser?.name?.charAt(0)}
@@ -275,12 +273,6 @@ const MobileHeader = ({ currentUser, isSyncing, setIsSidebarOpen, setIsConfigOpe
             </div>
           )}
         </div>
-        <button
-          onClick={() => setIsConfigOpen(true)}
-          className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 active:scale-90 transition-all font-black"
-        >
-          <Settings2 size={16} />
-        </button>
       </div>
     </div>
   );
@@ -347,92 +339,9 @@ function App() {
               currentUser={currentUser} 
               isSyncing={isSyncing} 
               setIsSidebarOpen={setIsSidebarOpen} 
-              setIsConfigOpen={setIsConfigOpen} 
             />
 
-            {/* SHEET FLOTANTE DE CONFIGURACIÓN */}
-            {isConfigOpen && (
-              <div
-                className="md:hidden fixed inset-0 z-50 flex items-end"
-                onClick={() => setIsConfigOpen(false)}
-              >
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-                {/* Panel */}
-                <div
-                  className="relative w-full bg-white rounded-t-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-4 duration-300"
-                  onClick={e => e.stopPropagation()}
-                >
-                  {/* Handle */}
-                  <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
 
-                  <div className="flex items-center justify-between mb-5">
-                    <h2 className="font-black text-slate-800 text-lg tracking-tight">Configuración</h2>
-                    <button onClick={() => setIsConfigOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-                      <X size={20} />
-                    </button>
-                  </div>
-
-                  <div className="space-y-2 mb-4">
-                    <Link
-                      to="/impresora"
-                      onClick={() => setIsConfigOpen(false)}
-                      className="flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-slate-50 hover:bg-blue-50 hover:text-primary transition-all active:scale-[0.98]"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                        <Bluetooth size={20} className="text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-800 text-sm">Impresora Bluetooth</p>
-                        <p className="text-xs text-slate-400 font-medium">Conectar impresora térmica</p>
-                      </div>
-                    </Link>
-
-                    <Link
-                      to="/clientes"
-                      onClick={() => setIsConfigOpen(false)}
-                      className="flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-slate-50 hover:bg-blue-50 hover:text-primary transition-all active:scale-[0.98]"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-cheese-100 flex items-center justify-center">
-                        <Store size={20} className="text-cheese-600" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-800 text-sm">Alta de Clientes</p>
-                        <p className="text-xs text-slate-400 font-medium">Registrar nuevo local o tienda</p>
-                      </div>
-                    </Link>
-
-                    {currentUser?.role === 'admin' && (
-                      <Link
-                        to="/ticket"
-                        onClick={() => setIsConfigOpen(false)}
-                        className="flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-slate-50 hover:bg-blue-50 hover:text-primary transition-all active:scale-[0.98]"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-                          <FileText size={20} className="text-violet-600" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-800 text-sm">Configurar Ticket</p>
-                          <p className="text-xs text-slate-400 font-medium">Encabezado, pie de página y más</p>
-                        </div>
-                      </Link>
-                    )}
-                  </div>
-
-                  <div className="border-t border-slate-100 pt-4">
-                    <button
-                      onClick={() => useStore.getState().logout()}
-                      className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-red-500 hover:bg-red-50 transition-all active:scale-[0.98]"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
-                        <LogOut size={20} className="text-red-500" />
-                      </div>
-                      <p className="font-bold text-sm">Cerrar Sesión</p>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
