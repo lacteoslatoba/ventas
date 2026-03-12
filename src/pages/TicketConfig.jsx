@@ -39,15 +39,15 @@ function TicketPreview({ config }) {
         return (
             <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-4 flex justify-center">
                 <div
-                    className={`font-mono leading-snug text-black bg-white uppercase`}
+                    className={`font-mono leading-snug text-black bg-white`}
                     style={{ width: '200px', minHeight: '300px', fontSize: `${useFontB ? 8.5 : 10}px` }}
                 >
-                    <div className="text-center font-bold mb-0.5 leading-tight" style={{ fontSize: `${businessNameSize}px` }}>
+                    <div className="text-center font-bold mb-0.5 leading-tight uppercase" style={{ fontSize: `${businessNameSize}px` }}>
                         {businessName || 'LACTEOS LA TOBA'}
                     </div>
-                    {subtitle && <div className="text-center">{subtitle}</div>}
-                    {showAddress && address && <div className="text-center">{address}</div>}
-                    {showPhone && phone && <div className="text-center">TEL: {phone}</div>}
+                    {subtitle && <div className="text-center uppercase">{subtitle}</div>}
+                    {showAddress && address && <div className="text-center uppercase">{address}</div>}
+                    {showPhone && phone && <div className="text-center uppercase">TEL: {phone}</div>}
                     {extraLine1 && <div className="text-center">{extraLine1}</div>}
                     {extraLine2 && <div className="text-center">{extraLine2}</div>}
 
@@ -58,46 +58,46 @@ function TicketPreview({ config }) {
                         {showTime && <span>{timeStr}</span>}
                     </div>
                     <div className="flex justify-between" style={metaStyle}>
-                        <span>NUMERO DE TICKET</span><span>#A1B2C3</span>
+                        <span>Ticket</span><span>#A1B2C3</span>
                     </div>
                     
-                    {showCustomer && <div className="flex justify-between" style={metaStyle}><span>CLIENTE</span><span>TIENDA LA FE</span></div>}
-                    {showSeller && <div className="flex justify-between" style={metaStyle}><span>REPARTIDOR</span><span>JUAN PEREZ</span></div>}
+                    {showCustomer && <div className="flex justify-between" style={metaStyle}><span>Cliente</span><span>Tienda La Fe</span></div>}
+                    {showSeller && <div className="flex justify-between" style={metaStyle}><span>Repartidor</span><span>Juan Pérez</span></div>}
 
                     {showItemsHeader && (
                         <>
                             <div className="border-t border-dashed border-black my-1" />
-                            <div className="flex justify-between"><span>ITEM</span><span>PRECIO</span></div>
+                            <div className="flex justify-between uppercase"><span>ITEM</span><span>PRECIO</span></div>
                             <div className="border-t border-dashed border-black my-1" />
                         </>
                     )}
 
                     <div className={spaceBetweenItems ? 'mb-4' : 'mb-2'}>
-                        <div>QUESO OAXACA</div>
-                        <div className="flex justify-between"><span>2 kg x $60.00/kg</span><span>$120.00</span></div>
+                        <div className="uppercase">QUESO OAXACA</div>
+                        <div className="flex justify-between uppercase"><span>2 kg x $60.00/kg</span><span>$120.00</span></div>
                     </div>
                     <div className={spaceBetweenItems ? 'mb-4' : 'mb-2'}>
-                        <div>REQUESON</div>
-                        <div className="flex justify-between"><span>1 x $45.00/u</span><span>$45.00</span></div>
+                        <div className="uppercase">REQUESON</div>
+                        <div className="flex justify-between uppercase"><span>1 x $45.00/u</span><span>$45.00</span></div>
                     </div>
 
-                    <div>NUMERO DE ARTICULOS: 2</div>
+                    <div className="uppercase">NUMERO DE ARTICULOS: 2</div>
                     
-                    <div className="text-right mt-2 font-bold">SUBTOTAL: $165.00</div>
-                    <div className={`${centerTotal ? 'text-center' : 'text-right'} font-bold text-[14px] leading-[14px] mt-2 mb-1`} style={{ fontSize: '14px' }}>TOTAL $165.00</div>
+                    <div className="text-right mt-2 font-bold uppercase">SUBTOTAL: $165.00</div>
+                    <div className={`${centerTotal ? 'text-center' : 'text-right'} font-bold text-[14px] leading-[14px] mt-2 mb-1 uppercase`} style={{ fontSize: '14px' }}>TOTAL $165.00</div>
 
                     {showCashAndChange && (
                         <>
                             <div className="border-t border-dashed border-black my-1" />
-                            <div className="flex justify-between"><span>EFECTIVO:</span><span>$165.00</span></div>
-                            <div className="flex justify-between"><span>CAMBIO:</span><span>$0.00</span></div>
+                            <div className="flex justify-between uppercase"><span>EFECTIVO:</span><span>$165.00</span></div>
+                            <div className="flex justify-between uppercase"><span>CAMBIO:</span><span>$0.00</span></div>
                         </>
                     )}
                     <div className="border-t border-dashed border-black my-1" />
 
-                    <div className="text-center mt-2">{footerLine1 || '¡GRACIAS POR SU COMPRA!'}</div>
-                    {footerLine2 && <div className="text-center">{footerLine2}</div>}
-                    {showSignature && <div className="mt-3">FIRMA: ________________________</div>}
+                    <div className="text-center mt-2 uppercase">{footerLine1 || '¡GRACIAS POR SU COMPRA!'}</div>
+                    {footerLine2 && <div className="text-center uppercase">{footerLine2}</div>}
+                    {showSignature && <div className="mt-3 uppercase">FIRMA: ________________________</div>}
                 </div>
             </div>
         );

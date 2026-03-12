@@ -128,15 +128,15 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
         add(col2(dStr, tStr));
 
         const tId = `#${(ticket.id || '').toUpperCase().slice(-6)}`;
-        add(col2('TICKET', tId));
+        add(col2('Ticket', tId));
         
         if (showCustomer) {
             const cName = (client?.name || 'GENERAL').slice(0, 15);
-            add(col2('CLIENTE', cName));
+            add(col2('Cliente', cName));
         }
         if (showSeller) {
             const sName = (user?.name || 'VENDEDOR').slice(0, 15);
-            add(col2('REPARTIDOR', sName));
+            add(col2('Repartidor', sName));
         }
 
         if (metadataSize < 9) add(CMD.FONT_A); // Volver a fuente normal
@@ -205,10 +205,10 @@ export function buildTicketBuffer({ ticket, user, client, config = {} }) {
         const tStr = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
         const tId = `#${(ticket.id || '').toUpperCase().slice(-6)}`;
 
-        const lineDate = `FECHA: ${dStr} ${tStr}`;
-        const lineTicket = `TICKET: ${tId}`;
-        const lineSeller = `REPARTIDOR: ${user?.name || 'VENDEDOR'}`;
-        const lineCustomer = `CLIENTE: ${client?.name || 'GENERAL'}`;
+        const lineDate = `Fecha: ${dStr} ${tStr}`;
+        const lineTicket = `Ticket: ${tId}`;
+        const lineSeller = `Repartidor: ${user?.name || 'Vendedor'}`;
+        const lineCustomer = `Cliente: ${client?.name || 'General'}`;
 
         add(metadataUppercase ? lineDate.toUpperCase() : lineDate, '\r\n');
         add(metadataUppercase ? lineTicket.toUpperCase() : lineTicket, '\r\n');
