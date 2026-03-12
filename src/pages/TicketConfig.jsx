@@ -340,7 +340,7 @@ export default function TicketConfig() {
                     </Section>
 
                     {/* Identificación del negocio */}
-                    <Section title="Datos del Negocio" icon={Building2}>
+                    <Section title="Datos del Negocio" icon={Building2} onSave={handleSave} saved={saved}>
                         <Field
                             id="businessName"
                             label="Nombre del Negocio"
@@ -381,7 +381,7 @@ export default function TicketConfig() {
                     </Section>
 
                     {/* Campos Visibles */}
-                    <Section title="Campos Visibles" icon={EyeIcon}>
+                    <Section title="Campos Visibles" icon={EyeIcon} onSave={handleSave} saved={saved}>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                             <Toggle
                                 id="showAddress"
@@ -437,7 +437,7 @@ export default function TicketConfig() {
                     </Section>
 
                     {/* Diseño y Apariencia */}
-                    <Section title="Diseño y Apariencia" icon={Type}>
+                    <Section title="Diseño y Apariencia" icon={Type} onSave={handleSave} saved={saved}>
                         <div className="space-y-6">
                             <div>
                                 <label className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
@@ -509,7 +509,7 @@ export default function TicketConfig() {
 
                     {/* Líneas extra */}
 
-                    <Section title="Líneas Adicionales del Encabezado" icon={AlignCenter}>
+                    <Section title="Líneas Adicionales del Encabezado" icon={AlignCenter} onSave={handleSave} saved={saved}>
                         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex gap-2 text-xs text-blue-600">
                             <Info size={14} className="shrink-0 mt-0.5" />
                             <span>Estas líneas aparecen debajo del teléfono. Puedes dejarlas vacías.</span>
@@ -533,7 +533,7 @@ export default function TicketConfig() {
                     </Section>
 
                     {/* Pie de página */}
-                    <Section title="Pie de Página" icon={Settings2}>
+                    <Section title="Pie de Página" icon={Settings2} onSave={handleSave} saved={saved}>
                         <Field
                             id="footerLine1"
                             label="Mensaje de despedida 1"
@@ -562,7 +562,7 @@ export default function TicketConfig() {
                     </Section>
 
                     {/* Papel */}
-                    <Section title="Tamaño de Papel" icon={Printer}>
+                    <Section title="Tamaño de Papel" icon={Printer} onSave={handleSave} saved={saved}>
                         <div className="grid grid-cols-2 gap-3">
                             {[
                                 { value: 58, label: '58 mm', desc: 'Estándar móvil' },
@@ -609,29 +609,6 @@ export default function TicketConfig() {
                 )}
             </div>
 
-            {/* Barra de acciones fija - Elevada para que no tape el menú móvil (z-index mayor y más bottom) */}
-            <div className="fixed bottom-[80px] md:bottom-0 left-0 right-0 md:left-64 bg-white/95 backdrop-blur-md border-t border-slate-200 p-4 flex gap-3 z-[45] shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
-                <button
-                    onClick={handleReset}
-                    className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all active:scale-95 text-sm"
-                >
-                    <RotateCcw size={16} />
-                    Restablecer
-                </button>
-                <button
-                    onClick={handleSave}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 font-bold rounded-xl transition-all active:scale-95 text-sm shadow-lg ${saved
-                        ? 'bg-emerald-500 text-white shadow-emerald-500/25'
-                        : 'bg-primary hover:bg-blue-700 text-white shadow-blue-500/25'
-                        }`}
-                >
-                    {saved ? (
-                        <><CheckCheck size={18} /> Guardado</>
-                    ) : (
-                        <><Save size={18} /> Guardar Configuración</>
-                    )}
-                </button>
-            </div>
         </div>
     );
 }
