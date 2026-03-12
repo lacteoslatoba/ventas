@@ -48,7 +48,6 @@ export default function Products() {
     if (isFormOpen) {
         return (
             <div className="min-h-screen bg-slate-50 dark:bg-slate-900 animate-in fade-in slide-in-from-right-8 duration-300">
-                {/* Header de Edición simple con retroceso */}
                 <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 h-16 flex items-center sticky top-0 z-40">
                     <button onClick={resetForm} className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors shrink-0">
                         <ArrowLeft size={24} />
@@ -60,7 +59,6 @@ export default function Products() {
 
                 <div className="p-4 max-w-2xl mx-auto pb-24">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Datos Generales */}
                         <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700">
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Información Básica</label>
                             
@@ -81,58 +79,56 @@ export default function Products() {
                                 <div>
                                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Existencia en Bodega</label>
                                     <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-2 pr-4 border-2 border-transparent focus-within:border-primary/20 transition-all">
-                                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-black"><ChevronRight size={20} /></div>
-                                        <input required type="number" step="0.01" value={formData.stock} onChange={e => setFormData({ ...formData, stock: e.target.value })} className="flex-1 bg-transparent border-none p-2 text-primary font-black text-2xl outline-none" placeholder="0.00" />
+                                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-black"><ChevronRight size={18} /></div>
+                                        <input required type="number" step="0.01" value={formData.stock} onChange={e => setFormData({ ...formData, stock: e.target.value })} className="flex-1 bg-transparent border-none p-2 text-primary font-black text-xl outline-none" placeholder="0.00" />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Listas de Precios Visuales */}
                         <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700">
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-1">Listas de Precios</label>
                             
                             <div className="space-y-4">
                                 <div className="flex items-center gap-4 group">
-                                    <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex flex-col items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
-                                        <span className="text-[10px] font-black opacity-60">LISTA</span>
-                                        <span className="text-xl font-black leading-none">A</span>
+                                    <div className="w-12 h-12 rounded-xl bg-emerald-500 flex flex-col items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
+                                        <span className="text-[8px] font-black opacity-60 uppercase tracking-tighter">Lista</span>
+                                        <span className="text-lg font-black leading-none">A</span>
                                     </div>
-                                    <div className="flex-1 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl p-4 flex items-center border-2 border-transparent focus-within:border-emerald-500/30 transition-all">
-                                        <span className="text-emerald-600 font-black mr-2 text-xl">$</span>
-                                        <input required type="number" step="0.01" value={formData.priceA} onChange={e => setFormData({ ...formData, priceA: e.target.value })} className="flex-1 bg-transparent border-none p-0 text-emerald-700 dark:text-emerald-400 font-black text-2xl outline-none" placeholder="0.00" />
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-4 group">
-                                    <div className="w-14 h-14 rounded-2xl bg-blue-500 flex flex-col items-center justify-center text-white shadow-lg shadow-blue-500/20 shrink-0">
-                                        <span className="text-[10px] font-black opacity-60">LISTA</span>
-                                        <span className="text-xl font-black leading-none">B</span>
-                                    </div>
-                                    <div className="flex-1 bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-4 flex items-center border-2 border-transparent focus-within:border-blue-500/30 transition-all">
-                                        <span className="text-blue-600 font-black mr-2 text-xl">$</span>
-                                        <input required type="number" step="0.01" value={formData.priceB} onChange={e => setFormData({ ...formData, priceB: e.target.value })} className="flex-1 bg-transparent border-none p-0 text-blue-700 dark:text-blue-400 font-black text-2xl outline-none" placeholder="0.00" />
+                                    <div className="flex-1 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl p-3 flex items-center border-2 border-transparent focus-within:border-emerald-500/30 transition-all">
+                                        <span className="text-emerald-600 font-black mr-2 text-lg">$</span>
+                                        <input required type="number" step="0.01" value={formData.priceA} onChange={e => setFormData({ ...formData, priceA: e.target.value })} className="flex-1 bg-transparent border-none p-0 text-emerald-700 dark:text-emerald-400 font-black text-xl outline-none" placeholder="0.00" />
                                     </div>
                                 </div>
 
                                 <div className="flex items-center gap-4 group">
-                                    <div className="w-14 h-14 rounded-2xl bg-purple-500 flex flex-col items-center justify-center text-white shadow-lg shadow-purple-500/20 shrink-0">
-                                        <span className="text-[10px] font-black opacity-60">LISTA</span>
-                                        <span className="text-xl font-black leading-none">C</span>
+                                    <div className="w-12 h-12 rounded-xl bg-blue-500 flex flex-col items-center justify-center text-white shadow-lg shadow-blue-500/20 shrink-0">
+                                        <span className="text-[8px] font-black opacity-60 uppercase tracking-tighter">Lista</span>
+                                        <span className="text-lg font-black leading-none">B</span>
                                     </div>
-                                    <div className="flex-1 bg-purple-50 dark:bg-purple-900/10 rounded-2xl p-4 flex items-center border-2 border-transparent focus-within:border-purple-500/30 transition-all">
-                                        <span className="text-purple-600 font-black mr-2 text-xl">$</span>
-                                        <input required type="number" step="0.01" value={formData.priceC} onChange={e => setFormData({ ...formData, priceC: e.target.value })} className="flex-1 bg-transparent border-none p-0 text-purple-700 dark:text-purple-400 font-black text-2xl outline-none" placeholder="0.00" />
+                                    <div className="flex-1 bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-3 flex items-center border-2 border-transparent focus-within:border-blue-500/30 transition-all">
+                                        <span className="text-blue-600 font-black mr-2 text-lg">$</span>
+                                        <input required type="number" step="0.01" value={formData.priceB} onChange={e => setFormData({ ...formData, priceB: e.target.value })} className="flex-1 bg-transparent border-none p-0 text-blue-700 dark:text-blue-400 font-black text-xl outline-none" placeholder="0.00" />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4 group">
+                                    <div className="w-12 h-12 rounded-xl bg-purple-500 flex flex-col items-center justify-center text-white shadow-lg shadow-purple-500/20 shrink-0">
+                                        <span className="text-[8px] font-black opacity-60 uppercase tracking-tighter">Lista</span>
+                                        <span className="text-lg font-black leading-none">C</span>
+                                    </div>
+                                    <div className="flex-1 bg-purple-50 dark:bg-purple-900/10 rounded-2xl p-3 flex items-center border-2 border-transparent focus-within:border-purple-500/30 transition-all">
+                                        <span className="text-purple-600 font-black mr-2 text-lg">$</span>
+                                        <input required type="number" step="0.01" value={formData.priceC} onChange={e => setFormData({ ...formData, priceC: e.target.value })} className="flex-1 bg-transparent border-none p-0 text-purple-700 dark:text-purple-400 font-black text-xl outline-none" placeholder="0.00" />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Botones de Acción al final del formulario */}
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button 
                                 type="submit" 
-                                className="flex-1 bg-primary text-white py-5 rounded-[2rem] shadow-xl shadow-primary/20 font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all text-sm"
+                                className="flex-1 bg-primary text-white py-5 rounded-[2rem] shadow-xl shadow-primary/20 font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all text-xs"
                             >
                                 <Save size={20} /> Guardar Producto
                             </button>
