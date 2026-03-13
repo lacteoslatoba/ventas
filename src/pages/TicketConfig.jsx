@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import {
     Settings2, Save, FileText, Building2, Phone,
     MapPin, AlignCenter, CheckCheck, Printer, Eye, EyeOff,
-    ChevronRight, Info, AlignLeft, AlignRight, Type, Calendar, User, Eye as EyeIcon, ArrowLeft,
+    ChevronRight, Info, AlignLeft, AlignRight, Type, Calendar, User, ArrowLeft,
     Image as ImageIcon, Upload, Trash2
 } from 'lucide-react';
 
@@ -363,7 +363,7 @@ export default function TicketConfig() {
                     </Section>
 
                     {/* Campos Visibles */}
-                    <Section title="Campos Visibles" icon={EyeIcon}>
+                    <Section title="Campos Visibles" icon={Eye}>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                             <Toggle
                                 id="showAddress"

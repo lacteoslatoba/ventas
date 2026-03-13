@@ -45,7 +45,7 @@ export default function TicketPreview({ config, sale, user, client }) {
         showFooterLine1 = true,
         showFooterLine2 = true,
         itemsSectionSpacing = 0,
-    } = config;
+    } = config || {};
 
     // Si no hay 'sale', usamos datos de prueba (para la pantalla de configuración)
     const isPreviewOnly = !sale;
