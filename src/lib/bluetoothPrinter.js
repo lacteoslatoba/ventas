@@ -130,22 +130,29 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         extraLine1 = '', extraLine2 = '',
         footerLine1 = '¡Gracias por su compra!',
         footerLine2 = '',
+        showLabels = true,
         showSignature = true,
         showDate = true, showTime = true,
         showSeller = true, showCustomer = true,
+        showAddress = true, showPhone = true,
         ticketTemplate = 'standard',
         metadataUppercase = false,
         metadataAlignment = 'between',
         metadataSpacing = 0,
         showMainTitle = true,
         showBusinessName = true,
-        showLabels = true,
         metadataSize = 10,
         multiLineItems = true,
         totalFontSize = 14,
+        itemsHeaderLeft = 'CANT/CONCEPTO',
         itemsHeaderRight = 'IMPORTE',
+        showItemsHeader = true,
+        spaceBetweenItems = false,
+        showCashAndChange = true,
+        centerTotal = false,
         showLogo = true,
         logoUrl = null,
+        paperWidth = 58,
         // Nuevas
         businessNameBold = true,
         metadataBold = false,
@@ -163,7 +170,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
     const add = (...parts) => chunks.push(toBytes(...parts));
 
     // Forzamos un ancho más seguro para impresoras de 58mm (generalmente 32 caps)
-    const WIDTH = config.paperWidth === 80 ? 48 : 31;
+    const WIDTH = paperWidth === 80 ? 48 : 31;
     const SEP_CHAR = separatorStyle === 'solid' ? '_' : '-';
     const SEP = SEP_CHAR.repeat(WIDTH) + '\r\n';
 
