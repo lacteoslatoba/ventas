@@ -263,20 +263,23 @@ export default function TicketConfig() {
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
                             <label className="flex items-center justify-between text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
                                 <span className="flex items-center gap-2"><Type size={14} /> Tamaño de Letra (Nombre)</span>
-                                <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.businessNameSize || 13}px</span>
                             </label>
-                            <input 
-                                type="range" 
-                                min="10" 
-                                max="24" 
-                                step="1"
-                                value={form.businessNameSize || 13}
-                                onChange={(e) => update('businessNameSize')(parseInt(e.target.value))}
-                                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                            />
-                            <div className="flex justify-between mt-1 px-1">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Chico</span>
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Grande</span>
+                            <div className="flex items-center gap-4">
+                                <button 
+                                    onClick={() => update('businessNameSize')(Math.max(10, (form.businessNameSize || 13) - 1))}
+                                    className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                >
+                                    <Minus size={18} />
+                                </button>
+                                <div className="flex-1 text-center bg-white py-2 rounded-xl border border-slate-100 font-black text-primary">
+                                    {form.businessNameSize || 13}px
+                                </div>
+                                <button 
+                                    onClick={() => update('businessNameSize')(Math.min(24, (form.businessNameSize || 13) + 1))}
+                                    className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                >
+                                    <Plus size={18} />
+                                </button>
                             </div>
                         </div>
                         <div className="flex items-start gap-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
@@ -341,38 +344,7 @@ export default function TicketConfig() {
                              </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                             <div className="flex items-start gap-2 bg-slate-100/30 p-2 rounded-xl border border-dashed border-slate-200">
-                                <div className="flex-1">
-                                    <Field
-                                        id="extraLine1"
-                                        label="Línea Extra 1"
-                                        value={form.extraLine1}
-                                        onChange={update('extraLine1')}
-                                        placeholder="NIT / RFC / INFO"
-                                        maxLength={30}
-                                    />
-                                </div>
-                                <div className="pt-6">
-                                    <Toggle id="showExtraLine1" checked={form.showExtraLine1} onChange={update('showExtraLine1')} />
-                                </div>
-                             </div>
-                             <div className="flex items-start gap-2 bg-slate-100/30 p-2 rounded-xl border border-dashed border-slate-200">
-                                <div className="flex-1">
-                                    <Field
-                                        id="extraLine2"
-                                        label="Línea Extra 2"
-                                        value={form.extraLine2}
-                                        onChange={update('extraLine2')}
-                                        placeholder="www.tusitio.com"
-                                        maxLength={30}
-                                    />
-                                </div>
-                                <div className="pt-6">
-                                    <Toggle id="showExtraLine2" checked={form.showExtraLine2} onChange={update('showExtraLine2')} />
-                                </div>
-                             </div>
-                        </div>
+
                     </Section>
 
                     {/* Campos Visibles */}
@@ -469,17 +441,24 @@ export default function TicketConfig() {
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                                 <label className="flex items-center justify-between text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
                                     <span className="flex items-center gap-2"><Type size={14} /> Tamaño de Datos (Fecha, Ticket, etc.)</span>
-                                    <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.metadataSize || 10}px</span>
                                 </label>
-                                <input 
-                                    type="range" 
-                                    min="7" 
-                                    max="14" 
-                                    step="1"
-                                    value={form.metadataSize || 10}
-                                    onChange={(e) => update('metadataSize')(parseInt(e.target.value))}
-                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                                />
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => update('metadataSize')(Math.max(7, (form.metadataSize || 10) - 1))}
+                                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                    >
+                                        <Minus size={18} />
+                                    </button>
+                                    <div className="flex-1 text-center bg-white py-2 rounded-xl border border-slate-100 font-black text-primary">
+                                        {form.metadataSize || 10}px
+                                    </div>
+                                    <button 
+                                        onClick={() => update('metadataSize')(Math.min(14, (form.metadataSize || 10) + 1))}
+                                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                    >
+                                        <Plus size={18} />
+                                    </button>
+                                </div>
                             </div>
                             
                             <Toggle
@@ -517,20 +496,23 @@ export default function TicketConfig() {
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-4">
                                 <label className="flex items-center justify-between text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
                                     <span className="flex items-center gap-2"><Type size={14} /> Espaciado entre Líneas</span>
-                                    <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.metadataSpacing || 0}px</span>
                                 </label>
-                                <input 
-                                    type="range" 
-                                    min="0" 
-                                    max="20" 
-                                    step="1"
-                                    value={form.metadataSpacing || 0}
-                                    onChange={(e) => update('metadataSpacing')(parseInt(e.target.value))}
-                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                                />
-                                <div className="flex justify-between mt-1 px-1">
-                                    <span className="text-[10px] text-slate-400 font-bold uppercase">Pegado</span>
-                                    <span className="text-[10px] text-slate-400 font-bold uppercase">Separado</span>
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => update('metadataSpacing')(Math.max(0, (form.metadataSpacing || 0) - 1))}
+                                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                    >
+                                        <Minus size={18} />
+                                    </button>
+                                    <div className="flex-1 text-center bg-white py-2 rounded-xl border border-slate-100 font-black text-primary">
+                                        {form.metadataSpacing || 0}px
+                                    </div>
+                                    <button 
+                                        onClick={() => update('metadataSpacing')(Math.min(20, (form.metadataSpacing || 0) + 1))}
+                                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                    >
+                                        <Plus size={18} />
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -616,20 +598,25 @@ export default function TicketConfig() {
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2">
                                 <label className="flex items-center justify-between text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
                                     <span className="flex items-center gap-2"><Type size={14} /> Tamaño TOTAL</span>
-                                    <span className={`font-black bg-white px-2 py-0.5 rounded-lg shadow-sm ${form.totalFontSize > 16 ? 'text-primary' : 'text-slate-500'}`}>
-                                        {form.totalFontSize > 16 ? 'GRANDE' : 'NORMAL'} ({form.totalFontSize || 14}px)
-                                    </span>
                                 </label>
-                                <input 
-                                    type="range" 
-                                    min="10" 
-                                    max="24" 
-                                    step="1"
-                                    value={form.totalFontSize || 14}
-                                    onChange={(e) => update('totalFontSize')(parseInt(e.target.value))}
-                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                                />
-                                <p className="text-[10px] text-slate-400 font-bold uppercase mt-2">
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => update('totalFontSize')(Math.max(10, (form.totalFontSize || 14) - 1))}
+                                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                    >
+                                        <Minus size={18} />
+                                    </button>
+                                    <div className="flex-1 text-center bg-white py-2 rounded-xl border border-slate-100 font-black text-primary">
+                                        {form.totalFontSize || 14}px
+                                    </div>
+                                    <button 
+                                        onClick={() => update('totalFontSize')(Math.min(24, (form.totalFontSize || 14) + 1))}
+                                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                    >
+                                        <Plus size={18} />
+                                    </button>
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase mt-3">
                                     {form.totalFontSize > 16 ? '⚠️ La impresora usará modo DOBLE TAMAÑO' : 'Se usará modo TAMAÑO NORMAL'}
                                 </p>
                             </div>
@@ -692,29 +679,49 @@ export default function TicketConfig() {
                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Márgenes y Separación</h3>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                        <label className="flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
-                                            <span>Márgenes Sup.</span>
-                                            <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.headerSpacing || 0}px</span>
+                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
+                                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 text-left">
+                                            Márgenes Sup.
                                         </label>
-                                        <input 
-                                            type="range" min="0" max="20" step="2"
-                                            value={form.headerSpacing || 0}
-                                            onChange={(e) => update('headerSpacing')(parseInt(e.target.value))}
-                                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                                        />
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={() => update('headerSpacing')(Math.max(0, (form.headerSpacing || 0) - 2))}
+                                                className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+                                            >
+                                                <Minus size={14} />
+                                            </button>
+                                            <div className="flex-1 bg-white py-1 rounded-lg border border-slate-100 text-xs font-black text-primary">
+                                                {form.headerSpacing || 0}
+                                            </div>
+                                            <button 
+                                                onClick={() => update('headerSpacing')(Math.min(20, (form.headerSpacing || 0) + 2))}
+                                                className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+                                            >
+                                                <Plus size={14} />
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                        <label className="flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
-                                            <span>Salto tras Productos</span>
-                                            <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.itemsSectionSpacing || 0}px</span>
+                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
+                                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 text-left">
+                                            Salto tras Productos
                                         </label>
-                                        <input 
-                                            type="range" min="0" max="20" step="5"
-                                            value={form.itemsSectionSpacing || 0}
-                                            onChange={(e) => update('itemsSectionSpacing')(parseInt(e.target.value))}
-                                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                                        />
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={() => update('itemsSectionSpacing')(Math.max(0, (form.itemsSectionSpacing || 0) - 5))}
+                                                className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+                                            >
+                                                <Minus size={14} />
+                                            </button>
+                                            <div className="flex-1 bg-white py-1 rounded-lg border border-slate-100 text-xs font-black text-primary">
+                                                {form.itemsSectionSpacing || 0}
+                                            </div>
+                                            <button 
+                                                onClick={() => update('itemsSectionSpacing')(Math.min(20, (form.itemsSectionSpacing || 0) + 5))}
+                                                className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+                                            >
+                                                <Plus size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -782,83 +789,56 @@ export default function TicketConfig() {
                                         </div>
 
                                         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                            <label className="flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
-                                                <span className="flex items-center gap-2"><Type size={12} /> Espacio Subtotal → Total</span>
-                                                <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.subtotalTotalSpacing || 0}px</span>
+                                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                                                Espacio Subtotal → Total
                                             </label>
-                                            <input 
-                                                type="range" 
-                                                min="0" 
-                                                max="15" 
-                                                step="1"
-                                                value={form.subtotalTotalSpacing || 0}
-                                                onChange={(e) => update('subtotalTotalSpacing')(parseInt(e.target.value))}
-                                                className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                                            />
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                    onClick={() => update('subtotalTotalSpacing')(Math.max(0, (form.subtotalTotalSpacing || 0) - 1))}
+                                                    className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+                                                >
+                                                    <Minus size={14} />
+                                                </button>
+                                                <div className="flex-1 bg-white py-1 rounded-lg border border-slate-100 text-xs font-black text-primary text-center">
+                                                    {form.subtotalTotalSpacing || 0}
+                                                </div>
+                                                <button 
+                                                    onClick={() => update('subtotalTotalSpacing')(Math.min(15, (form.subtotalTotalSpacing || 0) + 1))}
+                                                    className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+                                                >
+                                                    <Plus size={14} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
-                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2">
-                                    <label className="flex items-center justify-between text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
-                                        <span className="flex items-center gap-2"><AlignCenter size={14} /> Espacio antes de Despedida</span>
-                                        <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.footerSpacing || 0}px</span>
-                                    </label>
-                                    <input 
-                                        type="range" 
-                                        min="0" 
-                                        max="20" 
-                                        step="2"
-                                        value={form.footerSpacing || 0}
-                                        onChange={(e) => update('footerSpacing')(parseInt(e.target.value))}
-                                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                                    />
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2">
+                                        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
+                                            Espacio antes de Despedida
+                                        </label>
+                                        <div className="flex items-center gap-4">
+                                            <button 
+                                                onClick={() => update('footerSpacing')(Math.max(0, (form.footerSpacing || 0) - 2))}
+                                                className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                            >
+                                                <Minus size={18} />
+                                            </button>
+                                            <div className="flex-1 text-center bg-white py-2 rounded-xl border border-slate-100 font-black text-primary">
+                                                {form.footerSpacing || 0}px
+                                            </div>
+                                            <button 
+                                                onClick={() => update('footerSpacing')(Math.min(20, (form.footerSpacing || 0) + 2))}
+                                                className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                            >
+                                                <Plus size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </Section>
+                        </Section>
 
-                    {/* Líneas extra */}
-
-                    <Section title="Líneas Adicionales del Encabezado" icon={AlignCenter}>
-                        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex gap-2 text-xs text-blue-600 mb-4">
-                            <Info size={14} className="shrink-0 mt-0.5" />
-                            <span>Aparecen debajo del teléfono.</span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div className="flex items-start gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                                <div className="flex-1">
-                                    <Field
-                                        id="extraLine1"
-                                        label="Línea Extra 1"
-                                        value={form.extraLine1}
-                                        onChange={update('extraLine1')}
-                                        placeholder="NIT / RFC / INFO"
-                                        maxLength={30}
-                                    />
-                                </div>
-                                <div className="pt-6">
-                                    <Toggle id="showExtraLine1" checked={form.showExtraLine1} onChange={update('showExtraLine1')} />
-                                </div>
-                             </div>
-                             <div className="flex items-start gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                                <div className="flex-1">
-                                    <Field
-                                        id="extraLine2"
-                                        label="Línea Extra 2"
-                                        value={form.extraLine2}
-                                        onChange={update('extraLine2')}
-                                        placeholder="www.tusitio.com"
-                                        maxLength={30}
-                                    />
-                                </div>
-                                <div className="pt-6">
-                                    <Toggle id="showExtraLine2" checked={form.showExtraLine2} onChange={update('showExtraLine2')} />
-                                </div>
-                             </div>
-                        </div>
-                    </Section>
-
-                    {/* Pie de página */}
+                            {/* Pie de página */}
                     <Section title="Pie de Página" icon={Settings2}>
                         <div className="space-y-4">
                             <div className="flex items-start gap-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
@@ -922,7 +902,7 @@ export default function TicketConfig() {
                                     key={opt.value}
                                     type="button"
                                     onClick={() => setForm(prev => ({ ...prev, paperWidth: opt.value }))}
-                                    className={`p-4 rounded-2xl border-2 text-left transition-all ${form.paperWidth === opt.value
+                                    className={`${form.paperWidth === opt.value
                                         ? 'border-primary bg-primary/5 shadow-sm'
                                         : 'border-slate-200 bg-white hover:border-slate-300'}`}
                                 >

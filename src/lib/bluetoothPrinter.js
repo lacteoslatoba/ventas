@@ -127,7 +127,6 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
     const {
         businessName = 'LACTEOS LA TOBA',
         subtitle = '', address = '', phone = '',
-        extraLine1 = '', extraLine2 = '',
         footerLine1 = '¡Gracias por su compra!',
         footerLine2 = '',
         showLabels = true,
@@ -168,8 +167,6 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         showSubtitle = true,
         subtotalAlignment = 'right',
         subtotalTotalSpacing = 0,
-        showExtraLine1 = true,
-        showExtraLine2 = true,
         showFooterLine1 = true,
         showFooterLine2 = true,
         itemsSectionSpacing = 0,
@@ -248,8 +245,6 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         if (showSubtitle && subtitle) add(subtitle.toUpperCase() + '\r\n');
         if (showAddress && address) add(address.toUpperCase() + '\r\n');
         if (showPhone && phone) add(`TEL: ${phone}\r\n`);
-        if (showExtraLine1 && extraLine1) add(extraLine1.toUpperCase() + '\r\n');
-        if (showExtraLine2 && extraLine2) add(extraLine2.toUpperCase() + '\r\n');
 
         if (showSeparatorHeader) add(SEP);
         add(CMD.ALIGN_LEFT);
