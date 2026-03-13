@@ -20,7 +20,9 @@ export function useBTPrinter() {
     // Intento de reconexión automática al montar el hook
     useEffect(() => {
         const tryReconnect = async () => {
-            if (getGlobalPrinter() || window.__isBTReconnecting) return;
+            const current = getGlobalPrinter();
+            // Si ya está conectado y funcionando, no hacemos nada
+            if (current?.device?.gatt?.connected || window.__isBTReconnecting) return;
             
             const lastPrinter = getSavedPrinterName();
             if (lastPrinter) {
@@ -44,7 +46,22 @@ export function useBTPrinter() {
             }
         };
 
+        // Intentar al montar
         tryReconnect();
+
+        // También intentar en el primer clic del usuario (por restricciones de Chrome)
+        const handleFirstClick = () => {
+            tryReconnect();
+            window.removeEventListener('click', handleFirstClick);
+            window.removeEventListener('touchstart', handleFirstClick);
+        };
+        window.addEventListener('click', handleFirstClick);
+        window.addEventListener('touchstart', handleFirstClick);
+
+        return () => {
+            window.removeEventListener('click', handleFirstClick);
+            window.removeEventListener('touchstart', handleFirstClick);
+        };
     }, [setPrinter]);
 
     // Polling para detectar cambios globales

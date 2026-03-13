@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate 
 import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut } from 'lucide-react';
 import { useStore } from './store';
 import { autoConnectPrinter, getSavedPrinterName } from './lib/bluetoothPrinter';
+import { useBTPrinter } from './lib/useBTPrinter';
 
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
@@ -45,62 +46,9 @@ const NetworkIndicator = () => {
   return null;
 };
 
-// Componente para manejar reconexión de impresora usando un "User Gesture" (toque en pantalla)
+// Componente persistente para manejar reconexión de impresora usando el hook global
 const PrinterAutoConnect = () => {
-  useEffect(() => {
-    let attempts = 0;
-    
-    const tryAutoConnect = async () => {
-      // Evitar reconectar si ya hay impresora
-      if (window.__btPrinter) return;
-
-      const savedName = getSavedPrinterName();
-      if (!savedName) return;
-
-      try {
-        attempts++;
-        const result = await autoConnectPrinter(savedName);
-        if (result) {
-          window.__btPrinter = result;
-          console.log('Impresora reconectada automáticamente tras interacción:', result.device.name);
-          
-          result.device.addEventListener('gattserverdisconnected', () => {
-            console.log('Impresora desconectada');
-            window.__btPrinter = null;
-          });
-          
-          // Limpiar eventos si ya conectó
-          removeListeners();
-        }
-      } catch (err) {
-        console.warn('No se pudo reconectar la impresora automáticamente:', err);
-      }
-    };
-
-    const handleInteraction = () => {
-      // Intentar una o dos veces al interactuar
-      if (attempts < 2 && !window.__btPrinter) {
-        tryAutoConnect();
-      }
-    };
-
-    const removeListeners = () => {
-      document.removeEventListener('click', handleInteraction);
-      document.removeEventListener('touchstart', handleInteraction);
-    };
-
-    document.addEventListener('click', handleInteraction, { once: false });
-    document.addEventListener('touchstart', handleInteraction, { once: false });
-
-    // Intentar también automáticamente con delay por si el navegador lo permite
-    const timer = setTimeout(tryAutoConnect, 1500);
-
-    return () => {
-      clearTimeout(timer);
-      removeListeners();
-    };
-  }, []);
-
+  useBTPrinter(); // Activa la lógica de auto-reconexión del hook
   return null;
 };
 
