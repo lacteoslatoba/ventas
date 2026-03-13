@@ -31,6 +31,8 @@ function TicketPreview({ config }) {
         metadataSpacing = 0, // Margen extra arriba de cada línea
         multiLineItems = true,
         totalFontSize = 14,
+        itemsHeaderLeft = 'CANT/CONCEPTO',
+        itemsHeaderRight = 'IMPORTE',
         logoUrl = null,
     } = config;
 
@@ -81,7 +83,7 @@ function TicketPreview({ config }) {
                     {showItemsHeader && (
                         <>
                             <div className="border-t border-dashed border-black my-1" />
-                            <div className="flex justify-between uppercase"><span>ITEM</span><span>PRECIO</span></div>
+                            <div className="flex justify-between uppercase"><span>{itemsHeaderLeft}</span><span>{itemsHeaderRight}</span></div>
                             <div className="border-t border-dashed border-black my-1" />
                         </>
                     )}
@@ -199,7 +201,7 @@ function TicketPreview({ config }) {
 
                 {showItemsHeader && (
                     <>
-                        <div className="font-bold">CANT  CONCEPTO    IMPORTE</div>
+                        <div className="flex justify-between font-bold uppercase overflow-hidden"><span>{itemsHeaderLeft}</span><span>{itemsHeaderRight}</span></div>
                         <div className="border-t border-dashed border-black my-0.5" />
                     </>
                 )}
@@ -675,6 +677,24 @@ export default function TicketConfig() {
                     {/* Diseño y Apariencia */}
                     <Section title="Diseño y Apariencia" icon={Type}>
                         <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field
+                                    id="itemsHeaderLeft"
+                                    label="Título Izq. (Items)"
+                                    value={form.itemsHeaderLeft}
+                                    onChange={update('itemsHeaderLeft')}
+                                    placeholder="CANT/ITEM"
+                                    maxLength={15}
+                                />
+                                <Field
+                                    id="itemsHeaderRight"
+                                    label="Título Der. (Precio)"
+                                    value={form.itemsHeaderRight}
+                                    onChange={update('itemsHeaderRight')}
+                                    placeholder="IMPORTE"
+                                    maxLength={10}
+                                />
+                            </div>
                             <div>
                                 <label className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
                                     <AlignCenter size={14} /> Alineación de Títulos

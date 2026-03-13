@@ -143,6 +143,8 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         metadataSize = 10,
         multiLineItems = true,
         totalFontSize = 14,
+        itemsHeaderLeft = 'CANT/CONCEPTO',
+        itemsHeaderRight = 'IMPORTE',
         logoUrl = null
     } = config;
 
@@ -249,7 +251,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
 
         if (config.showItemsHeader !== false) {
             add(SEP, CMD.BOLD_ON);
-            add(formatMetaLine('ITEM', 'PRECIO'));
+            add(formatMetaLine(itemsHeaderLeft, itemsHeaderRight));
             add(CMD.BOLD_OFF, SEP);
         } else {
             add(SEP);
@@ -298,12 +300,16 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         
         add('\r\n', CMD.ALIGN_CENTER);
         
-        if (footerLine1) add(footerLine1.toUpperCase() + '\r\n');
-        if (footerLine2) add(footerLine2.toUpperCase() + '\r\n');
+        if (footerLine1) {
+            add(footerLine1.toUpperCase() + '\r\n');
+        }
+        if (footerLine2) {
+            add(footerLine2.toUpperCase() + '\r\n');
+        }
         if (showSignature) add('\r\nFIRMA: __________________\r\n');
         
-        add('\r\n\r\n\r\n\r\n', [ESC, 0x69]); // Intento de comando de corte alternativo
-
+        // Mucho más avance de papel para que salga el pie de página
+        add('\r\n\r\n\r\n\r\n\r\n\r\n', [ESC, 0x69]); 
     } else {
         // Estándar muy robusto
         add(CMD.INIT, CMD.ALIGN_CENTER);
@@ -342,7 +348,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         add(SEP);
         
         if (config.showItemsHeader !== false) {
-            add(formatMetaLine('CANT/ITEM', 'IMPORTE'));
+            add(formatMetaLine(itemsHeaderLeft, itemsHeaderRight));
             add(SEP);
         }
 
@@ -371,7 +377,12 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         }
         
         if (totalFontSize > 16) add(CMD.NORMAL_SIZE);
-        add(CMD.BOLD_OFF, '\r\n\r\n\r\n\r\n');
+        add(CMD.BOLD_OFF, SEP, CMD.ALIGN_CENTER);
+        
+        if (footerLine1) add(footerLine1.toUpperCase() + '\r\n');
+        if (footerLine2) add(footerLine2.toUpperCase() + '\r\n');
+        
+        add('\r\n\r\n\r\n\r\n\r\n\r\n', [ESC, 0x69]);
     }
 
     const totalLen = chunks.reduce((n, c) => n + c.length, 0);
