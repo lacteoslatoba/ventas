@@ -30,6 +30,7 @@ function TicketPreview({ config }) {
         metadataAlignment = 'between', // 'between' (columnas) o 'left', 'center', 'right'
         metadataSpacing = 0, // Margen extra arriba de cada línea
         multiLineItems = true,
+        totalFontSize = 14,
         logoUrl = null,
     } = config;
 
@@ -112,7 +113,7 @@ function TicketPreview({ config }) {
                     <div className="uppercase">NUMERO DE ARTICULOS: 2</div>
                     
                     <div className="text-right mt-2 font-bold uppercase">SUBTOTAL: $165.00</div>
-                    <div className={`${centerTotal ? 'text-center' : 'text-right'} font-bold text-[14px] leading-[14px] mt-2 mb-1 uppercase`} style={{ fontSize: '14px' }}>TOTAL $165.00</div>
+                    <div className={`${centerTotal ? 'text-center' : 'text-right'} font-bold leading-[1.2] mt-2 mb-1 uppercase`} style={{ fontSize: `${totalFontSize}px` }}>TOTAL $165.00</div>
 
                     {showCashAndChange && (
                         <>
@@ -216,7 +217,7 @@ function TicketPreview({ config }) {
                     </>
                 )}
                 <div className="border-t-2 border-black my-0.5" />
-                <div className={`${centerTotal ? 'text-center' : 'text-right'} font-bold text-[12px]`}>TOTAL $165.00</div>
+                <div className={`${centerTotal ? 'text-center' : 'text-right'} font-bold leading-[1.2] uppercase`} style={{ fontSize: `${totalFontSize}px` }}>TOTAL $165.00</div>
                 <div className="border-t border-dashed border-black my-0.5" />
 
                 {showCashAndChange && (
@@ -729,6 +730,26 @@ export default function TicketConfig() {
                                     checked={form.centerTotal}
                                     onChange={update('centerTotal')}
                                 />
+                            </div>
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2">
+                                <label className="flex items-center justify-between text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
+                                    <span className="flex items-center gap-2"><Type size={14} /> Tamaño TOTAL</span>
+                                    <span className={`font-black bg-white px-2 py-0.5 rounded-lg shadow-sm ${form.totalFontSize > 16 ? 'text-primary' : 'text-slate-500'}`}>
+                                        {form.totalFontSize > 16 ? 'GRANDE' : 'NORMAL'} ({form.totalFontSize || 14}px)
+                                    </span>
+                                </label>
+                                <input 
+                                    type="range" 
+                                    min="10" 
+                                    max="24" 
+                                    step="1"
+                                    value={form.totalFontSize || 14}
+                                    onChange={(e) => update('totalFontSize')(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                />
+                                <p className="text-[10px] text-slate-400 font-bold uppercase mt-2">
+                                    {form.totalFontSize > 16 ? '⚠️ La impresora usará modo DOBLE TAMAÑO' : 'Se usará modo TAMAÑO NORMAL'}
+                                </p>
                             </div>
                             <div className="pt-2 border-t border-slate-100">
                                 <Toggle

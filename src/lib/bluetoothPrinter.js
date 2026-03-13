@@ -142,6 +142,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         showLabels = true,
         metadataSize = 10,
         multiLineItems = true,
+        totalFontSize = 14,
         logoUrl = null
     } = config;
 
@@ -278,11 +279,15 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         add(col2('SUBTOTAL:', finalTot));
         
         add(CMD.BOLD_ON);
+        if (totalFontSize > 16) add(CMD.DOUBLE_SIZE);
+
         if (config.centerTotal) {
             add(CMD.ALIGN_CENTER, `TOTAL: ${finalTot}\r\n`, CMD.ALIGN_LEFT);
         } else {
             add(CMD.ALIGN_RIGHT, `TOTAL: ${finalTot}\r\n`, CMD.ALIGN_LEFT);
         }
+        
+        if (totalFontSize > 16) add(CMD.NORMAL_SIZE);
         add(CMD.BOLD_OFF, SEP);
 
         if (config.showCashAndChange !== false) {
@@ -356,11 +361,16 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         
         add(SEP, CMD.BOLD_ON);
         const finalTotStr = `$${Number(ticket.total).toFixed(2)}`;
+        
+        if (totalFontSize > 16) add(CMD.DOUBLE_SIZE);
+        
         if (config.centerTotal) {
             add(CMD.ALIGN_CENTER, `TOTAL: ${finalTotStr}\r\n`, CMD.ALIGN_LEFT);
         } else {
             add(col2('TOTAL:', finalTotStr));
         }
+        
+        if (totalFontSize > 16) add(CMD.NORMAL_SIZE);
         add(CMD.BOLD_OFF, '\r\n\r\n\r\n\r\n');
     }
 
