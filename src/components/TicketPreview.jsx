@@ -37,11 +37,14 @@ export default function TicketPreview({ config, sale, user, client }) {
         showSeparatorItems = true,
         showSeparatorFooter = true,
         separatorStyle = 'dashed',
-        headerSpacing = 0,
-        footerSpacing = 0,
         showSubtitle = true,
         subtotalAlignment = 'right',
         subtotalTotalSpacing = 0,
+        showExtraLine1 = true,
+        showExtraLine2 = true,
+        showFooterLine1 = true,
+        showFooterLine2 = true,
+        itemsSectionSpacing = 0,
     } = config;
 
     // Si no hay 'sale', usamos datos de prueba (para la pantalla de configuración)
@@ -92,8 +95,8 @@ export default function TicketPreview({ config, sale, user, client }) {
                     {showSubtitle && subtitle && <div className="text-center uppercase">{subtitle}</div>}
                     {showAddress && address && <div className="text-center uppercase">{address}</div>}
                     {showPhone && phone && <div className="text-center uppercase">TEL: {phone}</div>}
-                    {extraLine1 && <div className="text-center uppercase">{extraLine1}</div>}
-                    {extraLine2 && <div className="text-center uppercase">{extraLine2}</div>}
+                    {showExtraLine1 && extraLine1 && <div className="text-center uppercase">{extraLine1}</div>}
+                    {showExtraLine2 && extraLine2 && <div className="text-center uppercase">{extraLine2}</div>}
 
                     {showSeparatorHeader && <Separator />}
 
@@ -136,7 +139,7 @@ export default function TicketPreview({ config, sale, user, client }) {
                         ))}
                     </div>
 
-                    <div className="uppercase text-[9px] mt-1 opacity-70">ARTICULOS: {displaySale.items.length}</div>
+                    <div style={{ marginTop: `${itemsSectionSpacing}px` }} className="uppercase text-[9px] mt-1 opacity-70">ARTICULOS: {displaySale.items.length}</div>
                     
                     {showSubtotal && (
                         <div 
@@ -165,8 +168,10 @@ export default function TicketPreview({ config, sale, user, client }) {
                         </div>
                     )}
 
-                    <div className="text-center mt-2 uppercase" style={{ marginTop: `${footerSpacing}px` }}>{footerLine1 || '¡GRACIAS POR SU COMPRA!'}</div>
-                    {footerLine2 && <div className="text-center uppercase">{footerLine2}</div>}
+                    <div className="text-center mt-2 uppercase" style={{ marginTop: `${footerSpacing}px` }}>
+                        {showFooterLine1 && (footerLine1 || '¡GRACIAS POR SU COMPRA!')}
+                    </div>
+                    {showFooterLine2 && footerLine2 && <div className="text-center uppercase">{footerLine2}</div>}
                     {showSignature && <div className="mt-4 uppercase border-t border-black/20 pt-1 text-center text-[8px]">FIRMA DEL CLIENTE</div>}
                 </div>
             </div>
@@ -253,6 +258,8 @@ export default function TicketPreview({ config, sale, user, client }) {
                     ))}
                 </div>
 
+                <div style={{ marginTop: `${itemsSectionSpacing}px` }} />
+
                 {showSeparatorFooter && <Separator />}
 
                 {showSubtotal && (
@@ -280,9 +287,9 @@ export default function TicketPreview({ config, sale, user, client }) {
                 )}
 
                 <div className="text-center mt-1 text-[8px]" style={{ marginTop: `${footerSpacing}px` }}>
-                    {footerLine1 || '¡Gracias por su compra!'}
+                    {showFooterLine1 && (footerLine1 || '¡Gracias por su compra!')}
                 </div>
-                {footerLine2 && <div className="text-center text-[8px]">{footerLine2}</div>}
+                {showFooterLine2 && footerLine2 && <div className="text-center text-[8px]">{footerLine2}</div>}
                 {showSignature && (
                     <div className="mt-4 text-[8px] border-t border-black/20 pt-1 text-center">Firma: ________________________</div>
                 )}

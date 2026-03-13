@@ -81,6 +81,11 @@ export const useStore = create(
                 showSubtitle: true,
                 subtotalAlignment: 'right',
                 subtotalTotalSpacing: 0,
+                showExtraLine1: true,
+                showExtraLine2: true,
+                showFooterLine1: true,
+                showFooterLine2: true,
+                itemsSectionSpacing: 0,
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));

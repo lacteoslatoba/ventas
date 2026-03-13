@@ -167,6 +167,11 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         showSubtitle = true,
         subtotalAlignment = 'right',
         subtotalTotalSpacing = 0,
+        showExtraLine1 = true,
+        showExtraLine2 = true,
+        showFooterLine1 = true,
+        showFooterLine2 = true,
+        itemsSectionSpacing = 0,
     } = config;
 
     const chunks = [];
@@ -237,8 +242,8 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         if (showSubtitle && subtitle) add(subtitle.toUpperCase() + '\r\n');
         if (showAddress && address) add(address.toUpperCase() + '\r\n');
         if (showPhone && phone) add(`TEL: ${phone}\r\n`);
-        if (extraLine1) add(extraLine1.toUpperCase() + '\r\n');
-        if (extraLine2) add(extraLine2.toUpperCase() + '\r\n');
+        if (showExtraLine1 && extraLine1) add(extraLine1.toUpperCase() + '\r\n');
+        if (showExtraLine2 && extraLine2) add(extraLine2.toUpperCase() + '\r\n');
 
         if (showSeparatorHeader) add(SEP);
         add(CMD.ALIGN_LEFT);
@@ -299,6 +304,13 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         }
         if (itemsBold) add(CMD.BOLD_OFF);
 
+        if (itemsSectionSpacing > 0) {
+            let itemSpacingLines = 0;
+            if (itemsSectionSpacing > 0) itemSpacingLines = 1;
+            if (itemsSectionSpacing > 10) itemSpacingLines = 2;
+            if (itemSpacingLines > 0) add('\r\n'.repeat(itemSpacingLines));
+        }
+
         if (showSeparatorFooter) add(SEP);
 
         if (showSubtotal) {
@@ -334,10 +346,10 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         
         add('\r\n', CMD.ALIGN_CENTER);
         
-        if (footerLine1) {
+        if (showFooterLine1 && footerLine1) {
             add(footerLine1.toUpperCase() + '\r\n');
         }
-        if (footerLine2) {
+        if (showFooterLine2 && footerLine2) {
             add(footerLine2.toUpperCase() + '\r\n');
         }
         if (showSignature) add('\r\nFIRMA: __________________\r\n');
@@ -407,6 +419,13 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
             if (spaceBetweenItems) add('\r\n');
         }
         if (itemsBold) add(CMD.BOLD_OFF);
+
+        if (itemsSectionSpacing > 0) {
+            let itemSpacingLines = 0;
+            if (itemsSectionSpacing > 0) itemSpacingLines = 1;
+            if (itemsSectionSpacing > 10) itemSpacingLines = 2;
+            if (itemSpacingLines > 0) add('\r\n'.repeat(itemSpacingLines));
+        }
         
         if (showSeparatorFooter) add(SEP);
         
@@ -440,8 +459,8 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         
         if (showSeparatorFooter) add(SEP);
 
-        if (footerLine1) add(footerLine1.toUpperCase() + '\r\n');
-        if (footerLine2) add(footerLine2.toUpperCase() + '\r\n');
+        if (showFooterLine1 && footerLine1) add(footerLine1.toUpperCase() + '\r\n');
+        if (showFooterLine2 && footerLine2) add(footerLine2.toUpperCase() + '\r\n');
         
         add('\r\n\r\n\r\n\r\n\r\n\r\n', [ESC, 0x69]);
     }

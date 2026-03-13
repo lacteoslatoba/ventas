@@ -227,6 +227,15 @@ export default function TicketConfig() {
                             </div>
                         </div>
 
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Visibilidad Nombre</h3>
+                            <Toggle
+                                id="showBusinessName"
+                                checked={form.showBusinessName}
+                                onChange={update('showBusinessName')}
+                            />
+                        </div>
+
                         <Field
                             id="businessName"
                             label="Nombre del Negocio"
@@ -238,7 +247,7 @@ export default function TicketConfig() {
                             hint="Aparece grande en la parte superior del ticket"
                         />
                         
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6">
                             <label className="flex items-center justify-between text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
                                 <span className="flex items-center gap-2"><Type size={14} /> Tamaño de Letra (Nombre)</span>
                                 <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.businessNameSize || 13}px</span>
@@ -257,43 +266,100 @@ export default function TicketConfig() {
                                 <span className="text-[10px] text-slate-400 font-bold uppercase">Grande</span>
                             </div>
                         </div>
-                        <Field
-                            id="subtitle"
-                            label="Subtítulo / Giro"
-                            icon={AlignCenter}
-                            value={form.subtitle}
-                            onChange={update('subtitle')}
-                            placeholder="Productos Lácteos"
-                            maxLength={32}
-                            hint="Aparece debajo del nombre del negocio"
-                        />
-                        <div className="pt-1">
-                            <Toggle
-                                id="showSubtitle"
-                                label="Mostrar Subtítulo"
-                                desc="Habilita o deshabilita la visibilidad del giro/subtítulo en el ticket"
-                                checked={form.showSubtitle}
-                                onChange={update('showSubtitle')}
-                            />
+                        <div className="flex items-start gap-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                             <div className="flex-1">
+                                <Field
+                                    id="subtitle"
+                                    label="Subtítulo / Giro"
+                                    icon={AlignCenter}
+                                    value={form.subtitle}
+                                    onChange={update('subtitle')}
+                                    placeholder="Productos Lácteos"
+                                    maxLength={32}
+                                />
+                             </div>
+                             <div className="pt-7 shrink-0">
+                                <Toggle
+                                    id="showSubtitle"
+                                    checked={form.showSubtitle}
+                                    onChange={update('showSubtitle')}
+                                />
+                             </div>
                         </div>
-                        <Field
-                            id="address"
-                            label="Dirección"
-                            icon={MapPin}
-                            value={form.address}
-                            onChange={update('address')}
-                            placeholder="Av. Principal #123, Col. Centro"
-                            maxLength={38}
-                        />
-                        <Field
-                            id="phone"
-                            label="Teléfono / WhatsApp"
-                            icon={Phone}
-                            value={form.phone}
-                            onChange={update('phone')}
-                            placeholder="(618) 123-4567"
-                            maxLength={20}
-                        />
+                        <div className="flex items-start gap-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                             <div className="flex-1">
+                                <Field
+                                    id="address"
+                                    label="Dirección"
+                                    icon={MapPin}
+                                    value={form.address}
+                                    onChange={update('address')}
+                                    placeholder="Av. Principal #123, Col. Centro"
+                                    maxLength={38}
+                                />
+                             </div>
+                             <div className="pt-7 shrink-0">
+                                <Toggle
+                                    id="showAddress"
+                                    checked={form.showAddress}
+                                    onChange={update('showAddress')}
+                                />
+                             </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                             <div className="flex-1">
+                                <Field
+                                    id="phone"
+                                    label="Teléfono / WhatsApp"
+                                    icon={Phone}
+                                    value={form.phone}
+                                    onChange={update('phone')}
+                                    placeholder="(618) 123-4567"
+                                    maxLength={20}
+                                />
+                             </div>
+                             <div className="pt-7 shrink-0">
+                                <Toggle
+                                    id="showPhone"
+                                    checked={form.showPhone}
+                                    onChange={update('showPhone')}
+                                />
+                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                             <div className="flex items-start gap-2 bg-slate-100/30 p-2 rounded-xl border border-dashed border-slate-200">
+                                <div className="flex-1">
+                                    <Field
+                                        id="extraLine1"
+                                        label="Línea Extra 1"
+                                        value={form.extraLine1}
+                                        onChange={update('extraLine1')}
+                                        placeholder="NIT / RFC / INFO"
+                                        maxLength={30}
+                                    />
+                                </div>
+                                <div className="pt-6">
+                                    <Toggle id="showExtraLine1" checked={form.showExtraLine1} onChange={update('showExtraLine1')} />
+                                </div>
+                             </div>
+                             <div className="flex items-start gap-2 bg-slate-100/30 p-2 rounded-xl border border-dashed border-slate-200">
+                                <div className="flex-1">
+                                    <Field
+                                        id="extraLine2"
+                                        label="Línea Extra 2"
+                                        value={form.extraLine2}
+                                        onChange={update('extraLine2')}
+                                        placeholder="www.tusitio.com"
+                                        maxLength={30}
+                                    />
+                                </div>
+                                <div className="pt-6">
+                                    <Toggle id="showExtraLine2" checked={form.showExtraLine2} onChange={update('showExtraLine2')} />
+                                </div>
+                             </div>
+                        </div>
                     </Section>
 
                     {/* Campos Visibles */}
@@ -609,6 +675,37 @@ export default function TicketConfig() {
                                 />
                             </div>
 
+                            <div className="pt-4 border-t border-slate-100 space-y-4">
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Márgenes y Separación</h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                        <label className="flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                                            <span>Márgenes Sup.</span>
+                                            <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.headerSpacing || 0}px</span>
+                                        </label>
+                                        <input 
+                                            type="range" min="0" max="20" step="2"
+                                            value={form.headerSpacing || 0}
+                                            onChange={(e) => update('headerSpacing')(parseInt(e.target.value))}
+                                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                        />
+                                    </div>
+                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                        <label className="flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                                            <span>Salto tras Productos</span>
+                                            <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.itemsSectionSpacing || 0}px</span>
+                                        </label>
+                                        <input 
+                                            type="range" min="0" max="20" step="5"
+                                            value={form.itemsSectionSpacing || 0}
+                                            onChange={(e) => update('itemsSectionSpacing')(parseInt(e.target.value))}
+                                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="pt-4 border-t border-slate-100 space-y-2">
                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Resaltado (Negritas)</h3>
                                 <Toggle
@@ -710,47 +807,87 @@ export default function TicketConfig() {
                     {/* Líneas extra */}
 
                     <Section title="Líneas Adicionales del Encabezado" icon={AlignCenter}>
-                        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex gap-2 text-xs text-blue-600">
+                        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex gap-2 text-xs text-blue-600 mb-4">
                             <Info size={14} className="shrink-0 mt-0.5" />
-                            <span>Estas líneas aparecen debajo del teléfono. Puedes dejarlas vacías.</span>
+                            <span>Aparecen debajo del teléfono.</span>
                         </div>
-                        <Field
-                            id="extraLine1"
-                            label="Línea Extra 1"
-                            value={form.extraLine1}
-                            onChange={update('extraLine1')}
-                            placeholder="RFC: XAXX010101000"
-                            maxLength={38}
-                        />
-                        <Field
-                            id="extraLine2"
-                            label="Línea Extra 2"
-                            value={form.extraLine2}
-                            onChange={update('extraLine2')}
-                            placeholder="Horario: Lun–Sab 7am–2pm"
-                            maxLength={38}
-                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="flex items-start gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                <div className="flex-1">
+                                    <Field
+                                        id="extraLine1"
+                                        label="Línea Extra 1"
+                                        value={form.extraLine1}
+                                        onChange={update('extraLine1')}
+                                        placeholder="NIT / RFC / INFO"
+                                        maxLength={30}
+                                    />
+                                </div>
+                                <div className="pt-6">
+                                    <Toggle id="showExtraLine1" checked={form.showExtraLine1} onChange={update('showExtraLine1')} />
+                                </div>
+                             </div>
+                             <div className="flex items-start gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                <div className="flex-1">
+                                    <Field
+                                        id="extraLine2"
+                                        label="Línea Extra 2"
+                                        value={form.extraLine2}
+                                        onChange={update('extraLine2')}
+                                        placeholder="www.tusitio.com"
+                                        maxLength={30}
+                                    />
+                                </div>
+                                <div className="pt-6">
+                                    <Toggle id="showExtraLine2" checked={form.showExtraLine2} onChange={update('showExtraLine2')} />
+                                </div>
+                             </div>
+                        </div>
                     </Section>
 
                     {/* Pie de página */}
                     <Section title="Pie de Página" icon={Settings2}>
-                        <Field
-                            id="footerLine1"
-                            label="Mensaje de despedida 1"
-                            value={form.footerLine1}
-                            onChange={update('footerLine1')}
-                            placeholder="¡Gracias por su compra!"
-                            maxLength={38}
-                        />
-                        <Field
-                            id="footerLine2"
-                            label="Mensaje de despedida 2"
-                            value={form.footerLine2}
-                            onChange={update('footerLine2')}
-                            placeholder="Visítenos de nuevo"
-                            maxLength={38}
-                        />
-                        <div className="pt-2 space-y-3 border-t border-slate-100">
+                        <div className="space-y-4">
+                            <div className="flex items-start gap-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                                <div className="flex-1">
+                                    <Field
+                                        id="footerLine1"
+                                        label="Mensaje de despedida 1"
+                                        value={form.footerLine1}
+                                        onChange={update('footerLine1')}
+                                        placeholder="¡Gracias por su compra!"
+                                        maxLength={38}
+                                    />
+                                </div>
+                                <div className="pt-7 shrink-0">
+                                    <Toggle
+                                        id="showFooterLine1"
+                                        checked={form.showFooterLine1}
+                                        onChange={update('showFooterLine1')}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                                <div className="flex-1">
+                                    <Field
+                                        id="footerLine2"
+                                        label="Mensaje de despedida 2"
+                                        value={form.footerLine2}
+                                        onChange={update('footerLine2')}
+                                        placeholder="Visítenos de nuevo"
+                                        maxLength={38}
+                                    />
+                                </div>
+                                <div className="pt-7 shrink-0">
+                                    <Toggle
+                                        id="showFooterLine2"
+                                        checked={form.showFooterLine2}
+                                        onChange={update('showFooterLine2')}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="pt-4 space-y-3 border-t border-slate-100 mt-4">
                             <Toggle
                                 id="showSignature"
                                 label="Mostrar línea de firma"
