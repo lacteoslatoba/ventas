@@ -4,7 +4,7 @@ import {
     Settings2, Save, FileText, Building2, Phone,
     MapPin, AlignCenter, CheckCheck, Printer, Eye, EyeOff,
     ChevronRight, Info, AlignLeft, AlignRight, Type, Calendar, User, ArrowLeft,
-    Image as ImageIcon, Upload, Trash2
+    Image as ImageIcon, Upload, Trash2, RefreshCw, Minus, Plus
 } from 'lucide-react';
 
 import TicketPreview from '../components/TicketPreview';
@@ -117,10 +117,19 @@ export default function TicketConfig() {
         update('logoUrl')(null);
     };
 
-    const handleSave = () => {
-        updateTicketConfig(form);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
+    const [isSaving, setIsSaving] = useState(false);
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            await updateTicketConfig(form);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
+        } catch (error) {
+            console.error('Error al guardar:', error);
+            alert('Error al sincronizar con la base de datos. Se guardó localmente.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     if (!form) {
@@ -928,20 +937,25 @@ export default function TicketConfig() {
                     <div className="pt-4 pb-8">
                         <button
                             onClick={handleSave}
+                            disabled={isSaving}
                             className={`w-full py-5 rounded-[2rem] font-black uppercase tracking-widest transition-all active:scale-[0.98] border-2 shadow-sm flex items-center justify-center gap-3 ${
-                                saved 
+                                isSaving
+                                ? 'bg-slate-100 border-slate-300 text-slate-400 cursor-not-allowed'
+                                : saved 
                                 ? 'bg-white border-emerald-500 text-emerald-500 shadow-emerald-500/10' 
                                 : 'bg-white border-primary text-primary hover:bg-blue-50 shadow-blue-500/10'
                             }`}
                         >
-                            {saved ? (
-                                <><CheckCheck size={22} /> ¡CAMBIOS GUARDADOS!</>
+                            {isSaving ? (
+                                <><RefreshCw size={22} className="animate-spin" /> SINCRONIZANDO...</>
+                            ) : saved ? (
+                                <><CheckCheck size={22} /> ¡CAMBIOS GUARDADOS EN LA NUBE!</>
                             ) : (
-                                <><Save size={22} /> GUARDAR LOS CAMBIOS</>
+                                <><Save size={22} /> GUARDAR CONFIGURACIÓN GLOBAL</>
                             )}
                         </button>
                         <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-4">
-                            Toca para aplicar cambios en todos los tickets
+                            Esta configuración se aplicará a todos los repartidores y dispositivos
                         </p>
                     </div>
                 </div>

@@ -31,8 +31,6 @@ export const useStore = create(
                 subtitle: '',
                 address: '',
                 phone: '',
-                extraLine1: '',
-                extraLine2: '',
                 footerLine1: '¡Gracias por su compra!',
                 footerLine2: '',
                 showMainTitle: true,
@@ -81,15 +79,13 @@ export const useStore = create(
                 showSubtitle: true,
                 subtotalAlignment: 'right',
                 subtotalTotalSpacing: 0,
-                showExtraLine1: true,
-                showExtraLine2: true,
                 showFooterLine1: true,
                 showFooterLine2: true,
                 itemsSectionSpacing: 0,
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));
-                get().syncToSupabase();
+                return get().syncToSupabase();
             },
 
             updateCart: (update) => {
