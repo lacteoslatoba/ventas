@@ -146,12 +146,28 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
     const WIDTH = config.paperWidth === 80 ? 48 : 31;
     const SEP = '-'.repeat(WIDTH) + '\r\n';
 
-    // Función auxiliar para formatear líneas de dos columnas
-    const col2 = (l, r) => {
-        const spaces = Math.max(1, WIDTH - l.length - r.length);
-        const left = metadataUppercase ? l.toUpperCase() : l;
-        const right = metadataUppercase ? r.toUpperCase() : r;
-        return left + ' '.repeat(spaces) + right + '\r\n';
+    // Función auxiliar para formatear líneas de dos columnas o alineadas
+    const formatMetaLine = (l, r) => {
+        const align = config.metadataAlignment || 'between';
+        const spacing = '\r\n'.repeat(config.metadataSpacing > 5 ? 1 : 0); // Espaciado simple si es mayor a 5px
+        
+        let line = '';
+        if (align === 'between') {
+            const spaces = Math.max(1, WIDTH - l.length - r.length);
+            line = l + ' '.repeat(spaces) + r;
+        } else if (align === 'center') {
+            const combined = l + (r ? `: ${r}` : '');
+            const pad = Math.floor((WIDTH - combined.length) / 2);
+            line = ' '.repeat(Math.max(0, pad)) + combined;
+        } else if (align === 'right') {
+            const combined = l + (r ? `: ${r}` : '');
+            line = ' '.repeat(Math.max(0, WIDTH - combined.length)) + combined;
+        } else {
+            line = l + (r ? `: ${r}` : '');
+        }
+
+        const finalLine = metadataUppercase ? line.toUpperCase() : line;
+        return spacing + finalLine + '\r\n';
     };
 
     if (ticketTemplate === 'latoba') {
@@ -192,25 +208,25 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         // Aplicar fuente B si el tamaño es muy pequeño
         if (metadataSize < 9) add(CMD.FONT_B);
         
-        add(col2(dStr, tStr));
+        add(formatMetaLine(dStr, tStr));
 
         const tId = `#${(ticket.id || '').toUpperCase().slice(-6)}`;
-        add(col2('Ticket', tId));
+        add(formatMetaLine('Ticket', tId));
         
         if (showCustomer) {
             const cName = (client?.name || 'GENERAL').slice(0, 15);
-            add(col2('Cliente', cName));
+            add(formatMetaLine('Cliente', cName));
         }
         if (showSeller) {
             const sName = (user?.name || 'VENDEDOR').slice(0, 15);
-            add(col2('Repartidor', sName));
+            add(formatMetaLine('Repartidor', sName));
         }
 
         if (metadataSize < 9) add(CMD.FONT_A); // Volver a fuente normal
 
         if (config.showItemsHeader !== false) {
             add(SEP, CMD.BOLD_ON);
-            add(col2('ITEM', 'PRECIO'));
+            add(formatMetaLine('ITEM', 'PRECIO'));
             add(CMD.BOLD_OFF, SEP);
         } else {
             add(SEP);
@@ -231,19 +247,19 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
 
         add(SEP);
         const finalTot = `$${Number(ticket.total || 0).toFixed(2)}`;
-        add(col2('SUBTOTAL:', finalTot));
+        add(formatMetaLine('SUBTOTAL:', finalTot));
         
         add(CMD.BOLD_ON);
         if (config.centerTotal) {
             add(CMD.ALIGN_CENTER, `TOTAL: ${finalTot}\r\n`, CMD.ALIGN_LEFT);
         } else {
-            add(col2('TOTAL:', finalTot));
+            add(formatMetaLine('TOTAL:', finalTot));
         }
         add(CMD.BOLD_OFF, SEP);
 
         if (config.showCashAndChange !== false) {
-            add(col2('EFECTIVO:', finalTot));
-            add(col2('CAMBIO:', '$0.00'));
+            add(formatMetaLine('EFECTIVO:', finalTot));
+            add(formatMetaLine('CAMBIO:', '$0.00'));
             add(SEP);
         }
         
@@ -296,7 +312,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         add(SEP);
         
         if (config.showItemsHeader !== false) {
-            add(col2('CANT/ITEM', 'IMPORTE'));
+            add(formatMetaLine('CANT/ITEM', 'IMPORTE'));
             add(SEP);
         }
 

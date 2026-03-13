@@ -24,6 +24,8 @@ function TicketPreview({ config }) {
         businessNameSize = 13,
         metadataSize = 10,
         metadataUppercase = false,
+        metadataAlignment = 'between', // 'between' (columnas) o 'left', 'center', 'right'
+        metadataSpacing = 0, // Margen extra arriba de cada línea
         logoUrl = null,
     } = config;
 
@@ -60,16 +62,16 @@ function TicketPreview({ config }) {
 
                     <div className="border-t border-dashed border-black my-1" />
 
-                    <div className="flex justify-between" style={metaStyle}>
+                    <div style={{ ...metaStyle, marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
                         {showDate && <span>{dateStr}</span>}
                         {showTime && <span>{timeStr}</span>}
                     </div>
-                    <div className="flex justify-between" style={metaStyle}>
+                    <div style={{ ...metaStyle, marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
                         <span>Ticket</span><span>#A1B2C3</span>
                     </div>
                     
-                    {showCustomer && <div className="flex justify-between" style={metaStyle}><span>Cliente</span><span>Tienda La Fe</span></div>}
-                    {showSeller && <div className="flex justify-between" style={metaStyle}><span>Repartidor</span><span>Juan Pérez</span></div>}
+                    {showCustomer && <div style={{ ...metaStyle, marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>Cliente</span><span>Tienda La Fe</span></div>}
+                    {showSeller && <div style={{ ...metaStyle, marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>Repartidor</span><span>Juan Pérez</span></div>}
 
                     {showItemsHeader && (
                         <>
@@ -134,19 +136,37 @@ function TicketPreview({ config }) {
                 <div className="border-t border-dashed border-black my-1" />
 
                 {/* Info ticket */}
-                <div style={metaStyle}>
-                    <div>Ticket : #A1B2C3</div>
-                    {showDate && <div>Fecha  : {new Date().toLocaleDateString('es-MX')}</div>}
-                    {showTime && <div>Hora   : {new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>}
+                <div style={{ ...metaStyle, textAlign: metadataAlignment === 'between' ? 'left' : metadataAlignment }}>
+                    <div style={{ marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : ''}>
+                        <span>Ticket :</span> <span>#A1B2C3</span>
+                    </div>
+                    {showDate && (
+                        <div style={{ marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : ''}>
+                            <span>Fecha  :</span> <span>{new Date().toLocaleDateString('es-MX')}</span>
+                        </div>
+                    )}
+                    {showTime && (
+                        <div style={{ marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : ''}>
+                            <span>Hora   :</span> <span>{new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="border-t border-dashed border-black my-1" />
                 
                 {(showSeller || showCustomer) && (
                     <>
-                        <div style={metaStyle}>
-                            {showSeller && <div>Repartidor: Juan Pérez</div>}
-                            {showCustomer && <div>Cliente   : Tienda La Fe</div>}
+                        <div style={{ ...metaStyle, textAlign: metadataAlignment === 'between' ? 'left' : metadataAlignment }}>
+                            {showSeller && (
+                                <div style={{ marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : ''}>
+                                    <span>Repartidor:</span> <span>Juan Pérez</span>
+                                </div>
+                            )}
+                            {showCustomer && (
+                                <div style={{ marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : ''}>
+                                    <span>Cliente   :</span> <span>Tienda La Fe</span>
+                                </div>
+                            )}
                         </div>
                         <div className="border-t border-dashed border-black my-1" />
                     </>
@@ -544,6 +564,50 @@ export default function TicketConfig() {
                                 checked={form.metadataUppercase}
                                 onChange={update('metadataUppercase')}
                             />
+
+                            <div className="pt-4 border-t border-slate-100">
+                                <label className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
+                                    <AlignCenter size={14} /> Alineación de Datos
+                                </label>
+                                <div className="flex bg-slate-100 p-1.5 rounded-xl">
+                                    {[
+                                        { id: 'left', icon: AlignLeft, label: 'Izq.' },
+                                        { id: 'center', icon: AlignCenter, label: 'Cent.' },
+                                        { id: 'right', icon: AlignRight, label: 'Der.' },
+                                        { id: 'between', icon: CheckCheck, label: 'Columnas' }
+                                    ].map(opt => (
+                                        <button
+                                            key={opt.id}
+                                            type="button"
+                                            onClick={() => update('metadataAlignment')(opt.id)}
+                                            className={`flex-1 flex flex-col items-center justify-center py-2 rounded-lg text-xs font-bold transition-all ${form.metadataAlignment === opt.id || (opt.id === 'between' && !form.metadataAlignment) ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                                        >
+                                            <opt.icon size={16} />
+                                            <span className="text-[9px] mt-0.5">{opt.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-4">
+                                <label className="flex items-center justify-between text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
+                                    <span className="flex items-center gap-2"><Type size={14} /> Espaciado entre Líneas</span>
+                                    <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.metadataSpacing || 0}px</span>
+                                </label>
+                                <input 
+                                    type="range" 
+                                    min="0" 
+                                    max="20" 
+                                    step="1"
+                                    value={form.metadataSpacing || 0}
+                                    onChange={(e) => update('metadataSpacing')(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                />
+                                <div className="flex justify-between mt-1 px-1">
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase">Pegado</span>
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase">Separado</span>
+                                </div>
+                            </div>
                         </div>
                     </Section>
 
