@@ -141,6 +141,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         showBusinessName = true,
         showLabels = true,
         metadataSize = 10,
+        multiLineItems = true,
         logoUrl = null
     } = config;
 
@@ -151,11 +152,8 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
     const WIDTH = config.paperWidth === 80 ? 48 : 31;
     const SEP = '-'.repeat(WIDTH) + '\r\n';
 
-    // Función auxiliar para formatear líneas de dos columnas o alineadas
     const formatMetaLine = (l, r = '') => {
         const align = metadataAlignment || 'between';
-        // En impresoras térmicas, el "espaciado" se simula con saltos de línea
-        // Si el usuario pone > 0, añadimos al menos un salto. Si es > 10, dos.
         let spacingLines = 0;
         if (metadataSpacing > 0) spacingLines = 1;
         if (metadataSpacing > 12) spacingLines = 2;
@@ -180,10 +178,14 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
             line = cleanL + (cleanR ? `: ${cleanR}` : '');
         }
 
-        // Truncar si la línea excedió el ancho por alguna razón
         const truncated = line.slice(0, WIDTH);
         const finalLine = metadataUppercase ? truncated.toUpperCase() : truncated;
         return spacing + finalLine + '\r\n';
+    };
+
+    const col2 = (l, r) => {
+        const spaces = Math.max(1, WIDTH - String(l).length - String(r).length);
+        return String(l) + ' '.repeat(spaces) + String(r) + '\r\n';
     };
 
     if (ticketTemplate === 'latoba') {
@@ -254,26 +256,32 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
 
         const items = ticket.items || [];
         items.forEach(item => {
-            // Nombre en una sola línea (negrita opcional removida para estabilidad)
-            const name = (item.name || 'PRODUCTO').toUpperCase().slice(0, WIDTH);
-            add(name + '\r\n');
-            
-            // Cantidad y total abajo
-            const qtyStr = `${item.quantity || 0}${item.unit === 'Kg' ? 'kg' : 'x'} x $${Number(item.price || 0).toFixed(2)}`;
-            const totStr = `$${(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}`;
-            add(col2(qtyStr, totStr));
+            if (multiLineItems) {
+                // Estilo solicitado: Nombre arriba, Qty y Precio abajo
+                add(item.name.toUpperCase().slice(0, WIDTH) + '\r\n');
+                
+                const qtyStr = `${item.quantity || 0}${item.unit === 'Kg' ? 'kg' : 'x'} x $${Number(item.price || 0).toFixed(2)}`;
+                const totStr = `$${(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}`;
+                add(col2(qtyStr, totStr));
+            } else {
+                // Estilo compacto (una sola línea)
+                const qtyStr = `${item.quantity}${item.unit === 'Kg' ? 'k' : 'x'}`;
+                const nameStr = item.name.toUpperCase().slice(0, WIDTH - 12);
+                const totStr = `$${(Number(item.price) * Number(item.quantity)).toFixed(2)}`;
+                add(col2(`${qtyStr} ${nameStr}`, totStr));
+            }
             if (config.spaceBetweenItems) add('\r\n');
         });
 
         add(SEP);
         const finalTot = `$${Number(ticket.total || 0).toFixed(2)}`;
-        add(formatMetaLine('SUBTOTAL:', finalTot));
+        add(col2('SUBTOTAL:', finalTot));
         
         add(CMD.BOLD_ON);
         if (config.centerTotal) {
             add(CMD.ALIGN_CENTER, `TOTAL: ${finalTot}\r\n`, CMD.ALIGN_LEFT);
         } else {
-            add(formatMetaLine('TOTAL:', finalTot));
+            add(CMD.ALIGN_RIGHT, `TOTAL: ${finalTot}\r\n`, CMD.ALIGN_LEFT);
         }
         add(CMD.BOLD_OFF, SEP);
 
@@ -334,13 +342,25 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         }
 
         (ticket.items || []).forEach(item => {
-            const rowTotal = (Number(item.price) * Number(item.quantity)).toFixed(2);
-            add(`${item.quantity} ${item.name.toUpperCase().slice(0, 10)} $${rowTotal}\r\n`);
+            if (multiLineItems) {
+                add(item.name.toUpperCase().slice(0, WIDTH) + '\r\n');
+                const qtyStr = `${item.quantity || 0}${item.unit === 'Kg' ? 'kg' : 'x'} x $${Number(item.price || 0).toFixed(2)}`;
+                const totStr = `$${(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}`;
+                add(col2(qtyStr, totStr));
+            } else {
+                const rowTotal = (Number(item.price) * Number(item.quantity)).toFixed(2);
+                add(col2(`${item.quantity} ${item.name.toUpperCase().slice(0, WIDTH - 10)}`, `$${rowTotal}`));
+            }
             if (config.spaceBetweenItems) add('\r\n');
         });
         
-        add(SEP, config.centerTotal ? CMD.ALIGN_CENTER : CMD.ALIGN_RIGHT, CMD.BOLD_ON);
-        add(`TOTAL: $${Number(ticket.total).toFixed(2)}\r\n`);
+        add(SEP, CMD.BOLD_ON);
+        const finalTotStr = `$${Number(ticket.total).toFixed(2)}`;
+        if (config.centerTotal) {
+            add(CMD.ALIGN_CENTER, `TOTAL: ${finalTotStr}\r\n`, CMD.ALIGN_LEFT);
+        } else {
+            add(col2('TOTAL:', finalTotStr));
+        }
         add(CMD.BOLD_OFF, '\r\n\r\n\r\n\r\n');
     }
 

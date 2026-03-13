@@ -29,6 +29,7 @@ function TicketPreview({ config }) {
         metadataUppercase = false,
         metadataAlignment = 'between', // 'between' (columnas) o 'left', 'center', 'right'
         metadataSpacing = 0, // Margen extra arriba de cada línea
+        multiLineItems = true,
         logoUrl = null,
     } = config;
 
@@ -84,14 +85,29 @@ function TicketPreview({ config }) {
                         </>
                     )}
 
-                    <div className={spaceBetweenItems ? 'mb-4' : 'mb-2'}>
-                        <div className="uppercase">QUESO OAXACA</div>
-                        <div className="flex justify-between uppercase"><span>2 kg x $60.00/kg</span><span>$120.00</span></div>
-                    </div>
-                    <div className={spaceBetweenItems ? 'mb-4' : 'mb-2'}>
-                        <div className="uppercase">REQUESON</div>
-                        <div className="flex justify-between uppercase"><span>1 x $45.00/u</span><span>$45.00</span></div>
-                    </div>
+                    {multiLineItems ? (
+                        <>
+                            <div className={spaceBetweenItems ? 'mb-4' : 'mb-2'}>
+                                <div className="uppercase">QUESO OAXACA</div>
+                                <div className="flex justify-between uppercase text-[9px] text-slate-500"><span>2 kg x $60.00/kg</span><span>$120.00</span></div>
+                            </div>
+                            <div className={spaceBetweenItems ? 'mb-4' : 'mb-2'}>
+                                <div className="uppercase">REQUESON</div>
+                                <div className="flex justify-between uppercase text-[9px] text-slate-500"><span>1 x $45.00/u</span><span>$45.00</span></div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className={`flex justify-between uppercase ${spaceBetweenItems ? 'mb-3' : 'mb-1'}`}>
+                                <span>2kg QUESO OAX.</span>
+                                <span>$120.00</span>
+                            </div>
+                            <div className={`flex justify-between uppercase ${spaceBetweenItems ? 'mb-3' : 'mb-1'}`}>
+                                <span>1x REQUESON</span>
+                                <span>$45.00</span>
+                            </div>
+                        </>
+                    )}
 
                     <div className="uppercase">NUMERO DE ARTICULOS: 2</div>
                     
@@ -186,10 +202,19 @@ function TicketPreview({ config }) {
                         <div className="border-t border-dashed border-black my-0.5" />
                     </>
                 )}
-                <div>2x    Queso Oax.  $120.00</div>
-                <div className={`text-right text-[9px] ${spaceBetweenItems ? 'mb-3' : ''}`}>@ $60.00/u</div>
-                <div>1x    Requesón    $45.00</div>
-                <div className={`text-right text-[9px] ${spaceBetweenItems ? 'mb-3' : ''}`}>@ $45.00/u</div>
+                {multiLineItems ? (
+                    <>
+                        <div>QUESO OAXACA</div>
+                        <div className={`flex justify-between text-[9px] opacity-70 ${spaceBetweenItems ? 'mb-3' : 'mb-1'}`}><span>2x @ $60.00/u</span><span>$120.00</span></div>
+                        <div>REQUESON</div>
+                        <div className={`flex justify-between text-[9px] opacity-70 ${spaceBetweenItems ? 'mb-3' : 'mb-1'}`}><span>1x @ $45.00/u</span><span>$45.00</span></div>
+                    </>
+                ) : (
+                    <>
+                        <div className={`flex justify-between ${spaceBetweenItems ? 'mb-2' : ''}`}><span>2x QUESO OAXACA</span><span>$120.00</span></div>
+                        <div className={`flex justify-between ${spaceBetweenItems ? 'mb-2' : ''}`}><span>1x REQUESON</span><span>$45.00</span></div>
+                    </>
+                )}
                 <div className="border-t-2 border-black my-0.5" />
                 <div className={`${centerTotal ? 'text-center' : 'text-right'} font-bold text-[12px]`}>TOTAL $165.00</div>
                 <div className="border-t border-dashed border-black my-0.5" />
@@ -558,6 +583,13 @@ export default function TicketConfig() {
                                 checked={form.showItemsHeader}
                                 onChange={update('showItemsHeader')}
                                 desc="Muestra u oculta los títulos ITEM y PRECIO arriba de los productos"
+                            />
+                            <Toggle
+                                id="multiLineItems"
+                                label="Diseño de Items (Dos Líneas)"
+                                checked={form.multiLineItems}
+                                onChange={update('multiLineItems')}
+                                desc="Recomendado: Nombre arriba y detalles (cantidad/precio) abajo para tickets angostos"
                             />
                             <Toggle
                                 id="showCashAndChange"

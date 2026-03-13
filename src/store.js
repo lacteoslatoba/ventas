@@ -58,6 +58,7 @@ export const useStore = create(
                 businessNameSize: 13,
                 metadataSize: 10,
                 metadataUppercase: false,
+                multiLineItems: true,
                 logoUrl: 'https://i.ibb.co/w2Kw4S4/la.png',
             },
             updateTicketConfig: (config) => {
