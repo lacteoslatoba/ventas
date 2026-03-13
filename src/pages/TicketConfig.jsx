@@ -22,6 +22,9 @@ function TicketPreview({ config }) {
         showCashAndChange = true,
         centerTotal = false,
         businessNameSize = 13,
+        showMainTitle = true,
+        showBusinessName = true,
+        showLabels = true,
         metadataSize = 10,
         metadataUppercase = false,
         metadataAlignment = 'between', // 'between' (columnas) o 'left', 'center', 'right'
@@ -63,15 +66,15 @@ function TicketPreview({ config }) {
                     <div className="border-t border-dashed border-black my-1" />
 
                     <div style={{ ...metaStyle, marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
-                        {showDate && <span>{dateStr}</span>}
-                        {showTime && <span>{timeStr}</span>}
+                        {showDate && <span>{showLabels ? 'FECHA: ' : ''}{dateStr}</span>}
+                        {showTime && <span>{showLabels ? 'HORA: ' : ''}{timeStr}</span>}
                     </div>
                     <div style={{ ...metaStyle, marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
-                        <span>Ticket</span><span>#A1B2C3</span>
+                        <span>{showLabels ? 'Ticket' : ''}</span><span>#A1B2C3</span>
                     </div>
                     
-                    {showCustomer && <div style={{ ...metaStyle, marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>Cliente</span><span>Tienda La Fe</span></div>}
-                    {showSeller && <div style={{ ...metaStyle, marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>Repartidor</span><span>Juan Pérez</span></div>}
+                    {showCustomer && <div style={{ ...metaStyle, marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>{showLabels ? 'Cliente' : ''}</span><span>Tienda La Fe</span></div>}
+                    {showSeller && <div style={{ ...metaStyle, marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>{showLabels ? 'Repartidor' : ''}</span><span>Juan Pérez</span></div>}
 
                     {showItemsHeader && (
                         <>
@@ -124,9 +127,13 @@ function TicketPreview({ config }) {
                     </div>
                 )}
                 {/* Encabezado */}
-                <div className={`${alignClass} font-bold mb-0.5 leading-tight`} style={{ fontSize: `${businessNameSize}px` }}>
-                    {businessName || 'MI NEGOCIO'}
-                </div>
+                {showMainTitle && <div className="text-center font-bold text-[10px] mb-1">TICKET DE VENTA</div>}
+                
+                {showBusinessName && (
+                    <div className={`${alignClass} font-bold mb-0.5 leading-tight`} style={{ fontSize: `${businessNameSize}px` }}>
+                        {businessName || 'MI NEGOCIO'}
+                    </div>
+                )}
                 {subtitle && <div className={`${alignClass} ${useFontB ? 'text-[7px]' : 'text-[9px]'}`}>{subtitle}</div>}
                 {showAddress && address && <div className={alignClass}>{address}</div>}
                 {showPhone && phone && <div className={alignClass}>Tel: {phone}</div>}
@@ -138,16 +145,16 @@ function TicketPreview({ config }) {
                 {/* Info ticket */}
                 <div style={{ ...metaStyle, textAlign: metadataAlignment === 'between' ? 'left' : metadataAlignment }}>
                     <div style={{ marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : ''}>
-                        <span>Ticket :</span> <span>#A1B2C3</span>
+                        <span>{showLabels ? 'Ticket :' : ''}</span> <span>#A1B2C3</span>
                     </div>
                     {showDate && (
                         <div style={{ marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : ''}>
-                            <span>Fecha  :</span> <span>{new Date().toLocaleDateString('es-MX')}</span>
+                            <span>{showLabels ? 'Fecha  :' : ''}</span> <span>{new Date().toLocaleDateString('es-MX')}</span>
                         </div>
                     )}
                     {showTime && (
                         <div style={{ marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : ''}>
-                            <span>Hora   :</span> <span>{new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span>{showLabels ? 'Hora   :' : ''}</span> <span>{new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                     )}
                 </div>
@@ -159,12 +166,12 @@ function TicketPreview({ config }) {
                         <div style={{ ...metaStyle, textAlign: metadataAlignment === 'between' ? 'left' : metadataAlignment }}>
                             {showSeller && (
                                 <div style={{ marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : ''}>
-                                    <span>Repartidor:</span> <span>Juan Pérez</span>
+                                    <span>{showLabels ? 'Repartidor:' : ''}</span> <span>Juan Pérez</span>
                                 </div>
                             )}
                             {showCustomer && (
                                 <div style={{ marginTop: `${metadataSpacing}px` }} className={metadataAlignment === 'between' ? 'flex justify-between' : ''}>
-                                    <span>Cliente   :</span> <span>Tienda La Fe</span>
+                                    <span>{showLabels ? 'Cliente   :' : ''}</span> <span>Tienda La Fe</span>
                                 </div>
                             )}
                         </div>
@@ -523,6 +530,27 @@ export default function TicketConfig() {
                                 label="Cliente"
                                 checked={form.showCustomer}
                                 onChange={update('showCustomer')}
+                            />
+                            <Toggle
+                                id="showMainTitle"
+                                label="Título 'TICKET DE VENTA'"
+                                desc="Oculta el texto TICKET DE VENTA arriba del logo"
+                                checked={form.showMainTitle}
+                                onChange={update('showMainTitle')}
+                            />
+                            <Toggle
+                                id="showBusinessName"
+                                label="Nombre del Negocio (Texto)"
+                                desc="Oculta el nombre si ya está incluido en tu logotipo"
+                                checked={form.showBusinessName}
+                                onChange={update('showBusinessName')}
+                            />
+                            <Toggle
+                                id="showLabels"
+                                label="Etiquetas (Fecha:, Ticket:, etc.)"
+                                desc="Solo imprime los datos, ahorrando espacio"
+                                checked={form.showLabels}
+                                onChange={update('showLabels')}
                             />
                             <Toggle
                                 id="showItemsHeader"

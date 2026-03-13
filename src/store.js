@@ -16,7 +16,7 @@ export const useStore = create(
 
             // Configuración del Ticket
             ticketConfig: {
-                businessName: 'QUESOS EL BUEN SABOR',
+                businessName: 'LACTEOS LA TOBA',
                 subtitle: '',
                 address: '',
                 phone: '',
@@ -24,6 +24,9 @@ export const useStore = create(
                 extraLine2: '',
                 footerLine1: '¡Gracias por su compra!',
                 footerLine2: '',
+                showMainTitle: true,
+                showBusinessName: true,
+                showLabels: true,
                 showSignature: true,
                 paperWidth: 58, // mm: 58 o 80
                 synced: true, // Por defecto asumimos sincronizado si no se ha cambiado

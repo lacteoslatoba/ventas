@@ -137,6 +137,9 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         metadataUppercase = false,
         metadataAlignment = 'between',
         metadataSpacing = 0,
+        showMainTitle = true,
+        showBusinessName = true,
+        showLabels = true,
         metadataSize = 10,
         logoUrl = null
     } = config;
@@ -192,19 +195,21 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
             if (logoBytes) add(logoBytes, '\r\n');
         }
 
-        add(CMD.BOLD_ON);
-        
-        if (config.businessNameSize > 16) {
-            add(CMD.DOUBLE_SIZE);
+        if (showBusinessName !== false) {
+            add(CMD.BOLD_ON);
+            
+            if (config.businessNameSize > 16) {
+                add(CMD.DOUBLE_SIZE);
+            }
+            
+            add((businessName || 'LACTEOS LA TOBA').toUpperCase() + '\r\n');
+            
+            if (config.businessNameSize > 16) {
+                add(CMD.NORMAL_SIZE);
+            }
+            
+            add(CMD.BOLD_OFF);
         }
-        
-        add((businessName || 'LACTEOS LA TOBA').toUpperCase() + '\r\n');
-        
-        if (config.businessNameSize > 16) {
-            add(CMD.NORMAL_SIZE);
-        }
-        
-        add(CMD.BOLD_OFF);
         
         if (subtitle) add(subtitle.toUpperCase() + '\r\n');
         if (address) add(address.toUpperCase() + '\r\n');
@@ -221,18 +226,20 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         // Aplicar fuente B si el tamaño es muy pequeño
         if (metadataSize < 9) add(CMD.FONT_B);
         
-        add(formatMetaLine(dStr, tStr));
+        const labelFecha = showLabels ? 'FECHA' : '';
+        const labelHora = showLabels ? 'HORA' : '';
+        add(formatMetaLine(showLabels ? `${labelFecha}: ${dStr}` : dStr, showLabels ? `${labelHora}: ${tStr}` : tStr));
 
         const tId = `#${(ticket.id || '').toUpperCase().slice(-6)}`;
-        add(formatMetaLine('Ticket', tId));
+        add(formatMetaLine(showLabels ? 'Ticket' : '', tId));
         
         if (showCustomer) {
             const cName = (client?.name || 'GENERAL').slice(0, 15);
-            add(formatMetaLine('Cliente', cName));
+            add(formatMetaLine(showLabels ? 'Cliente' : '', cName));
         }
         if (showSeller) {
             const sName = (user?.name || 'VENDEDOR').slice(0, 15);
-            add(formatMetaLine('Repartidor', sName));
+            add(formatMetaLine(showLabels ? 'Repartidor' : '', sName));
         }
 
         if (metadataSize < 9) add(CMD.FONT_A); // Volver a fuente normal
@@ -294,11 +301,13 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
             if (logoBytes) add(logoBytes, '\r\n');
         }
 
-        add('TICKET DE VENTA\r\n');
+        if (showMainTitle !== false) add('TICKET DE VENTA\r\n');
         
-        if (config.businessNameSize > 16) add(CMD.DOUBLE_SIZE);
-        add(businessName.toUpperCase() + '\r\n');
-        if (config.businessNameSize > 16) add(CMD.NORMAL_SIZE);
+        if (showBusinessName !== false) {
+            if (config.businessNameSize > 16) add(CMD.DOUBLE_SIZE);
+            add(businessName.toUpperCase() + '\r\n');
+            if (config.businessNameSize > 16) add(CMD.NORMAL_SIZE);
+        }
         
         add(SEP, CMD.ALIGN_LEFT);
 
@@ -309,11 +318,11 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         const tStr = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
         const tId = `#${(ticket.id || '').toUpperCase().slice(-6)}`;
 
-        add(formatMetaLine('Fecha', `${dStr} ${tStr}`));
-        add(formatMetaLine('Ticket', tId));
+        add(formatMetaLine(showLabels ? 'Fecha' : '', `${dStr} ${tStr}`));
+        add(formatMetaLine(showLabels ? 'Ticket' : '', tId));
 
-        if (showSeller) add(formatMetaLine('Repartidor', user?.name || 'Vendedor'));
-        if (showCustomer) add(formatMetaLine('Cliente', client?.name || 'General'));
+        if (showSeller) add(formatMetaLine(showLabels ? 'Repartidor' : '', user?.name || 'Vendedor'));
+        if (showCustomer) add(formatMetaLine(showLabels ? 'Cliente' : '', client?.name || 'General'));
         
         if (metadataSize < 9) add(CMD.FONT_A);
         

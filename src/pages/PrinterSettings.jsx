@@ -18,6 +18,7 @@ export default function PrinterSettings() {
     const [statusMsg, setStatusMsg] = useState('');
     const [isTesting, setIsTesting] = useState(false);
     const [btSupported, setBtSupported] = useState(true);
+    const [showHelp, setShowHelp] = useState(false);
 
     useEffect(() => {
         if (!navigator.bluetooth) {
@@ -261,24 +262,36 @@ export default function PrinterSettings() {
                 </div>
             )}
 
-            {/* Info / Ayuda */}
-            <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-5 space-y-3">
-                <div className="flex items-center gap-2 text-primary mb-3">
-                    <Info size={18} />
-                    <span className="font-bold text-sm uppercase tracking-wider">Información</span>
-                </div>
-                {[
-                    { title: 'Impresoras compatibles', desc: 'Impresoras térmicas de 58mm o 80mm con Bluetooth: Xprinter, GOOJPRT, MUNBYN, ZJ-5805, RPP02N, PeriPage, etc.' },
-                    { title: 'Cómo conectar', desc: '1. Enciende y empareja la impresora en los ajustes Bluetooth del teléfono/PC. 2. Pulsa "Conectar Impresora" y selecciona tu dispositivo de la lista.' },
-                    { title: 'Requisitos', desc: 'Necesitas Google Chrome o Edge. En iPhone/Safari no funciona por limitaciones de Apple.' },
-                    { title: 'Si no aparece tu impresora', desc: 'Asegúrate de que esté emparejada previamente en la configuración Bluetooth del sistema.' },
-                ].map(({ title, desc }) => (
-                    <div key={title} className="border-b border-blue-100/70 pb-3 last:border-0 last:pb-0">
-                        <p className="font-bold text-blue-800 text-sm mb-0.5">{title}</p>
-                        <p className="text-blue-600 text-sm leading-relaxed">{desc}</p>
-                    </div>
-                ))}
+            {/* Info / Ayuda (Opcional) */}
+            <div className="mt-8 text-center">
+                <button
+                    onClick={() => setShowHelp(!showHelp)}
+                    className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-primary transition-colors flex items-center justify-center gap-2 mx-auto"
+                >
+                    <Info size={14} />
+                    {showHelp ? 'Ocultar Ayuda' : '¿Necesitas ayuda para conectar?'}
+                </button>
             </div>
+
+            {showHelp && (
+                <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-5 space-y-3 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-2 text-primary mb-3">
+                        <Info size={18} />
+                        <span className="font-bold text-sm uppercase tracking-wider">Ayuda de Conexión</span>
+                    </div>
+                    {[
+                        { title: 'Impresoras compatibles', desc: 'Impresoras térmicas de 58mm o 80mm con Bluetooth: Xprinter, GOOJPRT, MUNBYN, ZJ-5805, RPP02N, PeriPage, etc.' },
+                        { title: 'Cómo conectar', desc: '1. Enciende y empareja la impresora en los ajustes Bluetooth del teléfono/PC. 2. Pulsa "Conectar Impresora" y selecciona tu dispositivo de la lista.' },
+                        { title: 'Requisitos', desc: 'Necesitas Google Chrome o Edge. En iPhone/Safari no funciona por limitaciones de Apple.' },
+                        { title: 'Si no aparece tu impresora', desc: 'Asegúrate de que esté emparejada previamente en la configuración Bluetooth del sistema.' },
+                    ].map(({ title, desc }) => (
+                        <div key={title} className="border-b border-blue-100/70 pb-3 last:border-0 last:pb-0">
+                            <p className="font-bold text-blue-800 text-sm mb-0.5">{title}</p>
+                            <p className="text-blue-600 text-sm leading-relaxed">{desc}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
