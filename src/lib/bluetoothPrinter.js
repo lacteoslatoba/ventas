@@ -163,6 +163,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         showSeparatorItems = true,
         showSeparatorFooter = true,
         separatorStyle = 'dashed',
+        headerSpacing = 0,
         footerSpacing = 0,
         showSubtitle = true,
         subtotalAlignment = 'right',
@@ -219,7 +220,12 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
     };
 
     if (ticketTemplate === 'latoba') {
-        add(CMD.INIT, CMD.ALIGN_CENTER);
+        add(CMD.INIT);
+        if (headerSpacing > 0) {
+            let hLines = headerSpacing > 10 ? 2 : 1;
+            add('\r\n'.repeat(hLines));
+        }
+        add(CMD.ALIGN_CENTER);
 
         // Procesar Logo si existe y está habilitado
         if (showLogo && logoUrl) {
@@ -358,7 +364,12 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         add('\r\n'.repeat(footerSpacing > 0 ? footerSpacing : 6), [ESC, 0x69]); 
     } else {
         // Estándar muy robusto
-        add(CMD.INIT, CMD.ALIGN_CENTER);
+        add(CMD.INIT);
+        if (headerSpacing > 0) {
+            let hLines = headerSpacing > 10 ? 2 : 1;
+            add('\r\n'.repeat(hLines));
+        }
+        add(CMD.ALIGN_CENTER);
 
         // Procesar Logo si existe y está habilitado
         if (showLogo && logoUrl) {
