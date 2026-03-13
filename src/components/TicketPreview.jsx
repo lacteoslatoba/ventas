@@ -84,16 +84,23 @@ export default function TicketPreview({ config, sale, user, client }) {
             <div className={`bg-white ${isPreviewOnly ? 'border-2 border-dashed border-slate-200 rounded-2xl p-4' : 'p-2 shadow-2xl'} flex justify-center`}>
                 <div
                     className="font-mono leading-snug text-black bg-white overflow-hidden"
-                    style={{ width: '200px', minHeight: '300px', fontSize: `${useFontB ? 8.5 : 10}px` }}
+                    style={{ 
+                        width: '200px', 
+                        minHeight: '300px', 
+                        fontSize: `${useFontB ? 8.5 : 10}px`,
+                        paddingTop: `${headerSpacing}px`
+                    }}
                 >
                     {showLogo && logoUrl && (
                         <div className="flex justify-center mb-2">
                             <img src={logoUrl} alt="Logo" className="max-w-[100px] max-h-[60px] object-contain grayscale" />
                         </div>
                     )}
-                    <div className="text-center mb-0.5 leading-tight uppercase" style={{ fontSize: `${businessNameSize}px`, fontWeight: businessNameBold ? 'bold' : 'normal' }}>
-                        {businessName || 'LACTEOS LA TOBA'}
-                    </div>
+                    {showBusinessName && (
+                        <div className="text-center mb-0.5 leading-tight uppercase" style={{ fontSize: `${businessNameSize}px`, fontWeight: businessNameBold ? 'bold' : 'normal' }}>
+                            {businessName || 'LACTEOS LA TOBA'}
+                        </div>
+                    )}
                     {showSubtitle && subtitle && <div className="text-center uppercase">{subtitle}</div>}
                     {showAddress && address && <div className="text-center uppercase">{address}</div>}
                     {showPhone && phone && <div className="text-center uppercase">TEL: {phone}</div>}
@@ -186,7 +193,12 @@ export default function TicketPreview({ config, sale, user, client }) {
         <div className={`bg-white ${isPreviewOnly ? 'border-2 border-dashed border-slate-200 rounded-2xl p-4' : 'p-2 shadow-2xl'} flex justify-center`}>
             <div
                 className="font-mono leading-snug text-black bg-white overflow-hidden"
-                style={{ width: '200px', minHeight: '300px', fontSize: `${useFontB ? 8.5 : 10}px` }}
+                style={{ 
+                    width: '200px', 
+                    minHeight: '300px', 
+                    fontSize: `${useFontB ? 8.5 : 10}px`,
+                    paddingTop: `${headerSpacing}px`
+                }}
             >
                 {showLogo && logoUrl && (
                     <div className="flex justify-center mb-2">
@@ -206,27 +218,27 @@ export default function TicketPreview({ config, sale, user, client }) {
 
                 {showSeparatorHeader && <Separator />}
 
-                <div style={metaStyle}>
-                    <div className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
+                <div>
+                    <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
                         <span>{showLabels ? 'Ticket :' : ''}</span> <span>#{displaySale.id.slice(-6).toUpperCase()}</span>
                     </div>
                     {showDate && (
-                        <div className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
+                        <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
                             <span>{showLabels ? 'Fecha  :' : ''}</span> <span>{new Date(displaySale.date).toLocaleDateString('es-MX')}</span>
                         </div>
                     )}
                     {showTime && (
-                        <div className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
+                        <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
                             <span>{showLabels ? 'Hora   :' : ''}</span> <span>{new Date(displaySale.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                     )}
                     {showSeller && (
-                        <div className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
+                        <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
                             <span>{showLabels ? 'Vendedor:' : ''}</span> <span className="uppercase">{displayUser.name}</span>
                         </div>
                     )}
                     {showCustomer && (
-                        <div className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
+                        <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
                             <span>{showLabels ? 'Cliente :' : ''}</span> <span className="uppercase">{displayClient.name}</span>
                         </div>
                     )}
