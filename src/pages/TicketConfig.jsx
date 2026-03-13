@@ -123,14 +123,23 @@ export default function TicketConfig() {
         setTimeout(() => setSaved(false), 3000);
     };
 
+    if (!form) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-slate-500 font-bold animate-pulse">Cargando configuración...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="p-4 md:p-8 max-w-3xl mx-auto pb-48 md:pb-32">
             {/* Header */}
-            <div className="mb-8 flex items-start justify-between">
+            <div className="mb-10 flex items-start justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-                            <FileText size={20} className="text-primary" />
+                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                            <FileText size={24} className="text-primary" />
                         </div>
                         Configurar Ticket
                     </h1>
@@ -140,9 +149,13 @@ export default function TicketConfig() {
                 </div>
                 <button
                     onClick={() => setShowPreview(p => !p)}
-                    className="flex items-center gap-2 text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-all shrink-0"
+                    className={`flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-2xl transition-all shrink-0 shadow-sm ${
+                        showPreview 
+                        ? 'bg-slate-200 text-slate-700' 
+                        : 'bg-primary text-white shadow-primary/20'
+                    }`}
                 >
-                    {showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPreview ? <EyeOff size={18} /> : <Eye size={18} />}
                     {showPreview ? 'Ocultar' : 'Vista previa'}
                 </button>
             </div>
