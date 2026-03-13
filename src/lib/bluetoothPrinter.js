@@ -135,6 +135,8 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         showSeller = true, showCustomer = true,
         ticketTemplate = 'standard',
         metadataUppercase = false,
+        metadataAlignment = 'between',
+        metadataSpacing = 0,
         metadataSize = 10,
         logoUrl = null
     } = config;
@@ -147,26 +149,37 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
     const SEP = '-'.repeat(WIDTH) + '\r\n';
 
     // Función auxiliar para formatear líneas de dos columnas o alineadas
-    const formatMetaLine = (l, r) => {
-        const align = config.metadataAlignment || 'between';
-        const spacing = '\r\n'.repeat(config.metadataSpacing > 5 ? 1 : 0); // Espaciado simple si es mayor a 5px
+    const formatMetaLine = (l, r = '') => {
+        const align = metadataAlignment || 'between';
+        // En impresoras térmicas, el "espaciado" se simula con saltos de línea
+        // Si el usuario pone > 0, añadimos al menos un salto. Si es > 10, dos.
+        let spacingLines = 0;
+        if (metadataSpacing > 0) spacingLines = 1;
+        if (metadataSpacing > 12) spacingLines = 2;
+        
+        const spacing = '\r\n'.repeat(spacingLines);
         
         let line = '';
+        const cleanL = String(l);
+        const cleanR = String(r);
+
         if (align === 'between') {
-            const spaces = Math.max(1, WIDTH - l.length - r.length);
-            line = l + ' '.repeat(spaces) + r;
+            const spaces = Math.max(1, WIDTH - cleanL.length - cleanR.length);
+            line = cleanL + ' '.repeat(spaces) + cleanR;
         } else if (align === 'center') {
-            const combined = l + (r ? `: ${r}` : '');
+            const combined = cleanL + (cleanR ? `: ${cleanR}` : '');
             const pad = Math.floor((WIDTH - combined.length) / 2);
             line = ' '.repeat(Math.max(0, pad)) + combined;
         } else if (align === 'right') {
-            const combined = l + (r ? `: ${r}` : '');
+            const combined = cleanL + (cleanR ? `: ${cleanR}` : '');
             line = ' '.repeat(Math.max(0, WIDTH - combined.length)) + combined;
         } else {
-            line = l + (r ? `: ${r}` : '');
+            line = cleanL + (cleanR ? `: ${cleanR}` : '');
         }
 
-        const finalLine = metadataUppercase ? line.toUpperCase() : line;
+        // Truncar si la línea excedió el ancho por alguna razón
+        const truncated = line.slice(0, WIDTH);
+        const finalLine = metadataUppercase ? truncated.toUpperCase() : truncated;
         return spacing + finalLine + '\r\n';
     };
 
@@ -296,16 +309,11 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         const tStr = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
         const tId = `#${(ticket.id || '').toUpperCase().slice(-6)}`;
 
-        const lineDate = `Fecha: ${dStr} ${tStr}`;
-        const lineTicket = `Ticket: ${tId}`;
-        const lineSeller = `Repartidor: ${user?.name || 'Vendedor'}`;
-        const lineCustomer = `Cliente: ${client?.name || 'General'}`;
+        add(formatMetaLine('Fecha', `${dStr} ${tStr}`));
+        add(formatMetaLine('Ticket', tId));
 
-        add(metadataUppercase ? lineDate.toUpperCase() : lineDate, '\r\n');
-        add(metadataUppercase ? lineTicket.toUpperCase() : lineTicket, '\r\n');
-
-        if (showSeller) add(metadataUppercase ? lineSeller.toUpperCase() : lineSeller, '\r\n');
-        if (showCustomer) add(metadataUppercase ? lineCustomer.toUpperCase() : lineCustomer, '\r\n');
+        if (showSeller) add(formatMetaLine('Repartidor', user?.name || 'Vendedor'));
+        if (showCustomer) add(formatMetaLine('Cliente', client?.name || 'General'));
         
         if (metadataSize < 9) add(CMD.FONT_A);
         
