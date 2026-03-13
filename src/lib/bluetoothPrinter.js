@@ -164,6 +164,9 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         showSeparatorFooter = true,
         separatorStyle = 'dashed',
         footerSpacing = 0,
+        showSubtitle = true,
+        subtotalAlignment = 'right',
+        subtotalTotalSpacing = 0,
     } = config;
 
     const chunks = [];
@@ -231,7 +234,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
             if (businessNameBold) add(CMD.BOLD_OFF);
         }
         
-        if (subtitle) add(subtitle.toUpperCase() + '\r\n');
+        if (showSubtitle && subtitle) add(subtitle.toUpperCase() + '\r\n');
         if (showAddress && address) add(address.toUpperCase() + '\r\n');
         if (showPhone && phone) add(`TEL: ${phone}\r\n`);
         if (extraLine1) add(extraLine1.toUpperCase() + '\r\n');
@@ -299,7 +302,16 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         if (showSeparatorFooter) add(SEP);
 
         if (showSubtotal) {
-             add(formatMetaLine('SUBTOTAL', `$${ticket.total?.toFixed(2)}`));
+             const subtotalStr = `SUBTOTAL: $${ticket.total?.toFixed(2)}`;
+             if (subtotalAlignment === 'center') add(CMD.ALIGN_CENTER, subtotalStr + '\r\n');
+             else if (subtotalAlignment === 'left') add(CMD.ALIGN_LEFT, subtotalStr + '\r\n');
+             else if (subtotalAlignment === 'between') add(formatMetaLine('SUBTOTAL', `$${ticket.total?.toFixed(2)}`));
+             else add(CMD.ALIGN_RIGHT, subtotalStr + '\r\n');
+             
+             let subSpacingLines = 0;
+             if (subtotalTotalSpacing > 0) subSpacingLines = 1;
+             if (subtotalTotalSpacing > 10) subSpacingLines = 2;
+             if (subSpacingLines > 0) add('\r\n'.repeat(subSpacingLines));
         }
 
         if (totalBold) add(CMD.BOLD_ON);
@@ -399,7 +411,16 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         if (showSeparatorFooter) add(SEP);
         
         if (showSubtotal) {
-             add(formatMetaLine('SUBTOTAL', `$${ticket.total?.toFixed(2)}`));
+             const subtotalStr = `SUBTOTAL: $${ticket.total?.toFixed(2)}`;
+             if (subtotalAlignment === 'center') add(CMD.ALIGN_CENTER, subtotalStr + '\r\n');
+             else if (subtotalAlignment === 'left') add(CMD.ALIGN_LEFT, subtotalStr + '\r\n');
+             else if (subtotalAlignment === 'between') add(formatMetaLine('SUBTOTAL', `$${ticket.total?.toFixed(2)}`));
+             else add(CMD.ALIGN_RIGHT, subtotalStr + '\r\n');
+
+             let subSpacingLines = 0;
+             if (subtotalTotalSpacing > 0) subSpacingLines = 1;
+             if (subtotalTotalSpacing > 10) subSpacingLines = 2;
+             if (subSpacingLines > 0) add('\r\n'.repeat(subSpacingLines));
         }
 
         if (totalBold) add(CMD.BOLD_ON);

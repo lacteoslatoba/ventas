@@ -39,6 +39,9 @@ export default function TicketPreview({ config, sale, user, client }) {
         separatorStyle = 'dashed',
         headerSpacing = 0,
         footerSpacing = 0,
+        showSubtitle = true,
+        subtotalAlignment = 'right',
+        subtotalTotalSpacing = 0,
     } = config;
 
     // Si no hay 'sale', usamos datos de prueba (para la pantalla de configuración)
@@ -86,7 +89,7 @@ export default function TicketPreview({ config, sale, user, client }) {
                     <div className="text-center mb-0.5 leading-tight uppercase" style={{ fontSize: `${businessNameSize}px`, fontWeight: businessNameBold ? 'bold' : 'normal' }}>
                         {businessName || 'LACTEOS LA TOBA'}
                     </div>
-                    {subtitle && <div className="text-center uppercase">{subtitle}</div>}
+                    {showSubtitle && subtitle && <div className="text-center uppercase">{subtitle}</div>}
                     {showAddress && address && <div className="text-center uppercase">{address}</div>}
                     {showPhone && phone && <div className="text-center uppercase">TEL: {phone}</div>}
                     {extraLine1 && <div className="text-center uppercase">{extraLine1}</div>}
@@ -135,7 +138,18 @@ export default function TicketPreview({ config, sale, user, client }) {
 
                     <div className="uppercase text-[9px] mt-1 opacity-70">ARTICULOS: {displaySale.items.length}</div>
                     
-                    {showSubtotal && <div className="text-right mt-1 font-bold uppercase text-[9px]">SUBTOTAL: ${displaySale.total.toFixed(2)}</div>}
+                    {showSubtotal && (
+                        <div 
+                            className={`mt-1 font-bold uppercase text-[9px] ${subtotalAlignment === 'between' ? 'flex justify-between' : `text-${subtotalAlignment}`}`}
+                            style={{ marginBottom: `${subtotalTotalSpacing}px` }}
+                        >
+                            {subtotalAlignment === 'between' ? (
+                                <><span>SUBTOTAL:</span><span>${displaySale.total.toFixed(2)}</span></>
+                            ) : (
+                                `SUBTOTAL: $${displaySale.total.toFixed(2)}`
+                            )}
+                        </div>
+                    )}
                     
                     {showSeparatorFooter && <Separator />}
 
@@ -179,7 +193,7 @@ export default function TicketPreview({ config, sale, user, client }) {
                         {businessName || 'MI NEGOCIO'}
                     </div>
                 )}
-                {subtitle && <div className={`${alignClass} opacity-80 text-[8px]`}>{subtitle}</div>}
+                {showSubtitle && subtitle && <div className={`${alignClass} opacity-80 text-[8px]`}>{subtitle}</div>}
                 {showAddress && address && <div className={`${alignClass} text-[8px]`}>{address}</div>}
                 {showPhone && phone && <div className={`${alignClass} text-[8px]`}>Tel: {phone}</div>}
 
@@ -241,7 +255,18 @@ export default function TicketPreview({ config, sale, user, client }) {
 
                 {showSeparatorFooter && <Separator />}
 
-                {showSubtotal && <div className="text-right text-[9px] opacity-70 uppercase">SUBTOTAL ${displaySale.total.toFixed(2)}</div>}
+                {showSubtotal && (
+                    <div 
+                        className={`text-[9px] opacity-70 uppercase ${subtotalAlignment === 'between' ? 'flex justify-between' : `text-${subtotalAlignment}`}`}
+                        style={{ marginBottom: `${subtotalTotalSpacing}px` }}
+                    >
+                        {subtotalAlignment === 'between' ? (
+                            <><span>SUBTOTAL:</span><span>${displaySale.total.toFixed(2)}</span></>
+                        ) : (
+                            `SUBTOTAL $${displaySale.total.toFixed(2)}`
+                        )}
+                    </div>
+                )}
                 <div className={`${centerTotal ? 'text-center' : 'text-right'} leading-[1.2] uppercase`} style={{ fontSize: `${totalFontSize}px`, fontWeight: totalBold ? 'bold' : 'normal' }}>TOTAL ${displaySale.total.toFixed(2)}</div>
                 
                 {showSeparatorFooter && <Separator />}

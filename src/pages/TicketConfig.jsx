@@ -265,7 +265,17 @@ export default function TicketConfig() {
                             onChange={update('subtitle')}
                             placeholder="Productos Lácteos"
                             maxLength={32}
+                            hint="Aparece debajo del nombre del negocio"
                         />
+                        <div className="pt-1">
+                            <Toggle
+                                id="showSubtitle"
+                                label="Mostrar Subtítulo"
+                                desc="Habilita o deshabilita la visibilidad del giro/subtítulo en el ticket"
+                                checked={form.showSubtitle}
+                                onChange={update('showSubtitle')}
+                            />
+                        </div>
                         <Field
                             id="address"
                             label="Dirección"
@@ -635,6 +645,49 @@ export default function TicketConfig() {
                                     checked={form.showSubtotal}
                                     onChange={update('showSubtotal')}
                                 />
+                                {form.showSubtotal && (
+                                    <div className="pl-4 pt-2 space-y-4 border-l-2 border-slate-100 ml-2">
+                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                            <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                                                <AlignCenter size={12} /> Alineación Subtotal
+                                            </label>
+                                            <div className="flex bg-slate-100 p-1 rounded-lg">
+                                                {[
+                                                    { id: 'left', icon: AlignLeft, label: 'Izq.' },
+                                                    { id: 'center', icon: AlignCenter, label: 'Cent.' },
+                                                    { id: 'right', icon: AlignRight, label: 'Der.' },
+                                                    { id: 'between', icon: CheckCheck, label: 'Columnas' }
+                                                ].map(opt => (
+                                                    <button
+                                                        key={opt.id}
+                                                        type="button"
+                                                        onClick={() => update('subtotalAlignment')(opt.id)}
+                                                        className={`flex-1 flex flex-col items-center justify-center py-1.5 rounded-lg text-[10px] font-bold transition-all ${form.subtotalAlignment === opt.id ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                                    >
+                                                        <opt.icon size={14} />
+                                                        <span className="text-[8px] mt-0.5">{opt.label}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                            <label className="flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                                                <span className="flex items-center gap-2"><Type size={12} /> Espacio Subtotal → Total</span>
+                                                <span className="text-primary font-black bg-white px-2 py-0.5 rounded-lg shadow-sm">{form.subtotalTotalSpacing || 0}px</span>
+                                            </label>
+                                            <input 
+                                                type="range" 
+                                                min="0" 
+                                                max="15" 
+                                                step="1"
+                                                value={form.subtotalTotalSpacing || 0}
+                                                onChange={(e) => update('subtotalTotalSpacing')(parseInt(e.target.value))}
+                                                className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2">
                                     <label className="flex items-center justify-between text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
                                         <span className="flex items-center gap-2"><AlignCenter size={14} /> Espacio antes de Despedida</span>
