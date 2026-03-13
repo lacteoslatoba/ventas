@@ -2,6 +2,17 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabase';
 
+const mergeStateHelper = (localItems, freshItems) => {
+    if (!freshItems) return localItems;
+    const pendingLocal = localItems.filter(item => !item.synced);
+    const merged = freshItems.map(remoteItem => {
+        const localItem = pendingLocal.find(p => p.id === remoteItem.id);
+        return localItem ? localItem : remoteItem;
+    });
+    const locallyCreated = pendingLocal.filter(p => !freshItems.find(r => r.id === p.id));
+    return [...merged, ...locallyCreated];
+};
+
 export const useStore = create(
     persist(
         (set, get) => ({
@@ -162,23 +173,39 @@ export const useStore = create(
                         return nextState;
                     });
 
-                    // Sincronización especial de Ticket Config
+                    // Sincronización especial de Ticket Config (con Empaquetado JSON para campos faltantes)
                     if (state.ticketConfig && !state.ticketConfig.synced) {
                         const { synced: _synced, ...payload } = state.ticketConfig;
-                        
-                        // ─── Sincronización Inteligente para Ticket Config ───
                         const knownCols = state.cloudColumns?.['ticket_config'];
-                        let safePayload = { id: 'main', ...payload };
+                        
+                        let finalPayload = { id: 'main' };
                         
                         if (knownCols) {
-                            const filtered = { id: 'main' };
-                            knownCols.forEach(col => {
-                                if (payload[col] !== undefined) filtered[col] = payload[col];
+                            const extraData = {};
+                            const legacyMap = {
+                                businessName: 'header',
+                                footerLine1: 'footer',
+                                printCopy: 'doubleCopy'
+                            };
+
+                            Object.keys(payload).forEach(key => {
+                                const dbCol = legacyMap[key] || key;
+                                if (knownCols.includes(dbCol)) {
+                                    finalPayload[dbCol] = payload[key];
+                                } else {
+                                    extraData[key] = payload[key];
+                                }
                             });
-                            safePayload = filtered;
+
+                            if (Object.keys(extraData).length > 0 && knownCols.includes('footer')) {
+                                const currentFooter = payload.footerLine1 || '';
+                                finalPayload.footer = `JSON_CONFIG:${JSON.stringify({ ...extraData, _realFooter: currentFooter })}`;
+                            }
+                        } else {
+                            finalPayload = { id: 'main', ...payload };
                         }
 
-                        const { error } = await supabase.from('ticket_config').upsert(safePayload);
+                        const { error } = await supabase.from('ticket_config').upsert(finalPayload);
                         if (!error) {
                             set(s => ({ ticketConfig: { ...s.ticketConfig, synced: true } }));
                         } else {
@@ -203,7 +230,6 @@ export const useStore = create(
                     const freshData = {};
                     const cloudColumns = {};
 
-                    // 1. Descargar datos de tablas maestras y detectar sus columnas
                     for (const tableName of tablesToPull) {
                         const { data, error } = await supabase.from(tableName).select('*');
                         if (!error && data) {
@@ -212,7 +238,6 @@ export const useStore = create(
                         }
                     }
 
-                    // 2. Solo detectar columnas de tablas transaccionales (sin bajar todos los datos)
                     for (const tableName of tablesToCheckCols) {
                         const { data, error } = await supabase.from(tableName).select('*').limit(1);
                         if (!error && data && data.length > 0) {
@@ -220,45 +245,43 @@ export const useStore = create(
                         }
                     }
 
-                    set((state) => {
-                        // Función para fusionar preservando los cambios locales sin sincronizar
-                        const mergeState = (tableName) => {
-                            const newArray = freshData[tableName];
-                            if (!newArray) return state[tableName];
+                    set((state) => ({
+                        ...state,
+                        products: mergeStateHelper(state.products, freshData['products']),
+                        users: mergeStateHelper(state.users, freshData['users']),
+                        clients: mergeStateHelper(state.clients, freshData['clients']),
+                        cloudColumns: { ...state.cloudColumns, ...cloudColumns }
+                    }));
 
-                            const pendingLocal = state[tableName].filter(item => !item.synced);
-
-                            // Iniciamos con los que vienen de la nube y sobreescribimos con los pendientes locales
-                            const merged = newArray.map(remoteItem => {
-                                const localItem = pendingLocal.find(p => p.id === remoteItem.id);
-                                return localItem ? localItem : remoteItem;
-                            });
-
-                            // Agregamos aquellos que fueron creados localmente y no están en la nube
-                            const locallyCreated = pendingLocal.filter(p => !newArray.find(r => r.id === p.id));
-                            return [...merged, ...locallyCreated];
-                        };
-
-                        return {
-                            ...state,
-                            products: mergeState('products'),
-                            users: mergeState('users'),
-                            clients: mergeState('clients'),
-                            cloudColumns: { ...state.cloudColumns, ...cloudColumns } // Persistir conocimiento de la estructura
-                        };
-                    });
-
-                    // Descarga especial de Ticket Config
+                    // Descarga especial de Ticket Config (con Desempaquetado JSON)
                     const { data: configData, error: configError } = await supabase.from('ticket_config').select('*').eq('id', 'main').single();
                     if (!configError && configData) {
                         set(s => {
-                            // Solo sobreescribimos si no tenemos cambios locales sin sincronizar
                             if (s.ticketConfig?.synced) {
-                                // Limpiamos campos nulos o vacíos para no sobreescribir con basura de la nube
+                                let finalConfig = { ...configData };
+                                
+                                if (configData.footer && configData.footer.startsWith('JSON_CONFIG:')) {
+                                    try {
+                                        const jsonStr = configData.footer.replace('JSON_CONFIG:', '');
+                                        const unpacked = JSON.parse(jsonStr);
+                                        const { _realFooter, ...rest } = unpacked;
+                                        finalConfig = { ...finalConfig, ...rest, footer: _realFooter };
+                                    } catch (e) {
+                                        console.error('Error al desempaquetar config:', e);
+                                    }
+                                }
+
+                                const mappedConfig = {
+                                    ...finalConfig,
+                                    businessName: finalConfig.header || finalConfig.businessName,
+                                    footerLine1: finalConfig.footer || finalConfig.footerLine1,
+                                    printCopy: finalConfig.doubleCopy !== undefined ? finalConfig.doubleCopy : finalConfig.printCopy
+                                };
+
                                 const cleanData = {};
-                                Object.keys(configData).forEach(key => {
-                                    if (configData[key] !== null && configData[key] !== undefined && configData[key] !== '') {
-                                        cleanData[key] = configData[key];
+                                Object.keys(mappedConfig).forEach(key => {
+                                    if (mappedConfig[key] !== null && mappedConfig[key] !== undefined) {
+                                        cleanData[key] = mappedConfig[key];
                                     }
                                 });
 
@@ -277,6 +300,7 @@ export const useStore = create(
                     set({ isSyncing: false });
                 }
             },
+
 
             // Productos
             addProduct: (product) => {

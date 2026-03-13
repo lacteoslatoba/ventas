@@ -1,11 +1,21 @@
 
 import { createClient } from '@supabase/supabase-js'
-import * as dotenv from 'dotenv'
+import fs from 'fs'
 
-dotenv.config()
+let supabaseUrl, supabaseKey;
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
+try {
+  const env = fs.readFileSync('.env', 'utf8')
+  const getEnv = (name) => {
+      const match = env.match(new RegExp(`${name}=(.*)`))
+      return match ? match[1].trim().replace(/^"(.*)"$/, '$1') : null
+  }
+  supabaseUrl = getEnv('VITE_SUPABASE_URL')
+  supabaseKey = getEnv('VITE_SUPABASE_ANON_KEY')
+} catch (e) {
+  supabaseUrl = process.env.VITE_SUPABASE_URL
+  supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
+}
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Faltan variables de entorno VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY')
