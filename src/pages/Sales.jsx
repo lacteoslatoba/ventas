@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { ShoppingCart, Printer, Delete, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth } from 'lucide-react';
 import { printTicket } from '../lib/bluetoothPrinter';
 import { Link } from 'react-router-dom';
+import TicketPreview from '../components/TicketPreview';
 
 export default function Sales() {
     const { 
@@ -177,93 +178,12 @@ export default function Sales() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto w-full flex flex-col items-center py-6 bg-slate-50/50 dark:bg-slate-900/50 relative">
-                        {/* Ticket Virtual rendered directly */}
-                        <div className="bg-white shadow-xl shadow-slate-200/50 rounded-xl animate-in fade-in slide-in-from-bottom-4 duration-500 will-change-transform" style={{ fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.45', width: '280px', padding: '20px 20px 28px', color: '#000' }}>
-                            <div style={{ textAlign: ticketConfig.titleAlignment || 'center', marginBottom: '12px' }}>
-                                <div style={{ fontWeight: '900', fontSize: '16px', textTransform: 'uppercase' }}>{ticketConfig.businessName || 'MI NEGOCIO'}</div>
-                                {ticketConfig.subtitle && <div style={{ fontSize: '11px', textTransform: 'uppercase', marginTop: '4px' }}>{ticketConfig.subtitle}</div>}
-                                {ticketConfig.showAddress !== false && ticketConfig.address && <div style={{ fontSize: '11px', color: '#475569', textTransform: 'uppercase', marginTop: '4px' }}>{ticketConfig.address}</div>}
-                                {ticketConfig.showPhone !== false && ticketConfig.phone && <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>Tel: {ticketConfig.phone}</div>}
-                            </div>
-
-                            <div style={{ borderTop: '2px dashed #cbd5e1', margin: '14px 0' }} />
-
-                            <div className="flex justify-between items-center text-[11px] mb-1">
-                                <span>TICKET:</span>
-                                <strong>#{generatedTicket.id.slice(-6).toUpperCase()}</strong>
-                            </div>
-                            
-                            {ticketConfig.showDate !== false && (
-                                <div className="flex justify-between items-center text-[11px] mb-1">
-                                    <span>FECHA:</span>
-                                    <span>{new Date(generatedTicket.date).toLocaleDateString('es-MX')} {ticketConfig.showTime !== false && new Date(generatedTicket.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-                            )}
-
-                            {(ticketConfig.showSeller !== false || ticketConfig.showCustomer !== false) && (
-                                <>
-                                    <div style={{ borderTop: '1px dashed #e2e8f0', margin: '10px 0' }} />
-                                    {ticketConfig.showSeller !== false && (
-                                        <div className="flex justify-between items-center text-[11px] mb-1">
-                                            <span>CAJERO:</span>
-                                            <span className="uppercase text-right truncate max-w-[120px] font-semibold">{user?.name || 'ADMIN'}</span>
-                                        </div>
-                                    )}
-                                    {ticketConfig.showCustomer !== false && (
-                                        <div className="flex justify-between items-center text-[11px] mb-1">
-                                            <span>CLIENTE:</span>
-                                            <span className="uppercase text-right truncate max-w-[120px] font-semibold">{client?.name || 'GENERAL'}</span>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            {ticketConfig.showItemsHeader !== false && (
-                                <>
-                                    <div style={{ borderTop: '2px dashed #cbd5e1', margin: '14px 0' }} />
-                                    <div className="flex justify-between text-[11px] font-bold mb-2">
-                                        <span>ITEM</span>
-                                        <span>PRECIO</span>
-                                    </div>
-                                    <div style={{ borderTop: '1px dashed #e2e8f0', margin: '10px 0' }} />
-                                </>
-                            )}
-                            {ticketConfig.showItemsHeader === false && (
-                                <div style={{ borderTop: '2px dashed #cbd5e1', margin: '14px 0' }} />
-                            )}
-
-                            <div className={ticketConfig.spaceBetweenItems ? 'space-y-4' : 'space-y-3'}>
-                                {generatedTicket.items.map((item, idx) => (
-                                    <div key={idx} className="text-[11px]">
-                                        <div className="font-bold uppercase truncate">{item.name}</div>
-                                        <div className="flex justify-between text-slate-600 mt-0.5">
-                                            <span>{item.quantity} {item.unit === 'Kg' ? 'kg' : 'x'} x ${item.price.toFixed(2)}</span>
-                                            <span className="text-black font-bold">${(item.price * item.quantity).toFixed(2)}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                             <div style={{ borderTop: '2px solid #1e293b', margin: '14px 0 10px 0' }} />
-                            
-                            <div className="text-right text-[11px] font-bold mb-1">SUBTOTAL: ${generatedTicket.total.toFixed(2)}</div>
-                            <div className={`${ticketConfig.centerTotal ? 'text-center' : 'text-right'} font-black text-[17px] mt-3 mb-4 tracking-tighter`}>TOTAL ${generatedTicket.total.toFixed(2)}</div>
-
-                            {ticketConfig.showCashAndChange !== false && (
-                                <>
-                                    <div style={{ borderTop: '1px dashed #cbd5e1', margin: '12px 0' }} />
-                                    <div className="flex justify-between text-[11px]"><span>EFECTIVO:</span><span>${generatedTicket.total.toFixed(2)}</span></div>
-                                    <div className="flex justify-between text-[11px]"><span>CAMBIO:</span><span>$0.00</span></div>
-                                </>
-                            )}
-                            
-                            <div style={{ borderTop: '1px dashed #cbd5e1', margin: '12px 0' }} />
-                            
-                            <div style={{ textAlign: 'center', fontSize: '10px', marginTop: '16px' }}>
-                                <div className="uppercase">{ticketConfig.footerLine1 || '¡GRACIAS POR SU COMPRA!'}</div>
-                                {ticketConfig.footerLine2 && <div className="uppercase mt-1">{ticketConfig.footerLine2}</div>}
-                            </div>
-                        </div>
+                        <TicketPreview 
+                            config={ticketConfig} 
+                            sale={generatedTicket} 
+                            user={user} 
+                            client={client} 
+                        />
                     </div>
 
                     {/* Acciones principales */}
