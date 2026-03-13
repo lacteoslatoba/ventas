@@ -64,6 +64,18 @@ export const useStore = create(
                 itemsHeaderRight: 'IMPORTE',
                 showLogo: true,
                 logoUrl: 'https://i.ibb.co/w2Kw4S4/la.png',
+                // Nuevas opciones granulares
+                businessNameBold: true,
+                metadataBold: false,
+                totalBold: true,
+                itemsBold: false,
+                showSubtotal: true,
+                showSeparatorHeader: true,
+                showSeparatorItems: true,
+                showSeparatorFooter: true,
+                separatorStyle: 'dashed', // 'dashed' o 'solid'
+                headerSpacing: 0,
+                footerSpacing: 0,
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));

@@ -145,7 +145,18 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         totalFontSize = 14,
         itemsHeaderRight = 'IMPORTE',
         showLogo = true,
-        logoUrl = null
+        logoUrl = null,
+        // Nuevas
+        businessNameBold = true,
+        metadataBold = false,
+        totalBold = true,
+        itemsBold = false,
+        showSubtotal = true,
+        showSeparatorHeader = true,
+        showSeparatorItems = true,
+        showSeparatorFooter = true,
+        separatorStyle = 'dashed',
+        footerSpacing = 0,
     } = config;
 
     const chunks = [];
@@ -153,7 +164,8 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
 
     // Forzamos un ancho más seguro para impresoras de 58mm (generalmente 32 caps)
     const WIDTH = config.paperWidth === 80 ? 48 : 31;
-    const SEP = '-'.repeat(WIDTH) + '\r\n';
+    const SEP_CHAR = separatorStyle === 'solid' ? '_' : '-';
+    const SEP = SEP_CHAR.repeat(WIDTH) + '\r\n';
 
     const formatMetaLine = (l, r = '') => {
         const align = metadataAlignment || 'between';
@@ -201,28 +213,25 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         }
 
         if (showBusinessName !== false) {
-            add(CMD.BOLD_ON);
+            if (businessNameBold) add(CMD.BOLD_ON);
             
             if (config.businessNameSize > 16) {
                 add(CMD.DOUBLE_SIZE);
             }
             
             add((businessName || 'LACTEOS LA TOBA').toUpperCase() + '\r\n');
-            
-            if (config.businessNameSize > 16) {
-                add(CMD.NORMAL_SIZE);
-            }
-            
-            add(CMD.BOLD_OFF);
+            add(CMD.NORMAL_SIZE);
+            if (businessNameBold) add(CMD.BOLD_OFF);
         }
         
         if (subtitle) add(subtitle.toUpperCase() + '\r\n');
-        if (address) add(address.toUpperCase() + '\r\n');
-        if (phone) add(`TEL: ${phone}\r\n`);
+        if (showAddress && address) add(address.toUpperCase() + '\r\n');
+        if (showPhone && phone) add(`TEL: ${phone}\r\n`);
         if (extraLine1) add(extraLine1.toUpperCase() + '\r\n');
         if (extraLine2) add(extraLine2.toUpperCase() + '\r\n');
 
-        add(CMD.ALIGN_LEFT, SEP);
+        if (showSeparatorHeader) add(SEP);
+        add(CMD.ALIGN_LEFT);
         
         const dateObj = new Date(ticket.date || Date.now());
         const dStr = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -230,7 +239,8 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         
         // Aplicar fuente B si el tamaño es muy pequeño
         if (metadataSize < 9) add(CMD.FONT_B);
-        
+        if (metadataBold) add(CMD.BOLD_ON);
+
         const labelFecha = showLabels ? 'FECHA' : '';
         const labelHora = showLabels ? 'HORA' : '';
         add(formatMetaLine(showLabels ? `${labelFecha}: ${dStr}` : dStr, showLabels ? `${labelHora}: ${tStr}` : tStr));
@@ -247,18 +257,20 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
             add(formatMetaLine(showLabels ? 'Repartidor' : '', sName));
         }
 
+        if (metadataBold) add(CMD.BOLD_OFF);
         if (metadataSize < 9) add(CMD.FONT_A); // Volver a fuente normal
 
-        if (config.showItemsHeader !== false) {
-            add(SEP, CMD.BOLD_ON);
-            add(formatMetaLine(itemsHeaderLeft, itemsHeaderRight));
-            add(CMD.BOLD_OFF, SEP);
-        } else {
+        if (showSeparatorItems) add(SEP);
+
+        if (showItemsHeader) {
+            add(CMD.BOLD_ON);
+            add(formatMetaLine(itemsHeaderLeft.toUpperCase(), itemsHeaderRight.toUpperCase()));
+            add(CMD.BOLD_OFF);
             add(SEP);
         }
 
-        const items = ticket.items || [];
-        items.forEach(item => {
+        if (itemsBold) add(CMD.BOLD_ON);
+        for (const item of ticket.items || []) {
             if (multiLineItems) {
                 // Estilo solicitado: Nombre arriba, Qty y Precio abajo
                 add(item.name.toUpperCase().slice(0, WIDTH) + '\r\n');
@@ -273,28 +285,31 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
                 const totStr = `$${(Number(item.price) * Number(item.quantity)).toFixed(2)}`;
                 add(col2(`${qtyStr} ${nameStr}`, totStr));
             }
-            if (config.spaceBetweenItems) add('\r\n');
-        });
-
-        add(SEP);
-        const finalTot = `$${Number(ticket.total || 0).toFixed(2)}`;
-        add(col2('SUBTOTAL:', finalTot));
-        
-        add(CMD.BOLD_ON);
-        if (totalFontSize > 16) add(CMD.DOUBLE_SIZE);
-
-        if (config.centerTotal) {
-            add(CMD.ALIGN_CENTER, `TOTAL: ${finalTot}\r\n`, CMD.ALIGN_LEFT);
-        } else {
-            add(CMD.ALIGN_RIGHT, `TOTAL: ${finalTot}\r\n`, CMD.ALIGN_LEFT);
+            if (spaceBetweenItems) add('\r\n');
         }
-        
-        if (totalFontSize > 16) add(CMD.NORMAL_SIZE);
-        add(CMD.BOLD_OFF, SEP);
+        if (itemsBold) add(CMD.BOLD_OFF);
 
-        if (config.showCashAndChange !== false) {
-            add(formatMetaLine('EFECTIVO:', finalTot));
-            add(formatMetaLine('CAMBIO:', '$0.00'));
+        if (showSeparatorFooter) add(SEP);
+
+        if (showSubtotal) {
+             add(formatMetaLine('SUBTOTAL', `$${ticket.total?.toFixed(2)}`));
+        }
+
+        if (totalBold) add(CMD.BOLD_ON);
+        if (totalFontSize > 16) add(CMD.DOUBLE_SIZE);
+        if (centerTotal) add(CMD.ALIGN_CENTER);
+        
+        add(`TOTAL $${ticket.total?.toFixed(2)}\r\n`);
+        
+        add(CMD.NORMAL_SIZE);
+        if (totalBold) add(CMD.BOLD_OFF);
+        add(CMD.ALIGN_CENTER);
+
+        if (showSeparatorFooter) add(SEP);
+
+        if (showCashAndChange !== false) {
+            add(formatMetaLine('EFECTIVO:', `$${ticket.total?.toFixed(2)}`)); // Assuming cash paid is total for now
+            add(formatMetaLine('CAMBIO:', '$0.00')); // Assuming no change for now
             add(SEP);
         }
         
@@ -309,7 +324,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         if (showSignature) add('\r\nFIRMA: __________________\r\n');
         
         // Mucho más avance de papel para que salga el pie de página
-        add('\r\n\r\n\r\n\r\n\r\n\r\n', [ESC, 0x69]); 
+        add('\r\n'.repeat(footerSpacing > 0 ? footerSpacing : 6), [ESC, 0x69]); 
     } else {
         // Estándar muy robusto
         add(CMD.INIT, CMD.ALIGN_CENTER);
@@ -323,14 +338,18 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         if (showMainTitle !== false) add('TICKET DE VENTA\r\n');
         
         if (showBusinessName !== false) {
+            if (businessNameBold) add(CMD.BOLD_ON);
             if (config.businessNameSize > 16) add(CMD.DOUBLE_SIZE);
             add(businessName.toUpperCase() + '\r\n');
             if (config.businessNameSize > 16) add(CMD.NORMAL_SIZE);
+            if (businessNameBold) add(CMD.BOLD_OFF);
         }
         
-        add(SEP, CMD.ALIGN_LEFT);
+        if (showSeparatorHeader) add(SEP);
+        add(CMD.ALIGN_LEFT);
 
         if (metadataSize < 9) add(CMD.FONT_B);
+        if (metadataBold) add(CMD.BOLD_ON);
 
         const dateObj = new Date(ticket.date || Date.now());
         const dStr = dateObj.toLocaleDateString('es-MX');
@@ -343,16 +362,20 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         if (showSeller) add(formatMetaLine(showLabels ? 'Repartidor' : '', user?.name || 'Vendedor'));
         if (showCustomer) add(formatMetaLine(showLabels ? 'Cliente' : '', client?.name || 'General'));
         
+        if (metadataBold) add(CMD.BOLD_OFF);
         if (metadataSize < 9) add(CMD.FONT_A);
         
-        add(SEP);
+        if (showSeparatorItems) add(SEP);
         
-        if (config.showItemsHeader !== false) {
-            add(formatMetaLine(itemsHeaderLeft, itemsHeaderRight));
+        if (showItemsHeader) {
+            add(CMD.BOLD_ON);
+            add(formatMetaLine(itemsHeaderLeft.toUpperCase(), itemsHeaderRight.toUpperCase()));
+            add(CMD.BOLD_OFF);
             add(SEP);
         }
 
-        (ticket.items || []).forEach(item => {
+        if (itemsBold) add(CMD.BOLD_ON);
+        for (const item of ticket.items || []) {
             if (multiLineItems) {
                 add(item.name.toUpperCase().slice(0, WIDTH) + '\r\n');
                 const qtyStr = `${item.quantity || 0}${item.unit === 'Kg' ? 'kg' : 'x'} x $${Number(item.price || 0).toFixed(2)}`;
@@ -362,23 +385,33 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
                 const rowTotal = (Number(item.price) * Number(item.quantity)).toFixed(2);
                 add(col2(`${item.quantity} ${item.name.toUpperCase().slice(0, WIDTH - 10)}`, `$${rowTotal}`));
             }
-            if (config.spaceBetweenItems) add('\r\n');
-        });
+            if (spaceBetweenItems) add('\r\n');
+        }
+        if (itemsBold) add(CMD.BOLD_OFF);
         
-        add(SEP, CMD.BOLD_ON);
+        if (showSeparatorFooter) add(SEP);
+        
+        if (showSubtotal) {
+             add(formatMetaLine('SUBTOTAL', `$${ticket.total?.toFixed(2)}`));
+        }
+
+        if (totalBold) add(CMD.BOLD_ON);
         const finalTotStr = `$${Number(ticket.total).toFixed(2)}`;
         
         if (totalFontSize > 16) add(CMD.DOUBLE_SIZE);
         
-        if (config.centerTotal) {
-            add(CMD.ALIGN_CENTER, `TOTAL: ${finalTotStr}\r\n`, CMD.ALIGN_LEFT);
+        if (centerTotal) {
+            add(CMD.ALIGN_CENTER, `TOTAL: ${finalTotStr}\r\n`);
         } else {
             add(col2('TOTAL:', finalTotStr));
         }
         
         if (totalFontSize > 16) add(CMD.NORMAL_SIZE);
-        add(CMD.BOLD_OFF, SEP, CMD.ALIGN_CENTER);
+        if (totalBold) add(CMD.BOLD_OFF);
+        add(CMD.ALIGN_CENTER);
         
+        if (showSeparatorFooter) add(SEP);
+
         if (footerLine1) add(footerLine1.toUpperCase() + '\r\n');
         if (footerLine2) add(footerLine2.toUpperCase() + '\r\n');
         
