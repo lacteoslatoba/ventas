@@ -143,8 +143,8 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         metadataSize = 10,
         multiLineItems = true,
         totalFontSize = 14,
-        itemsHeaderLeft = 'CANT/CONCEPTO',
         itemsHeaderRight = 'IMPORTE',
+        showLogo = true,
         logoUrl = null
     } = config;
 
@@ -194,8 +194,8 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
     if (ticketTemplate === 'latoba') {
         add(CMD.INIT, CMD.ALIGN_CENTER);
 
-        // Procesar Logo si existe
-        if (logoUrl) {
+        // Procesar Logo si existe y está habilitado
+        if (showLogo && logoUrl) {
             const logoBytes = await processImage(logoUrl, WIDTH * 8);
             if (logoBytes) add(logoBytes, '\r\n');
         }
@@ -314,8 +314,8 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         // Estándar muy robusto
         add(CMD.INIT, CMD.ALIGN_CENTER);
 
-        // Procesar Logo si existe
-        if (logoUrl) {
+        // Procesar Logo si existe y está habilitado
+        if (showLogo && logoUrl) {
             const logoBytes = await processImage(logoUrl, WIDTH * 8);
             if (logoBytes) add(logoBytes, '\r\n');
         }

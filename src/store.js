@@ -62,6 +62,7 @@ export const useStore = create(
                 totalFontSize: 14,
                 itemsHeaderLeft: 'CANT/CONCEPTO',
                 itemsHeaderRight: 'IMPORTE',
+                showLogo: true,
                 logoUrl: 'https://i.ibb.co/w2Kw4S4/la.png',
             },
             updateTicketConfig: (config) => {

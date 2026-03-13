@@ -33,6 +33,7 @@ function TicketPreview({ config }) {
         totalFontSize = 14,
         itemsHeaderLeft = 'CANT/CONCEPTO',
         itemsHeaderRight = 'IMPORTE',
+        showLogo = true,
         logoUrl = null,
     } = config;
 
@@ -53,7 +54,7 @@ function TicketPreview({ config }) {
                     className={`font-mono leading-snug text-black bg-white`}
                     style={{ width: '200px', minHeight: '300px', fontSize: `${useFontB ? 8.5 : 10}px` }}
                 >
-                    {logoUrl && (
+                    {showLogo && logoUrl && (
                         <div className="flex justify-center mb-2">
                             <img src={logoUrl} alt="Logo" className="max-w-[100px] max-h-[60px] object-contain grayscale" />
                         </div>
@@ -140,7 +141,7 @@ function TicketPreview({ config }) {
                 className={`font-mono leading-snug text-black bg-white`}
                 style={{ width: '200px', minHeight: '300px', fontSize: `${useFontB ? 8.5 : 10}px` }}
             >
-                {logoUrl && (
+                {showLogo && logoUrl && (
                     <div className="flex justify-center mb-2">
                         <img src={logoUrl} alt="Logo" className="max-w-[100px] max-h-[60px] object-contain grayscale" />
                     </div>
@@ -579,6 +580,13 @@ export default function TicketConfig() {
                                 desc="Solo imprime los datos, ahorrando espacio"
                                 checked={form.showLabels}
                                 onChange={update('showLabels')}
+                            />
+                            <Toggle
+                                id="showLogo"
+                                label="Imprimir Logotipo"
+                                desc="Muestra el logo de la empresa en la parte superior"
+                                checked={form.showLogo}
+                                onChange={update('showLogo')}
                             />
                             <Toggle
                                 id="showItemsHeader"
