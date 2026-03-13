@@ -76,6 +76,8 @@ export const useStore = create(
                 separatorStyle: 'dashed', // 'dashed' o 'solid'
                 headerSpacing: 0,
                 footerSpacing: 0,
+                metadataAlignment: 'between',
+                metadataSpacing: 0,
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));
@@ -197,7 +199,7 @@ export const useStore = create(
                         
                         let finalPayload = { id: 'main' };
                         
-                        if (knownCols) {
+                        if (knownCols && knownCols.length > 0) {
                             const extraData = {};
                             const legacyMap = {
                                 businessName: 'header',
@@ -214,12 +216,25 @@ export const useStore = create(
                                 }
                             });
 
-                            if (Object.keys(extraData).length > 0 && knownCols.includes('footer')) {
-                                const currentFooter = payload.footerLine1 || '';
-                                finalPayload.footer = `JSON_CONFIG:${JSON.stringify({ ...extraData, _realFooter: currentFooter })}`;
+                            // Siempre intentamos guardar en el campo 'footer' como JSON si hay datos extra y la columna existe
+                            if (Object.keys(extraData).length > 0) {
+                                if (knownCols.includes('footer')) {
+                                    const currentFooter = payload.footerLine1 || '';
+                                    finalPayload.footer = `JSON_CONFIG:${JSON.stringify({ ...extraData, _realFooter: currentFooter })}`;
+                                } else if (knownCols.includes('header')) {
+                                    // Si no hay footer pero si header, intentamos meterlo ahí? Mejor no, puede romper el titulo
+                                    // Pero usualmente 'footer' estará presente
+                                }
                             }
                         } else {
-                            finalPayload = { id: 'main', ...payload };
+                            // Si no conocemos las columnas, enviamos lo básico para evitar errores de 
+                            // 'column does not exist' en Supabase, y dejamos los detalles para cuando
+                            // se cargue el esquema real.
+                            finalPayload = { 
+                                id: 'main', 
+                                header: payload.businessName || 'LACTEOS LA TOBA',
+                                footer: payload.footerLine1 || '¡Gracias por su compra!'
+                            };
                         }
 
                         const { error } = await supabase.from('ticket_config').upsert(finalPayload);
