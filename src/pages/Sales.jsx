@@ -331,15 +331,15 @@ export default function Sales() {
                 )}
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 border-t border-slate-100 bg-white lg:bg-slate-50/90 lg:backdrop-blur-md lg:rounded-b-3xl">
-                <div className="flex justify-between items-end mb-4 px-2">
+            <div className="absolute bottom-0 left-0 right-0 p-5 border-t border-slate-100 bg-white lg:bg-slate-50/90 lg:backdrop-blur-md lg:rounded-b-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                <div className="flex justify-between items-end mb-5 px-1">
                     <span className="text-slate-500 font-bold uppercase tracking-widest text-xs">Total Venta</span>
                     <span className="text-3xl font-black text-slate-900 tracking-tight">${total.toFixed(2)}</span>
                 </div>
                 <button
                     onClick={processSale}
                     disabled={cart.length === 0}
-                    className={`w-full py-4 rounded-xl font-bold flex justify-center items-center gap-2 text-base transition-all active:scale-95 ${cart.length === 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' : 'bg-primary text-white shadow-lg shadow-blue-500/25 hover:bg-blue-700'}`}
+                    className={`w-full py-5 rounded-2xl font-black flex justify-center items-center gap-2 text-lg transition-all active:scale-95 ${cart.length === 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' : 'bg-primary text-white shadow-xl shadow-blue-500/25 hover:bg-blue-700'}`}
                 >
                     Generar Recibo
                 </button>
@@ -421,8 +421,8 @@ export default function Sales() {
                 )}
 
                 {/* Mobile Full Screen Cart Overlay */}
-                <div className={`fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${mobileCartOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                    <div className={`absolute inset-x-0 bottom-0 top-[10vh] bg-slate-50 rounded-t-[2rem] transition-transform duration-300 ease-out-expo ${mobileCartOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+                <div className={`fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${mobileCartOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                    <div className={`absolute inset-x-0 bottom-[60px] top-[5vh] bg-slate-50 rounded-t-[2.5rem] shadow-2xl transition-transform duration-300 ease-out-expo ${mobileCartOpen ? 'translate-y-0' : 'translate-y-full'}`}>
                         {renderCartPanel()}
                     </div>
                 </div>

@@ -109,9 +109,12 @@ export default function Reports() {
 
             {/* DETALLE DE VENTA - INTERFAZ PREMIUM */}
             {selectedSale && (
-                <div className="fixed inset-0 z-[100] bg-background-light dark:bg-background-dark animate-in slide-in-from-bottom duration-300 no-print flex flex-col items-center">
-                    <div className="relative flex h-full w-full max-w-md mx-auto flex-col bg-white dark:bg-background-dark overflow-x-hidden shadow-2xl">
-                        
+                <div className="fixed inset-0 z-[70] bg-background-light dark:bg-background-dark animate-in slide-in-from-bottom duration-300 no-print flex flex-col items-center">
+                    <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedSale(null)}></div>
+                    <div 
+                        onClick={e => e.stopPropagation()}
+                        className="absolute inset-x-0 bottom-0 top-[6vh] md:top-[12vh] md:bottom-[12vh] md:max-w-2xl md:mx-auto bg-slate-50 dark:bg-background-dark rounded-t-[3rem] md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-full duration-500 ease-out-expo"
+                    >        
                         {/* Top App Bar */}
                         <div className="flex items-center bg-white dark:bg-background-dark p-4 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
                             <button 
