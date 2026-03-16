@@ -28,9 +28,15 @@ const NetworkIndicator = () => {
     const handleOffline = () => setOnlineStatus(false);
 
     // Sistema de altura estable para móviles (evita brincos del menú)
+    let lastWidth = window.innerWidth;
     const updateHeight = () => {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
+      // Solo actualizamos si el ancho cambia (cambio de orientación)
+      // O si es la primera vez. Esto evita el brinco cuando se oculta la barra del navegador.
+      if (window.innerWidth !== lastWidth || !document.documentElement.style.getPropertyValue('--vh')) {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+        lastWidth = window.innerWidth;
+      }
     };
 
     window.addEventListener('online', handleOnline);
@@ -163,7 +169,7 @@ const BottomNavigation = ({ currentUser }) => {
   const logout = useStore(state => state.logout);
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[72px] pb-safe z-50 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <div className="md:hidden flex-none bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[72px] pb-safe z-10 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
       <NavItem to="/" icon={ShoppingCart} label="Vender" active={isActive('/') || isActive('/ventas')} />
       
       <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
@@ -217,10 +223,9 @@ function App() {
 
 
             <main 
-              className="flex-1 overflow-x-hidden w-full relative scroll-smooth"
-              style={{ height: 'calc((var(--vh, 1vh) * 100) - 64px)' }}
+              className="flex-1 overflow-hidden w-full relative scroll-smooth"
             >
-              <div className="h-full overflow-y-auto pb-24 md:pb-8 relative custom-scrollbar">
+              <div className="h-full overflow-y-auto pb-4 md:pb-8 relative custom-scrollbar">
                 <Routes>
                   <Route path="/" element={<Sales />} />
                   <Route path="/menu" element={<MenuPage />} />

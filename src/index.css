@@ -3,12 +3,23 @@
 @tailwind utilities;
 
 @layer base {
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    /* Evitar el comportamiento de pull-to-refresh y el rebote */
+    overscroll-behavior: none;
+  }
+
   body {
     @apply text-slate-800 font-sans antialiased;
     background-color: #f8fafc;
     background-image: radial-gradient(at 0% 0%, hsla(43, 100%, 80%, 0.15) 0px, transparent 50%),
       radial-gradient(at 100% 100%, hsla(210, 100%, 90%, 0.1) 0px, transparent 50%);
     background-attachment: fixed;
+    height: 100%;
+    width: 100%;
   }
 }
 
