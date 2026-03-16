@@ -188,10 +188,10 @@ function App() {
       ) : (
         <Router>
           <PrinterAutoConnect />
-          <div className="flex flex-col md:flex-row h-screen bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900">
+          <div className="flex flex-col md:flex-row h-[100dvh] bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900">
             <Sidebar />
             
-            <div className="flex-1 flex flex-col h-screen overflow-hidden">
+            <div className="flex-1 flex flex-col h-[100dvh] overflow-hidden">
               <MobileHeaderWrapper 
                 currentUser={currentUser} 
                 isSyncing={isSyncing} 
