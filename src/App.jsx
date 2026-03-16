@@ -154,7 +154,7 @@ const BottomNavigation = ({ currentUser }) => {
   const logout = useStore(state => state.logout);
 
   return (
-    <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[72px] z-50 select-none no-print">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[72px] pb-safe z-50 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
       <NavItem to="/" icon={ShoppingCart} label="Vender" active={isActive('/') || isActive('/ventas')} />
       
       <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
