@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings } from 'lucide-react';
+import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings, Users } from 'lucide-react';
 import { useStore } from './store';
 import { useBTPrinter } from './lib/useBTPrinter';
 
@@ -103,8 +103,19 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
         </h1>
       </div>
 
-      {/* Derecha: Configuración */}
-      <div className="flex items-center gap-2 relative">
+      {/* Derecha: Ajustes y Salir */}
+      <div className="flex items-center gap-1 relative">
+        <button 
+          onClick={() => {
+            if (window.confirm('¿Deseas cerrar sesión?')) {
+              useStore.getState().logout();
+            }
+          }}
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-red-500 active:scale-95 transition-all"
+        >
+          <LogOut size={22} />
+        </button>
+
         <button 
           onClick={() => setShowSettings(!showSettings)}
           className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-95 transition-all"
@@ -165,7 +176,6 @@ export const NavItem = ({ to, icon: IconComponent, label, active, onClick }) => 
 const BottomNavigation = () => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
-  const logout = useStore(state => state.logout);
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[60px] z-50 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
@@ -173,12 +183,7 @@ const BottomNavigation = () => {
       
       <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
 
-      <NavItem 
-        onClick={() => logout()} 
-        icon={LogOut} 
-        label="Salir" 
-        active={false} 
-      />
+      <NavItem to="/clientes" icon={Users} label="Clientes" active={isActive('/clientes')} />
     </div>
   );
 };

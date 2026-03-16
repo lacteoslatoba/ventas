@@ -69,18 +69,22 @@ export default function Login() {
             </div>
 
             <div className="sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex justify-center mb-6 text-primary">
-                    <div className="p-4 bg-white rounded-[2rem] shadow-2xl border border-slate-100 flex items-center justify-center relative">
+                <div className="flex justify-center mb-6">
+                    <div className="p-1 bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 flex items-center justify-center relative overflow-hidden group">
                         {isOnline ? (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-4 border-white shadow-sm shadow-green-500/50"></div>
+                            <div className="absolute top-4 right-4 w-4 h-4 bg-green-500 rounded-full border-4 border-white shadow-sm shadow-green-500/50 z-10"></div>
                         ) : (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full border-4 border-white shadow-sm shadow-orange-500/50"></div>
+                            <div className="absolute top-4 right-4 w-4 h-4 bg-orange-500 rounded-full border-4 border-white shadow-sm shadow-orange-500/50 z-10"></div>
                         )}
-                        <Lock size={40} className="text-primary" strokeWidth={2.5} />
+                        <img 
+                            src="/logo.png" 
+                            alt="Lácteos La Toba Logo" 
+                            className="w-32 h-32 object-contain group-hover:scale-110 transition-transform duration-700"
+                        />
                     </div>
                 </div>
-                <h2 className="mt-2 text-center text-4xl font-black tracking-tighter text-slate-900 leading-tight">
-                    QuesoApp
+                <h2 className="mt-2 text-center text-4xl font-black tracking-tighter text-slate-900 leading-tight uppercase">
+                    Lácteos La Toba
                 </h2>
                 <p className="mt-3 text-center text-base text-slate-500 font-medium">
                     Ingresa tus credenciales para continuar
