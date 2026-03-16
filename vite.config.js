@@ -14,7 +14,7 @@ export default defineConfig({
         description: 'App de ventas en ruta y control de inventario',
         theme_color: '#ffb91a',
         background_color: '#f8fafc',
-        display: 'fullscreen',
+        display: 'standalone',
         orientation: 'portrait',
         icons: [
           {
