@@ -169,7 +169,7 @@ const BottomNavigation = () => {
   const logout = useStore(state => state.logout);
 
   return (
-    <div className="md:hidden flex-none bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[56px] pb-safe z-10 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <div className="md:hidden flex-none bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[56px] pb-safe z-50 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
       <NavItem to="/" icon={ShoppingCart} label="Vender" active={isActive('/') || isActive('/ventas')} />
       
       <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />

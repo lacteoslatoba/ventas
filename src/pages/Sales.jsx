@@ -167,9 +167,9 @@ export default function Sales() {
                 <div className="relative flex h-full w-full max-w-md mx-auto flex-col bg-white dark:bg-background-dark overflow-x-hidden shadow-2xl">
                     
                     <div className="flex items-center p-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 z-10">
-                        <Link to="/menu" className="p-2 -ml-1 mr-2 text-slate-400 hover:text-slate-900 transition-colors">
-                            <ArrowLeft size={24} />
-                        </Link>
+                        <button onClick={() => setGeneratedTicket(null)} className="p-2 -ml-1 mr-2 text-slate-400 hover:text-slate-900 transition-colors">
+                            <X size={24} />
+                        </button>
                         <h2 className="flex-1 text-center mr-8 text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
                              <span className="material-symbols-outlined text-emerald-500">check_circle</span>
                              Venta Exitosa
@@ -352,11 +352,16 @@ export default function Sales() {
 
             {/* Products Left Side */}
             <div className="flex-1 flex flex-col pb-8 lg:pb-0">
-                <div className="mb-6 px-1">
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                        Venta Rápida
-                    </h1>
-                    <p className="text-slate-500 font-medium text-sm mt-1">Selecciona productos para armar el pedido</p>
+                <div className="mb-6 px-1 flex justify-between items-start">
+                    <div>
+                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                            Venta Rápida
+                        </h1>
+                        <p className="text-slate-500 font-medium text-sm mt-1">Selecciona productos para armar el pedido</p>
+                    </div>
+                    <Link to="/menu" className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-all active:scale-90 lg:hidden">
+                        <X size={24} />
+                    </Link>
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
@@ -393,7 +398,7 @@ export default function Sales() {
             <div className="lg:hidden">
                 {/* Fixed Bottom Bar (Covers Bottom Nav) */}
                 {!mobileCartOpen && cart.length > 0 && (
-                    <div className="fixed bottom-0 left-0 right-0 z-40 animate-in slide-in-from-bottom-2 duration-300">
+                    <div className="fixed bottom-[56px] left-0 right-0 z-40 animate-in slide-in-from-bottom-2 duration-300">
                         <button
                             onClick={() => setMobileCartOpen(true)}
                             className="w-full h-[64px] pb-safe bg-slate-900 border-t border-slate-800 text-white shadow-[0_-8px_30px_rgba(0,0,0,0.15)] px-6 flex items-center justify-between transition-colors active:bg-slate-800"
