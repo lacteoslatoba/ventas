@@ -27,8 +27,16 @@ const NetworkIndicator = () => {
     };
     const handleOffline = () => setOnlineStatus(false);
 
+    // Sistema de altura estable para móviles (evita brincos del menú)
+    const updateHeight = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('resize', updateHeight);
+    updateHeight();
 
     // Al iniciar, tratamos de bajar primero el catálogo oficial y luego subir lo pendiente
     if (isOnline) {
@@ -40,6 +48,7 @@ const NetworkIndicator = () => {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('resize', updateHeight);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -188,10 +197,16 @@ function App() {
       ) : (
         <Router>
           <PrinterAutoConnect />
-          <div className="flex flex-col md:flex-row h-[100dvh] bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900">
+          <div 
+            className="flex flex-col md:flex-row bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900"
+            style={{ height: 'calc(var(--vh, 1vh) * 100)' }}
+          >
             <Sidebar />
             
-            <div className="flex-1 flex flex-col h-[100dvh] overflow-hidden">
+            <div 
+              className="flex-1 flex flex-col overflow-hidden"
+              style={{ height: 'calc(var(--vh, 1vh) * 100)' }}
+            >
               <MobileHeaderWrapper 
                 currentUser={currentUser} 
                 isSyncing={isSyncing} 
@@ -201,7 +216,10 @@ function App() {
 
 
 
-            <main className="flex-1 overflow-x-hidden w-full relative h-[calc(100dvh-64px)] md:h-screen scroll-smooth">
+            <main 
+              className="flex-1 overflow-x-hidden w-full relative scroll-smooth"
+              style={{ height: 'calc((var(--vh, 1vh) * 100) - 64px)' }}
+            >
               <div className="h-full overflow-y-auto pb-24 md:pb-8 relative custom-scrollbar">
                 <Routes>
                   <Route path="/" element={<Sales />} />
