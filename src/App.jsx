@@ -14,6 +14,7 @@ import Reports from './pages/Reports';
 import Login from './pages/Login';
 import PrinterSettings from './pages/PrinterSettings';
 import TicketConfig from './pages/TicketConfig';
+import Sidebar from './components/Sidebar';
 import MenuPage from './pages/Menu';
 
 const NetworkIndicator = () => {
@@ -193,10 +194,13 @@ function App() {
         <Router>
           <PrinterAutoConnect />
           <div className="flex flex-col md:flex-row h-screen bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900">
-            <MobileHeaderWrapper 
-              currentUser={currentUser} 
-              isSyncing={isSyncing} 
-            />
+            <Sidebar />
+            
+            <div className="flex-1 flex flex-col h-screen overflow-hidden">
+              <MobileHeaderWrapper 
+                currentUser={currentUser} 
+                isSyncing={isSyncing} 
+              />
 
 
 
@@ -219,8 +223,8 @@ function App() {
               </div>
             </main>
 
-            {/* MENÚ INFERIOR */}
-            <BottomNavigation currentUser={currentUser} />
+              <BottomNavigation currentUser={currentUser} />
+            </div>
           </div>
         </Router>
       )}
