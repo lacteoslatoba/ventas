@@ -38,7 +38,7 @@ export default function PrinterSettings() {
             setStatus('disconnected');
             setStatusMsg('Se perdió la conexión.');
         }
-    }, [printer, isReconnecting]);
+    }, [printer, isReconnecting, status]);
 
     const handleConnect = async () => {
         setStatus('connecting');

@@ -52,18 +52,7 @@ function toBytes(...parts) {
     return out;
 }
 
-function centerText(text, width = 31) {
-    if (text.length >= width) return text.slice(0, width);
-    const pad = Math.floor((width - text.length) / 2);
-    return ' '.repeat(pad) + text;
-}
 
-function alignTextStr(text, align, width = 31) {
-    if (text.length >= width) return text.slice(0, width);
-    if (align === 'center') return centerText(text, width);
-    if (align === 'right') return ' '.repeat(width - text.length) + text;
-    return text;
-}
 
 async function processImage(url, maxWidth = 200) {
     return new Promise((resolve) => {
@@ -131,7 +120,6 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         footerLine2 = '',
         showLabels = true,
         showSignature = true,
-        showDate = true, showTime = true,
         showSeller = true, showCustomer = true,
         showAddress = true, showPhone = true,
         ticketTemplate = 'standard',

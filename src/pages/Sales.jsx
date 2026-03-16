@@ -12,7 +12,6 @@ export default function Sales() {
     } = useStore();
     const [generatedTicket, setGeneratedTicket] = useState(null);
     const [btPrinting, setBtPrinting] = useState(false);
-    const [showVirtualTicket, setShowVirtualTicket] = useState(false);
 
     // Mobile Cart State
     const [mobileCartOpen, setMobileCartOpen] = useState(false);

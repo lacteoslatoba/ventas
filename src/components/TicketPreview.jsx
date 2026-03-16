@@ -1,4 +1,6 @@
-import React from 'react';
+const Separator = ({ separatorStyle }) => (
+    <div className={`border-t ${separatorStyle === 'dashed' ? 'border-dashed' : 'border-solid'} border-black my-1`} />
+);
 
 export default function TicketPreview({ config, sale, user, client }) {
     const {
@@ -49,7 +51,7 @@ export default function TicketPreview({ config, sale, user, client }) {
         footerSpacing = 0,
     } = config || {};
 
-    // Si no hay 'sale', usamos datos de prueba (para la pantalla de configuración)
+
     const isPreviewOnly = !sale;
     
     const displaySale = sale || {
@@ -64,10 +66,6 @@ export default function TicketPreview({ config, sale, user, client }) {
 
     const displayUser = user || { name: 'Vendedor Prueba' };
     const displayClient = client || { name: 'Cliente Prueba' };
-
-    const Separator = () => (
-        <div className={`border-t ${separatorStyle === 'dashed' ? 'border-dashed' : 'border-solid'} border-black my-1`} />
-    );
 
     const metaStyle = { 
         fontSize: `${metadataSize}px`, 
@@ -107,7 +105,7 @@ export default function TicketPreview({ config, sale, user, client }) {
                     {showExtraLine1 && extraLine1 && <div className="text-center uppercase">{extraLine1}</div>}
                     {showExtraLine2 && extraLine2 && <div className="text-center uppercase">{extraLine2}</div>}
 
-                    {showSeparatorHeader && <Separator />}
+                    {showSeparatorHeader && <Separator separatorStyle={separatorStyle} />}
 
                     <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
                         {showDate && <span>{showLabels ? 'FECHA: ' : ''}{dateStr}</span>}
@@ -120,12 +118,12 @@ export default function TicketPreview({ config, sale, user, client }) {
                     {showCustomer && <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>{showLabels ? 'Cliente' : ''}</span><span className="uppercase text-right">{displayClient.name}</span></div>}
                     {showSeller && <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>{showLabels ? 'Repartidor' : ''}</span><span className="uppercase text-right">{displayUser.name}</span></div>}
 
-                    {showSeparatorItems && <Separator />}
+                    {showSeparatorItems && <Separator separatorStyle={separatorStyle} />}
 
                     {showItemsHeader && (
                         <>
                             <div className="flex justify-between uppercase font-bold"><span>{itemsHeaderLeft}</span><span>{itemsHeaderRight}</span></div>
-                            <Separator />
+                            <SeparatorComp />
                         </>
                     )}
 
@@ -163,17 +161,17 @@ export default function TicketPreview({ config, sale, user, client }) {
                         </div>
                     )}
                     
-                    {showSeparatorFooter && <Separator />}
+                    {showSeparatorFooter && <SeparatorComp />}
 
                     <div className={`${centerTotal ? 'text-center' : 'text-right'} leading-[1.2] mt-1 mb-1 uppercase`} style={{ fontSize: `${totalFontSize}px`, fontWeight: totalBold ? 'bold' : 'normal' }}>TOTAL ${displaySale.total.toFixed(2)}</div>
 
-                    {showSeparatorFooter && <Separator />}
+                    {showSeparatorFooter && <Separator separatorStyle={separatorStyle} />}
 
                     {showCashAndChange && (
                         <div className="text-[9px] opacity-70">
                             <div className="flex justify-between uppercase"><span>EFECTIVO:</span><span>${displaySale.total.toFixed(2)}</span></div>
                             <div className="flex justify-between uppercase"><span>CAMBIO:</span><span>$0.00</span></div>
-                            <Separator />
+                            <SeparatorComp />
                         </div>
                     )}
 
@@ -216,7 +214,7 @@ export default function TicketPreview({ config, sale, user, client }) {
                 {showAddress && address && <div className={`${alignClass} text-[8px]`}>{address}</div>}
                 {showPhone && phone && <div className={`${alignClass} text-[8px]`}>Tel: {phone}</div>}
 
-                {showSeparatorHeader && <Separator />}
+                {showSeparatorHeader && <Separator separatorStyle={separatorStyle} />}
 
                 <div>
                     <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
@@ -244,12 +242,12 @@ export default function TicketPreview({ config, sale, user, client }) {
                     )}
                 </div>
 
-                {showSeparatorItems && <Separator />}
+                {showSeparatorItems && <Separator separatorStyle={separatorStyle} />}
 
                 {showItemsHeader && (
                     <>
                         <div className="flex justify-between font-bold uppercase"><span>{itemsHeaderLeft}</span><span>{itemsHeaderRight}</span></div>
-                        <Separator />
+                        <Separator separatorStyle={separatorStyle} />
                     </>
                 )}
 
@@ -274,7 +272,7 @@ export default function TicketPreview({ config, sale, user, client }) {
 
                 <div style={{ marginTop: `${itemsSectionSpacing}px` }} />
 
-                {showSeparatorFooter && <Separator />}
+                {showSeparatorFooter && <Separator separatorStyle={separatorStyle} />}
 
                 {showSubtotal && (
                     <div 
@@ -290,13 +288,13 @@ export default function TicketPreview({ config, sale, user, client }) {
                 )}
                 <div className={`${centerTotal ? 'text-center' : 'text-right'} leading-[1.2] uppercase`} style={{ fontSize: `${totalFontSize}px`, fontWeight: totalBold ? 'bold' : 'normal' }}>TOTAL ${displaySale.total.toFixed(2)}</div>
                 
-                {showSeparatorFooter && <Separator />}
+                {showSeparatorFooter && <Separator separatorStyle={separatorStyle} />}
 
                 {showCashAndChange && (
                     <div className="text-[8px] opacity-70">
                         <div className="flex justify-between"><span>Efectivo:</span><span>${displaySale.total.toFixed(2)}</span></div>
                         <div className="flex justify-between"><span>Cambio:</span><span>$0.00</span></div>
-                        <Separator />
+                        <Separator separatorStyle={separatorStyle} />
                     </div>
                 )}
 

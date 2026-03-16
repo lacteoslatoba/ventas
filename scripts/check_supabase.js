@@ -1,4 +1,4 @@
-
+/* global process */
 import { createClient } from '@supabase/supabase-js'
 import fs from 'fs'
 
@@ -12,7 +12,7 @@ try {
   }
   supabaseUrl = getEnv('VITE_SUPABASE_URL')
   supabaseKey = getEnv('VITE_SUPABASE_ANON_KEY')
-} catch (e) {
+} catch (_e) {
   supabaseUrl = process.env.VITE_SUPABASE_URL
   supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
 }

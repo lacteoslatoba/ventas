@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut } from 'lucide-react';
 import { useStore } from './store';
-import { autoConnectPrinter, getSavedPrinterName } from './lib/bluetoothPrinter';
 import { useBTPrinter } from './lib/useBTPrinter';
 
 import Dashboard from './pages/Dashboard';
@@ -55,9 +54,7 @@ const PrinterAutoConnect = () => {
 
 
 
-const MobileHeader = ({ currentUser, isSyncing }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
+const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
   const isHome = location.pathname === '/' || (currentUser?.role !== 'admin' && location.pathname === '/ventas');
 
   return (
@@ -78,7 +75,7 @@ const MobileHeader = ({ currentUser, isSyncing }) => {
           {isHome ? 'Bienvenido' : 'Navegación'}
         </span>
         <h1 className="text-base font-black tracking-tight text-slate-800 dark:text-white leading-none">
-          {isHome ? currentUser?.name?.split(' ')[0] : location.pathname.replace('/', '').toUpperCase()}
+          {isHome ? currentUser?.name?.split(' ')[0] : location.pathname.substring(1).toUpperCase()}
         </h1>
       </div>
 
@@ -97,26 +94,27 @@ const MobileHeader = ({ currentUser, isSyncing }) => {
   );
 };
 
-const BottomNavigation = ({ currentUser }) => {
+// Componente interno para botón
+// eslint-disable-next-line no-unused-vars
+const NavItem = ({ to, icon: IconComponent, label, active, onClick }) => {
+  const content = (
+    <div className={`flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 transition-colors ${active ? 'text-primary' : 'text-slate-500'}`}>
+      <IconComponent size={22} fill={active ? "currentColor" : "none"} strokeWidth={2} />
+      <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">{label}</span>
+    </div>
+  );
+
+  if (onClick) {
+    return <button onClick={onClick} className="focus:outline-none">{content}</button>;
+  }
+
+  return <Link to={to} className="focus:outline-none">{content}</Link>;
+};
+
+const BottomNavigation = ({ currentUser: _currentUser }) => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
   const logout = useStore(state => state.logout);
-
-  // Componente interno para botón
-  const NavItem = ({ to, icon: Icon, label, active, onClick }) => {
-    const content = (
-      <div className={`flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 transition-colors ${active ? 'text-primary' : 'text-slate-500'}`}>
-        <Icon size={22} fill={active ? "currentColor" : "none"} strokeWidth={2} />
-        <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">{label}</span>
-      </div>
-    );
-
-    if (onClick) {
-      return <button onClick={onClick} className="focus:outline-none">{content}</button>;
-    }
-
-    return <Link to={to} className="focus:outline-none">{content}</Link>;
-  };
 
   return (
     <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 h-[68px] flex justify-around items-center z-30 shadow-[0_-8px_25px_rgba(0,0,0,0.05)] pb-safe select-none`}>
@@ -136,6 +134,12 @@ const BottomNavigation = ({ currentUser }) => {
   );
 };
 
+const MobileHeaderWrapper = ({ currentUser, isSyncing }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  return <MobileHeader currentUser={currentUser} isSyncing={isSyncing} location={location} navigate={navigate} />;
+};
+
 function App() {
   const { currentUser, isSyncing } = useStore();
 
@@ -150,7 +154,7 @@ function App() {
         <Router>
           <PrinterAutoConnect />
           <div className="flex flex-col md:flex-row h-screen bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900">
-            <MobileHeader 
+            <MobileHeaderWrapper 
               currentUser={currentUser} 
               isSyncing={isSyncing} 
             />
