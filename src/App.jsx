@@ -74,7 +74,7 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
           }} 
           className={`p-2 -ml-2 rounded-xl text-primary bg-primary/5 active:scale-90 transition-all ${(isHome && !isAdmin) ? 'opacity-0 pointer-events-none' : ''}`}
         >
-          <ArrowLeft size={24} />
+          {isHome ? <LayoutGrid size={24} /> : <ArrowLeft size={24} />}
         </button>
       </div>
 
@@ -152,14 +152,9 @@ const BottomNavigation = ({ currentUser }) => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
   const logout = useStore(state => state.logout);
-  const isAdmin = currentUser?.role === 'admin';
 
   return (
-    <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 h-[68px] flex justify-around items-center z-30 shadow-[0_-8px_25px_rgba(0,0,0,0.05)] pb-safe select-none`}>
-      {isAdmin && (
-        <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
-      )}
-      
+    <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[72px] z-50 select-none no-print">
       <NavItem to="/" icon={ShoppingCart} label="Vender" active={isActive('/') || isActive('/ventas')} />
       
       <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 
-const SidebarItem = ({ to, icon: IconComponent, label, active, onClick }) => (
+const SidebarItem = ({ to, icon: Icon, label, active, onClick }) => (
   <Link 
     to={to} 
     onClick={onClick}
@@ -16,7 +16,7 @@ const SidebarItem = ({ to, icon: IconComponent, label, active, onClick }) => (
         : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary'
     }`}
   >
-    <IconComponent size={20} strokeWidth={active ? 2.5 : 2} />
+    <Icon size={20} strokeWidth={active ? 2.5 : 2} />
     <span className={`font-bold text-sm ${active ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>
       {label}
     </span>
