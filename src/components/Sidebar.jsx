@@ -30,7 +30,7 @@ export default function Sidebar() {
   const isAdmin = currentUser?.role === 'admin';
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-orange-200 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-full p-2 no-print z-50">
+    <aside className="hidden md:flex flex-col w-64 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-full p-2 no-print z-50">
       {/* Logo / Header */}
       <div className="flex items-center gap-3 px-2 mb-4">
         <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
