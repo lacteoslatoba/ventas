@@ -147,8 +147,7 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
 };
 
 // Componente interno para botón
-// eslint-disable-next-line no-unused-vars
-const NavItem = ({ to, icon: IconComponent, label, active, onClick }) => {
+export const NavItem = ({ to, icon: IconComponent, label, active, onClick }) => {
   const content = (
     <div className={`flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 transition-colors ${active ? 'text-primary' : 'text-slate-500'}`}>
       <IconComponent size={22} fill={active ? "currentColor" : "none"} strokeWidth={2} />

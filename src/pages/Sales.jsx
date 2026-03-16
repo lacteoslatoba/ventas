@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { ShoppingCart, Printer, Delete, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth } from 'lucide-react';
+import { ShoppingCart, Printer, Delete, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth, Banknote, LogOut } from 'lucide-react';
 import { printTicket } from '../lib/bluetoothPrinter';
 import { Link } from 'react-router-dom';
 import TicketPreview from '../components/TicketPreview';
@@ -268,32 +268,24 @@ export default function Sales() {
 
     // Elemento del Carrito (Reutilizable en Desktop / Móvil)
     const renderCartPanel = () => (
-        <div className="flex flex-col h-full bg-white lg:rounded-3xl shadow-2xl lg:shadow-xl border-t lg:border border-slate-100 relative">
-            <div className="p-4 md:p-5 border-b border-slate-100 bg-slate-50/50 lg:rounded-t-3xl text-sm space-y-4">
-                {/* Header with Title, Back Arrow (Mobile) and Clear Cart */}
-                <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => setMobileCartOpen(false)} className="lg:hidden p-2 bg-slate-200 hover:bg-slate-300 rounded-xl text-slate-700 active:scale-95 transition-all">
-                            <ArrowLeft size={20} />
-                        </button>
-                        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><ShoppingCart size={22} className="text-primary hidden lg:block" /> Pedido</h2>
-                    </div>
-                    {cart.length > 0 && (
-                        <button onClick={clearCart} className="text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg active:scale-95 transition-all flex items-center gap-1.5">
-                            <Trash2 size={14} /> Vaciar
-                        </button>
-                    )}
-                </div>
-
-                <div>
-                    <label className="block text-slate-500 font-bold mb-1.5 uppercase text-xs tracking-wider">Cliente / Tienda</label>
-                    <select value={selectedCartClient} onChange={e => updateSelectedCartClient(e.target.value)} className="w-full bg-white border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 p-3 rounded-xl font-medium outline-none text-slate-800 transition-all shadow-sm">
-                        <option value="">Selecciona dónde se deja...</option>
-                        {clients
-                            .filter(c => currentUser?.role === 'admin' ? true : c.userId === currentUser?.id)
-                            .map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                </div>
+        <div className="flex flex-col h-full bg-white lg:rounded-3xl lg:shadow-xl border-t lg:border border-slate-100 relative">
+            <div className="p-5 flex justify-between items-center bg-slate-50/50 border-b border-slate-100 shrink-0">
+                <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">🛒 Detalle del Carrito</h2>
+                {cart.length > 0 && (
+                    <button onClick={clearCart} className="text-[10px] font-bold text-red-500 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg active:scale-95 transition-all flex items-center gap-1.5 uppercase tracking-wider">
+                        <Trash2 size={12} /> Vaciar Borrador
+                    </button>
+                )}
+            </div>
+            
+            <div className="px-5 py-4 bg-white border-b border-slate-100 shrink-0">
+                <label className="block text-slate-400 font-black mb-1.5 uppercase text-[10px] tracking-widest">Información de Entrega</label>
+                <select value={selectedCartClient} onChange={e => updateSelectedCartClient(e.target.value)} className="w-full bg-slate-50 border-none shadow-inner focus:ring-2 focus:ring-primary/20 p-4 rounded-2xl font-black outline-none text-slate-800 transition-all">
+                    <option value="">Selecciona Cliente / Tienda...</option>
+                    {clients
+                        .filter(c => currentUser?.role === 'admin' ? true : c.userId === currentUser?.id)
+                        .map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-2 md:p-5 pb-[120px] lg:pb-5">
@@ -421,9 +413,44 @@ export default function Sales() {
                 )}
 
                 {/* Mobile Full Screen Cart Overlay */}
-                <div className={`fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${mobileCartOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                    <div className={`absolute inset-x-0 bottom-[60px] top-[5vh] bg-slate-50 rounded-t-[2.5rem] shadow-2xl transition-transform duration-300 ease-out-expo ${mobileCartOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+                <div className={`fixed inset-0 z-[60] bg-slate-50 dark:bg-background-dark no-print flex flex-col transition-transform duration-300 ease-out-expo ${mobileCartOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+                    {/* Header estilo App */}
+                    <div className="flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 h-[56px] shrink-0">
+                        <button onClick={() => setMobileCartOpen(false)} className="p-2 text-primary bg-primary/5 rounded-xl active:scale-90 transition-all">
+                            <ArrowLeft size={24} />
+                        </button>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-0.5">Venta Actual</span>
+                            <h1 className="text-base font-black tracking-tight text-slate-800 dark:text-white leading-none uppercase">PEDIDO</h1>
+                        </div>
+                        <div className="w-10"></div>
+                    </div>
+
+                    <div className="flex-1 overflow-hidden">
                         {renderCartPanel()}
+                    </div>
+
+                    {/* Footer estilo App */}
+                    <div className="bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[60px]">
+                        <button onClick={() => setMobileCartOpen(false)} className="flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 text-primary">
+                            <ShoppingCart size={22} fill="currentColor" strokeWidth={2} />
+                            <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">Vender</span>
+                        </button>
+                        <button 
+                            onClick={() => {
+                                setMobileCartOpen(false);
+                                // Navegación manual si es necesario
+                                window.location.href = '/reportes';
+                            }} 
+                            className="flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 text-slate-500"
+                        >
+                            <span className="material-symbols-outlined !text-[22px]">payments</span>
+                            <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">Reportes</span>
+                        </button>
+                        <button onClick={() => useStore.getState().logout()} className="flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 text-slate-500">
+                            <LogOut size={22} strokeWidth={2} />
+                            <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">Salir</span>
+                        </button>
                     </div>
                 </div>
             </div>
