@@ -63,6 +63,10 @@ export default function Sales() {
         const rawPieces = (selectedPieces || "0").toString().trim();
         const numPieces = parseInt(rawPieces) || 0;
 
+        if (numPieces <= 0) {
+            return alert('Por favor, ingresa el número de piezas (Mandatorio)');
+        }
+
         // Obtener el precio dinámico basado en la lista del usuario
         let productPrice = Number(selectedProductDialog.price) || 0;
         const userPriceList = currentUser?.priceList || 'A';
@@ -331,7 +335,7 @@ export default function Sales() {
                 <button
                     onClick={processSale}
                     disabled={cart.length === 0}
-                    className={`w-full py-5 rounded-2xl font-black flex justify-center items-center gap-2 text-lg transition-all active:scale-95 ${cart.length === 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' : 'bg-primary text-white shadow-xl shadow-blue-500/25 hover:bg-blue-700'}`}
+                    className={`w-full py-5 rounded-2xl font-black flex justify-center items-center gap-2 text-lg transition-all active:scale-95 border-2 ${cart.length === 0 ? 'border-slate-100 bg-slate-50 text-slate-400 cursor-not-allowed shadow-none' : 'border-primary bg-white text-primary shadow-xl shadow-blue-500/5 hover:bg-blue-50'}`}
                 >
                     Generar Recibo
                 </button>
@@ -454,7 +458,7 @@ export default function Sales() {
                             className="flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 text-slate-500"
                         >
                             <Users size={22} strokeWidth={2} />
-                            <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">Clientes</span>
+                            <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">Alta Clientes</span>
                         </button>
                     </div>
                 </div>
@@ -494,10 +498,10 @@ export default function Sales() {
 
                         <div className="flex-1 overflow-y-auto flex flex-col p-4">
                             {/* Inputs Visuales */}
-                            <div className="flex flex-row gap-3 mb-4">
+                            <div className="flex flex-col gap-3 mb-4">
                                 <div 
                                     onClick={() => setActiveField('qty')}
-                                    className={`flex-1 p-3 rounded-2xl border-2 transition-all cursor-pointer ${activeField === 'qty' ? 'border-primary bg-blue-50 ring-4 ring-primary/5' : 'border-slate-100 bg-slate-50 opacity-70'}`}
+                                    className={`w-full p-4 rounded-2xl border-2 transition-all cursor-pointer ${activeField === 'qty' ? 'border-primary bg-blue-50 ring-4 ring-primary/5' : 'border-slate-100 bg-slate-50 opacity-70'}`}
                                 >
                                     <label className="block text-center text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Cantidad ({selectedProductDialog.unit || 'u'})</label>
                                     <div className="text-center text-3xl font-black text-slate-800 min-h-[36px]">
@@ -505,12 +509,12 @@ export default function Sales() {
                                         {activeField === 'qty' && <span className="inline-block w-1 h-8 bg-primary ml-1 animate-pulse align-middle" />}
                                     </div>
                                 </div>
-
+ 
                                 <div 
                                     onClick={() => setActiveField('pieces')}
-                                    className={`flex-1 p-3 rounded-2xl border-2 transition-all cursor-pointer ${activeField === 'pieces' ? 'border-amber-500 bg-amber-50 ring-4 ring-amber-500/5' : 'border-slate-100 bg-slate-50 opacity-70'}`}
+                                    className={`w-full p-4 rounded-2xl border-2 transition-all cursor-pointer ${activeField === 'pieces' ? 'border-amber-500 bg-amber-50 ring-4 ring-amber-500/5' : 'border-slate-100 bg-slate-50 opacity-70'}`}
                                 >
-                                    <label className="block text-center text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Piezas (opc)</label>
+                                    <label className="block text-center text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Piezas (Mandatorio)</label>
                                     <div className="text-center text-3xl font-black text-slate-800 min-h-[36px]">
                                         {selectedPieces || <span className="text-slate-200">0</span>}
                                         {activeField === 'pieces' && <span className="inline-block w-1 h-8 bg-amber-500 ml-1 animate-pulse align-middle" />}

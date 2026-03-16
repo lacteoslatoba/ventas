@@ -77,13 +77,13 @@ export default function Login() {
                             <div className="absolute top-4 right-4 w-4 h-4 bg-orange-500 rounded-full border-4 border-white shadow-sm shadow-orange-500/50 z-10"></div>
                         )}
                         <img 
-                            src="/logo.png" 
+                            src="/pwa-logo.png" 
                             alt="Lácteos La Toba Logo" 
-                            className="w-32 h-32 object-contain group-hover:scale-110 transition-transform duration-700"
+                            className="w-40 h-40 object-contain group-hover:scale-110 transition-transform duration-700"
                         />
                     </div>
                 </div>
-                <h2 className="mt-2 text-center text-4xl font-black tracking-tighter text-slate-900 leading-tight uppercase">
+                <h2 className="mt-2 text-center text-4xl font-black tracking-tighter text-slate-900 leading-tight uppercase font-sans">
                     Lácteos La Toba
                 </h2>
                 <p className="mt-3 text-center text-base text-slate-500 font-medium">

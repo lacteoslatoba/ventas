@@ -182,8 +182,8 @@ const BottomNavigation = () => {
       <NavItem to="/" icon={ShoppingCart} label="Vender" active={isActive('/') || isActive('/ventas')} />
       
       <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
-
-      <NavItem to="/clientes" icon={Users} label="Clientes" active={isActive('/clientes')} />
+ 
+      <NavItem to="/clientes" icon={Users} label="Alta Clientes" active={isActive('/clientes')} />
     </div>
   );
 };
