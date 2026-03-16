@@ -235,7 +235,6 @@ export default function Reports() {
                                 </div>
                             </div>
                         </div>
-
                         {/* Action Area - Sticky Bottom */}
                         <div className="mt-auto p-4 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex flex-col gap-3">
                             <button 
@@ -258,7 +257,19 @@ export default function Reports() {
                                 <span className="text-lg">{btPrinting ? 'Imprimiendo...' : 'Reimprimir Ticket'}</span>
                             </button>
                             
-                            {/* Botones secundarios eliminados a petición del usuario */}
+                            <button
+                                onClick={async () => {
+                                    if (window.confirm('¿Estás seguro de eliminar esta venta? Esta acción devolverá los productos al inventario.')) {
+                                        const { deleteSale } = useStore.getState();
+                                        await deleteSale(selectedSale.id);
+                                        setSelectedSale(null);
+                                    }
+                                }}
+                                className="w-full bg-red-50 text-red-500 hover:bg-red-100 font-bold py-4 rounded-3xl flex items-center justify-center gap-2 transition-all active:scale-95"
+                            >
+                                <span className="material-symbols-outlined text-xl">delete_forever</span>
+                                Eliminar Venta
+                            </button>
                         </div>
 
                         {/* Bottom Spacer for mobile chin */}

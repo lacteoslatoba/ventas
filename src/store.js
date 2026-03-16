@@ -435,6 +435,36 @@ export const useStore = create(
                 });
                 get().syncToSupabase();
             },
+            deleteSale: async (saleId) => {
+                const state = get();
+                const saleToDelete = state.sales.find(s => s.id === saleId);
+                if (!saleToDelete) return;
+
+                set((s) => ({
+                    // Eliminar la venta
+                    sales: s.sales.filter(s => s.id !== saleId),
+                    // Devolver stock
+                    products: s.products.map(p => {
+                        const item = saleToDelete.items.find(i => i.productId === p.id);
+                        if (item) {
+                            return { ...p, stock: (p.stock || 0) + Number(item.quantity), synced: false };
+                        }
+                        return p;
+                    })
+                }));
+
+                // Sincronizar cambios a la nube
+                if (state.isOnline && supabase) {
+                    try {
+                        // 1. Eliminar de Supabase
+                        await supabase.from('sales').delete().eq('id', saleId);
+                        // 2. Disparar sync normal para actualizar productos (stock devuelto)
+                        get().syncToSupabase();
+                    } catch (error) {
+                        console.error('Error eliminando venta en la nube:', error);
+                    }
+                }
+            },
         }),
         {
             name: 'ventas-quesos-storage',
