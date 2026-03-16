@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 
-const SidebarItem = ({ to, icon: IconComponent, label, active, onClick }) => (
+const SidebarItem = ({ to, icon: Icon, label, active, onClick }) => ( // eslint-disable-line no-unused-vars
   <Link 
     to={to} 
     onClick={onClick}
@@ -16,7 +16,7 @@ const SidebarItem = ({ to, icon: IconComponent, label, active, onClick }) => (
         : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary'
     }`}
   >
-    <IconComponent size={20} strokeWidth={active ? 2.5 : 2} />
+    <Icon size={20} strokeWidth={active ? 2.5 : 2} />
     <span className={`font-bold text-sm ${active ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>
       {label}
     </span>
@@ -30,7 +30,7 @@ export default function Sidebar() {
   const isAdmin = currentUser?.role === 'admin';
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-cheese-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-full p-4 no-print z-50">
+    <aside className="hidden md:flex flex-col w-64 bg-cheese-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-full p-4 no-print z-50">
       {/* Logo / Header */}
       <div className="flex items-center gap-3 px-2 mb-8">
         <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
