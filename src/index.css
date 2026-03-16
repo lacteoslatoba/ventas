@@ -20,9 +20,11 @@
     background-attachment: fixed;
     height: 100%;
     width: 100%;
-    /* Añadir espacio para el notch y la barra de estado */
-    padding-top: env(safe-area-inset-top, 0px);
   }
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 @media print {

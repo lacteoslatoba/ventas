@@ -204,14 +204,13 @@ function App() {
         <Router>
           <PrinterAutoConnect />
           <div 
-            className="flex flex-col md:flex-row bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900"
+            className="flex flex-col md:flex-row bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900 pt-safe"
             style={{ height: 'calc(var(--vh, 1vh) * 100)' }}
           >
             <Sidebar />
             
             <div 
-              className="flex-1 flex flex-col overflow-hidden"
-              style={{ height: 'calc(var(--vh, 1vh) * 100)' }}
+              className="flex-1 flex flex-col overflow-hidden h-full"
             >
               <MobileHeaderWrapper 
                 currentUser={currentUser} 
