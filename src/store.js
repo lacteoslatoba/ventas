@@ -200,45 +200,33 @@ export const useStore = create(
                     if (state.ticketConfig && !state.ticketConfig.synced) {
                         const { synced: _synced, ...payload } = state.ticketConfig;
                         const knownCols = state.cloudColumns?.['ticket_config'];
+                        const dbColumns = [
+                            'id', 'header', 'footer', 'doubleCopy', 'centerTotal', 
+                            'spaceBetweenItems', 'showCashAndChange'
+                        ];
+                        const availableCols = knownCols && knownCols.length > 0 ? knownCols : dbColumns;
                         
                         let finalPayload = { id: 'main' };
-                        
-                        if (knownCols && knownCols.length > 0) {
-                            const extraData = {};
-                            const legacyMap = {
-                                businessName: 'header',
-                                footerLine1: 'footer',
-                                printCopy: 'doubleCopy'
-                            };
+                        const extraData = {};
+                        const legacyMap = {
+                            businessName: 'header',
+                            footerLine1: 'footer',
+                            printCopy: 'doubleCopy'
+                        };
 
-                            Object.keys(payload).forEach(key => {
-                                const dbCol = legacyMap[key] || key;
-                                if (knownCols.includes(dbCol)) {
-                                    finalPayload[dbCol] = payload[key];
-                                } else {
-                                    extraData[key] = payload[key];
-                                }
-                            });
-
-                            // Siempre intentamos guardar en el campo 'footer' como JSON si hay datos extra y la columna existe
-                            if (Object.keys(extraData).length > 0) {
-                                if (knownCols.includes('footer')) {
-                                    const currentFooter = payload.footerLine1 || '';
-                                    finalPayload.footer = `JSON_CONFIG:${JSON.stringify({ ...extraData, _realFooter: currentFooter })}`;
-                                } else if (knownCols.includes('header')) {
-                                    // Si no hay footer pero si header, intentamos meterlo ahí? Mejor no, puede romper el titulo
-                                    // Pero usualmente 'footer' estará presente
-                                }
+                        Object.keys(payload).forEach(key => {
+                            const dbCol = legacyMap[key] || key;
+                            if (availableCols.includes(dbCol)) {
+                                finalPayload[dbCol] = payload[key];
+                            } else {
+                                extraData[key] = payload[key];
                             }
-                        } else {
-                            // Si no conocemos las columnas, enviamos lo básico para evitar errores de 
-                            // 'column does not exist' en Supabase, y dejamos los detalles para cuando
-                            // se cargue el esquema real.
-                            finalPayload = { 
-                                id: 'main', 
-                                header: payload.businessName || 'LACTEOS LA TOBA',
-                                footer: payload.footerLine1 || '¡Gracias por su compra!'
-                            };
+                        });
+
+                        // Siempre intentamos guardar en el campo 'footer' como JSON si hay datos extra
+                        if (Object.keys(extraData).length > 0) {
+                            const currentFooter = payload.footerLine1 || '';
+                            finalPayload.footer = `JSON_CONFIG:${JSON.stringify({ ...extraData, _realFooter: currentFooter })}`;
                         }
 
                         const { error } = await supabase.from('ticket_config').upsert(finalPayload);
@@ -293,7 +281,7 @@ export const useStore = create(
                     const { data: configData, error: configError } = await supabase.from('ticket_config').select('*').eq('id', 'main').single();
                     if (!configError && configData) {
                         set(s => {
-                            if (s.ticketConfig?.synced) {
+                            if (s.ticketConfig?.synced || !s.ticketConfig) {
                                 let finalConfig = { ...configData };
                                 
                                 if (configData.footer && configData.footer.startsWith('JSON_CONFIG:')) {
@@ -309,8 +297,8 @@ export const useStore = create(
 
                                 const mappedConfig = {
                                     ...finalConfig,
-                                    businessName: finalConfig.header || finalConfig.businessName,
-                                    footerLine1: finalConfig.footer || finalConfig.footerLine1,
+                                    businessName: finalConfig.header !== undefined ? finalConfig.header : finalConfig.businessName,
+                                    footerLine1: finalConfig.footer !== undefined ? finalConfig.footer : finalConfig.footerLine1,
                                     printCopy: finalConfig.doubleCopy !== undefined ? finalConfig.doubleCopy : finalConfig.printCopy
                                 };
 

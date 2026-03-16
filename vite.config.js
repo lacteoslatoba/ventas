@@ -18,9 +18,9 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: 'icon.svg',
+            src: 'pwa-logo.png',
             sizes: '192x192 512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable'
           }
         ]
