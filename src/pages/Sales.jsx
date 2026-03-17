@@ -355,9 +355,11 @@ export default function Sales() {
                         </h1>
                         <p className="text-slate-500 font-medium text-sm mt-1">Selecciona productos para armar el pedido</p>
                     </div>
-                    <Link to="/menu" className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-all active:scale-90 lg:hidden">
-                        <X size={24} />
-                    </Link>
+                    {currentUser?.role === 'admin' && (
+                        <Link to="/menu" className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-all active:scale-90 lg:hidden">
+                            <X size={24} />
+                        </Link>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
