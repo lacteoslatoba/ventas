@@ -65,40 +65,39 @@ export default function Reports() {
                 </div>
             )}
 
-            <div className="max-w-6xl mx-auto backdrop-blur-sm">
-                <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-700">
-                    <div className="p-6 border-b border-slate-100 bg-slate-50/50">
-                        <h2 className="text-xl font-black text-slate-800 tracking-tight">Historial de Transacciones</h2>
-                        <p className="text-sm text-slate-500 font-medium">Pulsa una venta para ver el detalle o imprimir</p>
-                    </div>
-                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
-                        <table className="w-full text-left">
-                            <thead className="bg-white sticky top-0 z-10 shadow-sm">
-                                <tr>
-                                    <th className="py-4 px-6 font-bold text-slate-400 uppercase tracking-widest text-[10px]">Fecha / Hora</th>
-                                    <th className="py-4 px-6 font-bold text-slate-400 uppercase tracking-widest text-[10px]">Cliente / Destino</th>
-                                    <th className="py-4 px-6 font-bold text-slate-400 uppercase tracking-widest text-[10px] text-right">Total Venta</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredSales.slice().reverse().map(sale => {
-                                    const client = clients.find(c => c.id === sale.clientId);
-                                    return (
-                                        <tr
-                                            key={sale.id}
-                                            onClick={() => setSelectedSale(sale)}
-                                            className="border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
-                                        >
-                                            <td className="py-4 px-6 text-sm text-slate-500 font-normal group-hover:text-primary transition-colors">{new Date(sale.date).toLocaleString()}</td>
-                                            <td className="py-4 px-6 text-sm font-normal text-slate-700">{client?.name || 'Cliente'}</td>
-                                            <td className="py-4 px-6 text-base font-normal text-slate-900 text-right tracking-tight">${sale.total.toFixed(2)}</td>
-                                        </tr>
-                                    )
-                                })}
-                                {filteredSales.length === 0 && <tr><td colSpan="3" className="p-16 text-center text-slate-400 italic font-medium">No se han registrado transacciones aún.</td></tr>}
-                            </tbody>
-                        </table>
-                    </div>
+            <div className="max-w-6xl mx-auto">
+                <div className="overflow-x-auto max-h-[calc(100vh-250px)] overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-bottom-5 duration-700">
+                    <table className="w-full text-left">
+                        <thead className="sticky top-0 z-10">
+                            <tr className="border-b-2 border-slate-200">
+                                <th className="py-4 px-2 font-black text-slate-400 uppercase tracking-widest text-[10px]">Fecha / Hora</th>
+                                <th className="py-4 px-2 font-black text-slate-400 uppercase tracking-widest text-[10px]">Cliente</th>
+                                <th className="py-4 px-2 font-black text-slate-400 uppercase tracking-widest text-[10px] text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filteredSales.slice().reverse().map(sale => {
+                                const client = clients.find(c => c.id === sale.clientId);
+                                return (
+                                    <tr
+                                        key={sale.id}
+                                        onClick={() => setSelectedSale(sale)}
+                                        className="hover:bg-primary/5 transition-colors cursor-pointer group"
+                                    >
+                                        <td className="py-5 px-2 text-sm text-slate-500 font-medium group-hover:text-primary transition-colors">
+                                            {new Date(sale.date).toLocaleDateString([], { day: '2-digit', month: '2-digit' })} {' '}
+                                            <span className="text-[10px] opacity-60">
+                                                {new Date(sale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </td>
+                                        <td className="py-5 px-2 text-sm font-bold text-slate-700">{client?.name || 'Cliente'}</td>
+                                        <td className="py-5 px-2 text-base font-black text-slate-900 text-right tracking-tight">${sale.total.toFixed(2)}</td>
+                                    </tr>
+                                )
+                            })}
+                            {filteredSales.length === 0 && <tr><td colSpan="3" className="p-16 text-center text-slate-400 italic font-medium">No se han registrado transacciones aún.</td></tr>}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
