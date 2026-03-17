@@ -126,15 +126,33 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
         </button>
 
         <button 
-          onClick={() => setShowSettings(!showSettings)}
-          className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-95 transition-all"
+          onClick={() => {
+            if (confirm('¿Deseas buscar actualizaciones y refrescar la aplicación?')) {
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistration().then(reg => {
+                  if (reg) reg.update().then(() => window.location.reload());
+                  else window.location.reload();
+                });
+              } else {
+                window.location.reload();
+              }
+            }
+          }}
+          className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 active:scale-95 transition-all relative"
         >
-          <Settings size={22} className={showSettings ? 'rotate-90' : ''} />
+          <span className="material-symbols-outlined text-xl">sync_refresh</span>
           {isSyncing && (
             <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
               <RefreshCw size={10} className="animate-spin text-primary" />
             </div>
           )}
+        </button>
+
+        <button 
+          onClick={() => setShowSettings(!showSettings)}
+          className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-95 transition-all"
+        >
+          <Settings size={22} className={showSettings ? 'rotate-90' : ''} />
         </button>
 
         {/* Dropdown de Ajustes */}
@@ -157,26 +175,6 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
                   <span className="material-symbols-outlined text-lg">print</span>
                 </div>
                 Conexión Impresora
-              </button>
-              <button 
-                onClick={() => {
-                  if (confirm('¿Deseas buscar actualizaciones y refrescar la aplicación?')) {
-                    if ('serviceWorker' in navigator) {
-                      navigator.serviceWorker.getRegistration().then(reg => {
-                        if (reg) reg.update().then(() => window.location.reload());
-                        else window.location.reload();
-                      });
-                    } else {
-                      window.location.reload();
-                    }
-                  }
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-              >
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600">
-                  <span className="material-symbols-outlined text-lg">sync_refresh</span>
-                </div>
-                Refrescar App
               </button>
             </div>
           </>
