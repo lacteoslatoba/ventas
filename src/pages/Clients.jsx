@@ -70,7 +70,16 @@ export default function Clients() {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-500 mb-1">Lugar</label>
-                            <input type="text" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className="w-full border border-slate-200 rounded-lg p-2 outline-none" placeholder="Calle 1 #123" />
+                            <select 
+                                required
+                                value={formData.address} 
+                                onChange={e => setFormData({ ...formData, address: e.target.value })} 
+                                className="w-full border border-slate-200 rounded-lg p-2 outline-none bg-white"
+                            >
+                                <option value="">Selecciona Lugar...</option>
+                                <option value="BETO CONSTITUCION">BETO CONSTITUCION</option>
+                                <option value="LA TOBA">LA TOBA</option>
+                            </select>
                         </div>
                         {currentUser?.role === 'admin' && (
                             <div>
