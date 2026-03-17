@@ -10,7 +10,7 @@ export default function Reports() {
     const [btPrinting, setBtPrinting] = useState(false);
 
     const isAdmin = currentUser?.role === 'admin';
-    const effectiveFilterUser = isAdmin ? filterUser : currentUser?.id;
+    const effectiveFilterUser = isAdmin ? filterUser : '';
 
     const filteredSales = effectiveFilterUser ? sales.filter(s => s.userId === effectiveFilterUser) : sales;
     const totalEarned = filteredSales.reduce((sum, s) => sum + s.total, 0);
@@ -49,8 +49,8 @@ export default function Reports() {
                 Reportes de Venta
             </h1>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-                {isAdmin ? (
+            {isAdmin && (
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-500 mb-1">Filtrar por Repartidor</label>
                         <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="w-full sm:w-64 border border-slate-200 rounded-lg p-2 outline-none">
@@ -58,17 +58,12 @@ export default function Reports() {
                             {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                         </select>
                     </div>
-                ) : (
-                    <div>
-                        <p className="text-sm font-black uppercase tracking-widest text-primary mb-1">Mis ventas</p>
-                        <p className="text-slate-500 font-medium">Resumen personal de hoy</p>
+                    <div className="text-right">
+                        <p className="text-sm text-slate-500 font-medium">Total Filtrado</p>
+                        <p className="text-4xl font-black text-green-600">${totalEarned.toFixed(2)}</p>
                     </div>
-                )}
-                <div className="text-right">
-                    <p className="text-sm text-slate-500 font-medium">Total Vendido</p>
-                    <p className="text-4xl font-black text-green-600">${totalEarned.toFixed(2)}</p>
                 </div>
-            </div>
+            )}
 
             <div className="max-w-6xl mx-auto backdrop-blur-sm">
                 <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-700">
@@ -109,11 +104,17 @@ export default function Reports() {
 
             {/* DETALLE DE VENTA - INTERFAZ PREMIUM */}
             {selectedSale && (
-                <div className="fixed inset-0 z-[70] bg-background-light dark:bg-background-dark animate-in slide-in-from-bottom duration-300 no-print flex flex-col items-center">
-                    <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedSale(null)}></div>
+                <div className="fixed inset-0 z-[70] no-print flex flex-col items-center justify-end md:justify-center">
+                    {/* Overlay de fondo con desenfoque */}
+                    <div 
+                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" 
+                        onClick={() => setSelectedSale(null)}
+                    ></div>
+                    
+                    {/* Contenido del Modal */}
                     <div 
                         onClick={e => e.stopPropagation()}
-                        className="absolute inset-x-0 bottom-0 top-[6vh] md:top-[12vh] md:bottom-[12vh] md:max-w-2xl md:mx-auto bg-slate-50 dark:bg-background-dark rounded-t-[3rem] md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-full duration-500 ease-out-expo"
+                        className="relative w-full bottom-0 md:static md:max-w-2xl bg-white dark:bg-slate-900 rounded-t-[3rem] md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-full duration-500 ease-out-expo h-[94vh] md:h-[80vh]"
                     >        
                         {/* Top App Bar */}
                         <div className="flex items-center bg-white dark:bg-background-dark p-4 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">

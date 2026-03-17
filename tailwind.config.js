@@ -37,6 +37,10 @@ export default {
           800: '#9b5807',
           900: '#83470b',
           950: '#4c2600',
+        },
+        background: {
+          light: '#f6f6f8',
+          dark: '#101622',
         }
       }
     },
