@@ -103,32 +103,27 @@ export default function Reports() {
 
             {/* DETALLE DE VENTA - INTERFAZ PREMIUM */}
             {selectedSale && (
-                <div className="fixed inset-0 z-[70] no-print flex flex-col items-center justify-center p-6">
-                    {/* Overlay de fondo con desenfoque */}
+                <div className="fixed inset-0 z-[70] no-print flex flex-col items-center justify-end md:justify-center">
+                    {/* Overlay de fondo */}
                     <div 
                         className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" 
                         onClick={() => setSelectedSale(null)}
                     ></div>
                     
-                    {/* Contenido del Modal - Versión Tarjeta Flotante Compacta */}
+                    {/* Contenido del Modal - Versión Pantalla Completa */}
                     <div 
                         onClick={e => e.stopPropagation()}
-                        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-500 ease-out-expo h-[70vh] border border-white/20"
+                        className="relative w-full md:max-w-2xl bg-white dark:bg-slate-900 md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-full duration-500 ease-out-expo h-full md:h-[80vh]"
                     >        
-                        {/* Decorative Handle Indicator */}
-                        <div className="flex justify-center pt-3 pb-1">
-                            <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
-                        </div>
-
                         {/* Top App Bar */}
-                        <div className="flex items-center bg-white dark:bg-background-dark px-4 py-2 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-10">
+                        <div className="flex items-center bg-white dark:bg-background-dark p-4 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
                             <button 
                                 onClick={() => setSelectedSale(null)}
                                 className="text-slate-900 dark:text-slate-100 flex size-10 items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                             >
                                 <span className="material-symbols-outlined text-2xl font-bold">arrow_back</span>
                             </button>
-                            <h2 className="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-tight flex-1 ml-2">
+                            <h2 className="text-slate-900 dark:text-slate-100 text-xl font-bold leading-tight tracking-tight flex-1 ml-2">
                                 Venta #{selectedSale.id.slice(-6)}
                             </h2>
                             <button className="flex items-center justify-center rounded-lg h-10 w-10 text-slate-400">
