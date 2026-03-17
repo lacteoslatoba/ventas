@@ -138,14 +138,12 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
               }
             }
           }}
-          className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 active:scale-95 transition-all relative"
+          className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 active:scale-95 transition-all relative overflow-hidden"
+          title="Refrescar aplicación"
         >
-          <span className="material-symbols-outlined text-xl">sync_refresh</span>
-          {isSyncing && (
-            <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-              <RefreshCw size={10} className="animate-spin text-primary" />
-            </div>
-          )}
+          <span className={`material-symbols-outlined text-2xl ${isSyncing ? 'animate-spin' : ''}`}>
+            sync
+          </span>
         </button>
 
         <button 
