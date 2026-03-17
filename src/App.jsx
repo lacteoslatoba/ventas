@@ -27,11 +27,18 @@ const NetworkIndicator = () => {
     };
     const handleOffline = () => setOnlineStatus(false);
 
+    // Sistema de actualización automática de PWA
+    const checkForUpdates = () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (reg) reg.update();
+        });
+      }
+    };
+
     // Sistema de altura estable para móviles (evita brincos del menú)
     let lastWidth = window.innerWidth;
     const updateHeight = () => {
-      // Solo actualizamos si el ancho cambia (cambio de orientación)
-      // O si es la primera vez. Esto evita el brinco cuando se oculta la barra del navegador.
       if (window.innerWidth !== lastWidth || !document.documentElement.style.getPropertyValue('--vh')) {
         const vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -42,9 +49,10 @@ const NetworkIndicator = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('resize', updateHeight);
+    window.addEventListener('focus', checkForUpdates); // Check when app is focused (opened from home screen)
     updateHeight();
+    checkForUpdates(); // Check on initial mount
 
-    // Al iniciar, tratamos de bajar primero el catálogo oficial y luego subir lo pendiente
     if (isOnline) {
       useStore.getState().fetchFromSupabase().then(() => {
         syncToSupabase();
@@ -55,6 +63,7 @@ const NetworkIndicator = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('resize', updateHeight);
+      window.removeEventListener('focus', checkForUpdates);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -148,6 +157,26 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
                   <span className="material-symbols-outlined text-lg">print</span>
                 </div>
                 Conexión Impresora
+              </button>
+              <button 
+                onClick={() => {
+                  if (confirm('¿Deseas buscar actualizaciones y refrescar la aplicación?')) {
+                    if ('serviceWorker' in navigator) {
+                      navigator.serviceWorker.getRegistration().then(reg => {
+                        if (reg) reg.update().then(() => window.location.reload());
+                        else window.location.reload();
+                      });
+                    } else {
+                      window.location.reload();
+                    }
+                  }
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600">
+                  <span className="material-symbols-outlined text-lg">sync_refresh</span>
+                </div>
+                Refrescar App
               </button>
             </div>
           </>
