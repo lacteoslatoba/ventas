@@ -103,17 +103,17 @@ export default function Reports() {
 
             {/* DETALLE DE VENTA - INTERFAZ PREMIUM */}
             {selectedSale && (
-                <div className="fixed inset-0 z-[70] no-print flex flex-col items-center justify-end md:justify-center">
+                <div className="fixed inset-0 z-[70] no-print flex flex-col items-center justify-center p-4">
                     {/* Overlay de fondo con desenfoque */}
                     <div 
                         className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" 
                         onClick={() => setSelectedSale(null)}
                     ></div>
                     
-                    {/* Contenido del Modal */}
+                    {/* Contenido del Modal - Versión Tarjeta Flotante */}
                     <div 
                         onClick={e => e.stopPropagation()}
-                        className="relative w-full bottom-0 md:static md:max-w-2xl bg-white dark:bg-slate-900 rounded-t-[3rem] md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-full duration-500 ease-out-expo h-[94vh] md:h-[80vh]"
+                        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-500 ease-out-expo h-[82vh]"
                     >        
                         {/* Top App Bar */}
                         <div className="flex items-center bg-white dark:bg-background-dark p-4 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
