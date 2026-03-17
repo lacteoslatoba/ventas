@@ -240,7 +240,7 @@ export default function Reports() {
                             </div>
                         </div>
                         {/* Action Area - Sticky Bottom */}
-                        <div className="mt-auto p-4 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex flex-col gap-3">
+                        <div className="mt-auto p-4 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex flex-row gap-3">
                             <button 
                                 onClick={async () => {
                                     const btPrinter = window.__btPrinter;
@@ -251,14 +251,14 @@ export default function Reports() {
                                     }
                                 }}
                                 disabled={btPrinting}
-                                className="w-full bg-primary hover:bg-blue-700 text-white font-black py-5 rounded-3xl shadow-xl shadow-primary/25 flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50"
+                                className="flex-1 bg-white border-2 border-primary text-primary hover:bg-blue-50 font-black py-4 rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                             >
                                 {btPrinting ? (
                                     <span className="material-symbols-outlined animate-spin">refresh</span>
                                 ) : (
                                     <span className="material-symbols-outlined">print</span>
                                 )}
-                                <span className="text-lg">{btPrinting ? 'Imprimiendo...' : 'Reimprimir Ticket'}</span>
+                                <span className="text-sm md:text-base font-black uppercase tracking-tight">{btPrinting ? 'Imprimiendo' : 'Reimprimir'}</span>
                             </button>
                             
                             <button
@@ -269,10 +269,10 @@ export default function Reports() {
                                         setSelectedSale(null);
                                     }
                                 }}
-                                className="w-full bg-red-50 text-red-500 hover:bg-red-100 font-bold py-4 rounded-3xl flex items-center justify-center gap-2 transition-all active:scale-95"
+                                className="w-[110px] bg-red-50 text-red-500 hover:bg-red-100 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"
                             >
-                                <span className="material-symbols-outlined text-xl">delete_forever</span>
-                                Eliminar Venta
+                                <span className="material-symbols-outlined text-lg">delete</span>
+                                <span className="text-xs uppercase font-black">Eliminar</span>
                             </button>
                         </div>
 
