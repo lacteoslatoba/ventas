@@ -90,30 +90,34 @@ export default function Clients() {
             )}
 
             {/* Vista para Desktop */}
-            <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="hidden md:block overflow-hidden">
                 <table className="w-full text-left">
-                    <thead className="bg-slate-50 border-b border-slate-100">
-                        <tr>
-                            <th className="py-3 px-4 font-medium text-slate-500">Nombre</th>
-                            {currentUser?.role === 'admin' && <th className="py-3 px-4 font-medium text-slate-500">Repartidor</th>}
-                            <th className="py-3 px-4 font-medium text-slate-500">Teléfono</th>
-                            <th className="py-3 px-4 font-medium text-slate-500">Lugar</th>
-                            <th className="py-3 px-4 font-medium text-slate-500 text-right">Acciones</th>
+                    <thead>
+                        <tr className="border-b-2 border-slate-200">
+                            <th className="py-4 px-2 font-black text-slate-400 uppercase tracking-widest text-[10px]">Nombre</th>
+                            {currentUser?.role === 'admin' && <th className="py-4 px-2 font-black text-slate-400 uppercase tracking-widest text-[10px]">Repartidor</th>}
+                            <th className="py-4 px-2 font-black text-slate-400 uppercase tracking-widest text-[10px]">Teléfono</th>
+                            <th className="py-4 px-2 font-black text-slate-400 uppercase tracking-widest text-[10px]">Lugar</th>
+                            <th className="py-4 px-2 font-black text-slate-400 uppercase tracking-widest text-[10px] text-right">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {visibleClients.length === 0 && <tr><td colSpan={currentUser?.role === 'admin' ? "5" : "4"} className="text-center py-8 text-slate-400">Sin clientes registrados</td></tr>}
+                    <tbody className="divide-y divide-slate-100">
+                        {visibleClients.length === 0 && <tr><td colSpan={currentUser?.role === 'admin' ? "5" : "4"} className="text-center py-16 text-slate-400 italic font-medium">Sin clientes registrados</td></tr>}
                         {visibleClients.map((c) => (
-                            <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50">
-                                <td className="py-3 px-4 font-semibold text-slate-800">{c.name}</td>
+                            <tr key={c.id} className="hover:bg-primary/5 transition-colors group">
+                                <td className="py-4 px-2 font-bold text-slate-800">{c.name}</td>
                                 {currentUser?.role === 'admin' && (
-                                    <td className="py-3 px-4"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-sm">{users.find(u => u.id === c.userId)?.name || 'Todos'}</span></td>
+                                    <td className="py-4 px-2">
+                                        <span className="bg-primary/10 text-primary text-[10px] font-black uppercase px-2 py-1 rounded-lg">
+                                            {users.find(u => u.id === c.userId)?.name || 'Todos'}
+                                        </span>
+                                    </td>
                                 )}
-                                <td className="py-3 px-4 text-slate-600">{c.phone || '-'}</td>
-                                <td className="py-3 px-4 text-slate-600">{c.address || '-'}</td>
-                                <td className="py-3 px-4 flex justify-end gap-2">
-                                    <button onClick={() => edit(c)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg" title="Editar"><Edit2 size={16} /></button>
-                                    <button onClick={() => handleDelete(c.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Eliminar"><Trash2 size={16} /></button>
+                                <td className="py-4 px-2 text-slate-500 font-medium">{c.phone || '-'}</td>
+                                <td className="py-4 px-2 text-slate-500 font-medium">{c.address || '-'}</td>
+                                <td className="py-4 px-2 flex justify-end gap-2">
+                                    <button onClick={() => edit(c)} className="p-2 text-blue-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-blue-100 transition-all" title="Editar"><Edit2 size={16} /></button>
+                                    <button onClick={() => handleDelete(c.id)} className="p-2 text-red-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-red-100 transition-all" title="Eliminar"><Trash2 size={16} /></button>
                                 </td>
                             </tr>
                         ))}
@@ -121,16 +125,16 @@ export default function Clients() {
                 </table>
             </div>
 
-            {/* Vista para Móvil (Tarjetas) */}
+            {/* Vista para Móvil (Tarjetas Transparentes) */}
             <div className="md:hidden space-y-4">
-                {visibleClients.length === 0 && <p className="text-center py-8 text-slate-400 bg-white rounded-2xl border border-slate-100 italic">Sin clientes registrados</p>}
+                {visibleClients.length === 0 && <p className="text-center py-16 text-slate-400 italic font-medium">Sin clientes registrados</p>}
                 {visibleClients.map((c) => (
-                    <div key={c.id} className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden group">
-                        <div className="flex justify-between items-start mb-3">
+                    <div key={c.id} className="py-5 border-b border-slate-100 relative group">
+                        <div className="flex justify-between items-start">
                             <div className="flex-1 pr-4">
                                 <h3 className="font-black text-slate-800 text-lg leading-tight mb-1">{c.name}</h3>
                                 <div className="flex flex-wrap gap-2">
-                                    {c.phone && <span className="text-slate-500 text-xs font-semibold flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100">{c.phone}</span>}
+                                    {c.phone && <span className="text-slate-500 text-[10px] font-bold flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-lg border border-slate-100">{c.phone}</span>}
                                     {currentUser?.role === 'admin' && (
                                         <span className="bg-primary/5 text-primary text-[10px] uppercase font-black px-2 py-0.5 rounded-lg border border-primary/10">
                                             {users.find(u => u.id === c.userId)?.name || 'Todos'}
@@ -141,23 +145,24 @@ export default function Clients() {
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => edit(c)}
-                                    className="p-3 bg-blue-50 text-blue-600 rounded-2xl active:scale-90 transition-transform shadow-sm shadow-blue-200/50"
+                                    className="w-10 h-10 bg-white text-blue-600 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 active:scale-90 transition-all"
                                     title="Editar"
                                 >
-                                    <Edit2 size={20} />
+                                    <Edit2 size={18} />
                                 </button>
                                 <button
                                     onClick={() => handleDelete(c.id)}
-                                    className="p-3 bg-red-50 text-red-600 rounded-2xl active:scale-90 transition-transform shadow-sm shadow-red-200/50"
+                                    className="w-10 h-10 bg-white text-red-600 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 active:scale-90 transition-all"
                                     title="Eliminar"
                                 >
-                                    <Trash2 size={20} />
+                                    <Trash2 size={18} />
                                 </button>
                             </div>
                         </div>
                         {c.address && (
-                            <div className="pt-3 border-t border-slate-50 flex items-center gap-2 text-sm text-slate-600 italic">
-                                <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest not-italic">Lugar:</span> {c.address}
+                            <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+                                <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Lugar:</span>
+                                <span className="font-medium">{c.address}</span>
                             </div>
                         )}
                     </div>
