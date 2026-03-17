@@ -237,8 +237,8 @@ export const useStore = create(
                 if (!get().isOnline || !supabase) return;
                 set({ isSyncing: true });
                 try {
-                    const tablesToPull = ['products', 'users', 'clients'];
-                    const tablesToCheckCols = ['inventory', 'sales'];
+                    const tablesToPull = ['products', 'users', 'clients', 'sales', 'inventory'];
+                    const tablesToCheckCols = [];
                     const freshData = {};
                     const cloudColumns = {};
 
@@ -262,6 +262,8 @@ export const useStore = create(
                         products: mergeStateHelper(state.products, freshData['products']),
                         users: mergeStateHelper(state.users, freshData['users']),
                         clients: mergeStateHelper(state.clients, freshData['clients']),
+                        sales: mergeStateHelper(state.sales, freshData['sales']),
+                        inventory: mergeStateHelper(state.inventory, freshData['inventory']),
                         cloudColumns: { ...state.cloudColumns, ...cloudColumns }
                     }));
 
