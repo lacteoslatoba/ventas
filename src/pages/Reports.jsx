@@ -12,8 +12,8 @@ export default function Reports() {
     const isAdmin = currentUser?.role === 'admin';
     const effectiveFilterUser = isAdmin ? filterUser : '';
 
-    const filteredSales = effectiveFilterUser ? sales.filter(s => s.userId === effectiveFilterUser) : sales;
-    const totalEarned = filteredSales.reduce((sum, s) => sum + s.total, 0);
+    const filteredSales = (effectiveFilterUser ? (sales || []).filter(s => s && s.userId === effectiveFilterUser) : (sales || [])) || [];
+    const totalEarned = filteredSales.reduce((sum, s) => sum + (Number(s?.total) || 0), 0);
 
 
 

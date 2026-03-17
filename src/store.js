@@ -3,14 +3,22 @@ import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabase';
 
 const mergeStateHelper = (localItems, freshItems) => {
-    if (!freshItems) return localItems;
-    const pendingLocal = localItems.filter(item => !item.synced);
+    if (!freshItems) return localItems || [];
+    const local = localItems || [];
+    const pendingLocalMap = new Map(local.filter(item => !item.synced).map(item => [item.id, item]));
+    
+    // Map fresh items and replace with local pending ones if they match
     const merged = freshItems.map(remoteItem => {
-        const localItem = pendingLocal.find(p => p.id === remoteItem.id);
-        return localItem ? localItem : remoteItem;
+        const localItem = pendingLocalMap.get(remoteItem.id);
+        if (localItem) {
+            pendingLocalMap.delete(remoteItem.id);
+            return localItem;
+        }
+        return remoteItem;
     });
-    const locallyCreated = pendingLocal.filter(p => !freshItems.find(r => r.id === p.id));
-    return [...merged, ...locallyCreated];
+    
+    // Add locally created items that are not yet on the server
+    return [...merged, ...Array.from(pendingLocalMap.values())];
 };
 
 export const useStore = create(
@@ -140,18 +148,12 @@ export const useStore = create(
                     for (const tableName of tablesToSync) {
                         const pendingData = state[tableName].filter(item => !item.synced);
                         if (pendingData.length > 0) {
-                            // Remove the 'synced' property from the payload sent to the cloud
-                            // Remove userId if it's 'admin' to avoid foreign key violation if the DB allows nulls,
-                            // or replace it with a valid system UUID if known.
-                            // For now, we'll try to omit it or set it to null if it's 'admin'.
                             const payload = pendingData.map(({ synced: _synced, ...rest }) => rest);
 
-                            // ─── Sincronización Inteligente (Filtrado de columnas) ───
                             const safePayload = payload.map(item => {
                                 const knownCols = state.cloudColumns?.[tableName];
-                                if (!knownCols) return item; // Si no conocemos las columnas, probamos suerte
+                                if (!knownCols) return item;
 
-                                // Solo dejamos los campos que existen en la nube
                                 const filtered = {};
                                 knownCols.forEach(col => {
                                     if (item[col] !== undefined) filtered[col] = item[col];
@@ -162,10 +164,8 @@ export const useStore = create(
                             const { error } = await supabase.from(tableName).upsert(safePayload);
                             if (error) {
                                 console.error(`Error Syncing ${tableName}:`, error.message);
-                                // Si falló por columnas y no teníamos guardado el esquema, avisamos una vez
                                 if (error.message.includes('column') && !state.cloudColumns?.[tableName]) {
-                                    console.warn(`Esquema desactualizado en ${tableName}. Refrescando columnas...`);
-                                    get().fetchFromSupabase(); // Intentar aprender el esquema real
+                                    get().fetchFromSupabase();
                                 }
                             } else {
                                 successTables.push(tableName);
@@ -175,7 +175,6 @@ export const useStore = create(
                         }
                     }
 
-                    // Marcamos como sincronizadas SOLO las tablas que tuvieron éxito
                     set((s) => {
                         const nextState = { lastSync: new Date().toISOString() };
                         successTables.forEach(t => {
@@ -184,7 +183,6 @@ export const useStore = create(
                         return nextState;
                     });
 
-                    // Sincronización especial de Ticket Config (con Empaquetado JSON para campos faltantes)
                     if (state.ticketConfig && !state.ticketConfig.synced) {
                         const { synced: _synced, ...payload } = state.ticketConfig;
                         const knownCols = state.cloudColumns?.['ticket_config'];
@@ -211,7 +209,6 @@ export const useStore = create(
                             }
                         });
 
-                        // Siempre intentamos guardar en el campo 'footer' como JSON si hay datos extra
                         if (Object.keys(extraData).length > 0) {
                             const currentFooter = payload.footerLine1 || '';
                             finalPayload.footer = `JSON_CONFIG:${JSON.stringify({ ...extraData, _realFooter: currentFooter })}`;
@@ -238,7 +235,6 @@ export const useStore = create(
                 set({ isSyncing: true });
                 try {
                     const tablesToPull = ['products', 'users', 'clients', 'sales', 'inventory'];
-                    const tablesToCheckCols = [];
                     const freshData = {};
                     const cloudColumns = {};
 
@@ -247,13 +243,6 @@ export const useStore = create(
                         if (!error && data) {
                             freshData[tableName] = data.map(item => ({ ...item, synced: true }));
                             if (data.length > 0) cloudColumns[tableName] = Object.keys(data[0]);
-                        }
-                    }
-
-                    for (const tableName of tablesToCheckCols) {
-                        const { data, error } = await supabase.from(tableName).select('*').limit(1);
-                        if (!error && data && data.length > 0) {
-                            cloudColumns[tableName] = Object.keys(data[0]);
                         }
                     }
 
@@ -267,7 +256,6 @@ export const useStore = create(
                         cloudColumns: { ...state.cloudColumns, ...cloudColumns }
                     }));
 
-                    // Descarga especial de Ticket Config (con Desempaquetado JSON)
                     const { data: configData, error: configError } = await supabase.from('ticket_config').select('*').eq('id', 'main').single();
                     if (!configError && configData) {
                         set(s => {
@@ -325,7 +313,7 @@ export const useStore = create(
                     priceA: Number(product.priceA) || 0,
                     priceB: Number(product.priceB) || 0,
                     priceC: Number(product.priceC) || 0,
-                    price: Number(product.priceA) || 0 // Por compatibilidad
+                    price: Number(product.priceA) || 0 
                 };
                 set((state) => ({ products: [...state.products, newProduct] }));
                 get().syncToSupabase();
@@ -337,7 +325,7 @@ export const useStore = create(
                             const updated = { ...p, ...data, synced: false };
                             if (data.priceA !== undefined) {
                                 updated.priceA = Number(data.priceA);
-                                updated.price = Number(data.priceA); // Sincronizar legacy price
+                                updated.price = Number(data.priceA);
                             }
                             if (data.priceB !== undefined) updated.priceB = Number(data.priceB);
                             if (data.priceC !== undefined) updated.priceC = Number(data.priceC);
@@ -398,7 +386,6 @@ export const useStore = create(
             },
             deleteUser: (id) => {
                 set((state) => ({ users: state.users.filter((u) => u.id !== id) }));
-                // Considerar soft delete si se sincroniza con servidor
             },
 
             // Clientes
@@ -443,9 +430,7 @@ export const useStore = create(
                 if (!saleToDelete) return;
 
                 set((s) => ({
-                    // Eliminar la venta
                     sales: s.sales.filter(s => s.id !== saleId),
-                    // Devolver stock
                     products: s.products.map(p => {
                         const item = saleToDelete.items.find(i => i.productId === p.id);
                         if (item) {
@@ -455,12 +440,9 @@ export const useStore = create(
                     })
                 }));
 
-                // Sincronizar cambios a la nube
                 if (state.isOnline && supabase) {
                     try {
-                        // 1. Eliminar de Supabase
                         await supabase.from('sales').delete().eq('id', saleId);
-                        // 2. Disparar sync normal para actualizar productos (stock devuelto)
                         get().syncToSupabase();
                     } catch (error) {
                         console.error('Error eliminando venta en la nube:', error);
