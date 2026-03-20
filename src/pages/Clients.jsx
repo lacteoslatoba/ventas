@@ -146,9 +146,9 @@ export default function Clients() {
 
             {/* MODAL: FORMULARIO ALTA / EDICIÓN */}
             {isFormOpen && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div className="fixed inset-0 z-[70] flex items-start sm:items-center justify-center p-4 pt-8 sm:pt-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
+                    <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl flex flex-col max-h-[90dvh] my-auto animate-in slide-in-from-bottom-8 duration-300">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl shrink-0">
                             <h3 className="font-black text-xl text-slate-800 tracking-tight">{editId ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
                             <button
                                 onClick={() => { setIsFormOpen(false); if (!editId) setFormData({ name: '', phone: '', address: '', userId: currentUser?.role !== 'admin' ? currentUser?.id : '' }); }}
@@ -158,7 +158,7 @@ export default function Clients() {
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
                             <div>
                                 <label className="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Nombre Comercial</label>
                                 <input
@@ -211,7 +211,7 @@ export default function Clients() {
                                 </>
                             )}
                             
-                            <div className="pt-2">
+                            <div className="pt-2 pb-1 shrink-0">
                                 <button type="submit" className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
                                     {editId ? 'Actualizar Cliente' : 'Guardar Cliente'}
                                 </button>
