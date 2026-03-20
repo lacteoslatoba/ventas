@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Plus, Edit2, Trash2, User, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, User, X, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export default function Clients() {
     const { clients, currentUser, addClient, deleteClient, updateClient } = useStore();
@@ -8,6 +8,13 @@ export default function Clients() {
     const [formData, setFormData] = useState({ name: '', phone: '', address: '', userId: currentUser?.role !== 'admin' ? currentUser?.id : '' });
     const [editId, setEditId] = useState(null);
     const [selectedClient, setSelectedClient] = useState(null);
+    const [toast, setToast] = useState(null); // { message, type: 'success'|'error' }
+    const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -23,15 +30,22 @@ export default function Clients() {
             setFormData({ name: '', phone: '', address: '', userId: currentUser?.role !== 'admin' ? currentUser?.id : '' });
             setEditId(null);
             setIsFormOpen(false);
-            alert("✅ Guardado correctamente en el sistema.");
+            showToast('Guardado correctamente en el sistema.');
         } catch (err) {
-            alert("Error al guardar: " + err.message);
+            showToast(err.message || 'Error al guardar.', 'error');
         }
     };
 
     const handleDelete = (id) => {
-        if (window.confirm("¿Seguro que deseas eliminar a este cliente?")) {
-            deleteClient(id);
+        setConfirmDeleteId(id);
+    };
+
+    const confirmDeleteAction = () => {
+        if (confirmDeleteId) {
+            deleteClient(confirmDeleteId);
+            setConfirmDeleteId(null);
+            setSelectedClient(null);
+            showToast('Cliente eliminado.', 'success');
         }
     };
 
@@ -203,6 +217,47 @@ export default function Clients() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL CONFIRMAR ELIMINAR */}
+            {confirmDeleteId && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl w-full max-w-xs shadow-2xl p-6 text-center animate-in zoom-in-95 duration-200">
+                        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <AlertTriangle size={32} />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">¿Eliminar Cliente?</h3>
+                        <p className="text-slate-500 text-sm mb-6">Esta acción no se puede deshacer.</p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl active:scale-95 transition-all text-sm"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmDeleteAction}
+                                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/30 active:scale-95 transition-all text-sm"
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TOAST FLOTANTE */}
+            {toast && (
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-6 duration-300">
+                    <div className={`flex items-center gap-3 px-5 py-3.5 rounded-full shadow-2xl font-medium text-sm border backdrop-blur-md ${
+                        toast.type === 'error' 
+                            ? 'bg-red-50/90 text-red-700 border-red-100' 
+                            : 'bg-slate-900/90 text-white border-slate-800'
+                    }`}>
+                        {toast.type === 'error' ? <AlertTriangle size={18} /> : <CheckCircle size={18} className="text-emerald-400" />}
+                        {toast.message}
                     </div>
                 </div>
             )}
