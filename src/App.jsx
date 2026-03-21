@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings, Users } from 'lucide-react';
+import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings, Users, Menu } from 'lucide-react';
 import { useStore } from './store';
 import { useBTPrinter } from './lib/useBTPrinter';
 
@@ -83,27 +83,90 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
   const isAdmin = currentUser?.role === 'admin';
   const isHome = location.pathname === '/' || (!isAdmin && location.pathname === '/ventas');
   const [showSettings, setShowSettings] = React.useState(false);
+  const [showDriverMenu, setShowDriverMenu] = React.useState(false);
+
+  const handleRefresh = () => {
+    if (!navigator.onLine) {
+      alert('Debes estar conectado a Internet para buscar actualizaciones.');
+      return;
+    }
+    if (confirm('¿Deseas buscar actualizaciones y refrescar la aplicación?')) {
+      if ('caches' in window) {
+        caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name))));
+      }
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          Promise.all(registrations.map((reg) => reg.unregister())).then(() => {
+            window.location.reload();
+          });
+        });
+      } else {
+        window.location.reload();
+      }
+    }
+  };
 
   return (
     <div className="md:hidden flex-shrink-0 flex items-center justify-between bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-1.5 no-print z-40 relative">
       {/* Izquierda: Regresar o Hamburger/Menú */}
-      <div className="w-10">
+      <div className="w-10 relative">
         <button 
           onClick={() => {
             if (isHome) {
               if (isAdmin) navigate('/menu');
+              else setShowDriverMenu(!showDriverMenu);
             } else {
               navigate(-1);
             }
           }} 
-          className={`p-2 -ml-2 rounded-xl text-primary bg-primary/5 active:scale-90 transition-all ${(isHome && !isAdmin) ? 'opacity-0 pointer-events-none' : ''}`}
+          className={`p-2 -ml-2 rounded-xl text-primary bg-primary/5 active:scale-90 transition-all`}
         >
-          {isHome ? <LayoutGrid size={24} /> : <ArrowLeft size={24} />}
+          {isHome ? (isAdmin ? <LayoutGrid size={24} /> : <Menu size={24} />) : <ArrowLeft size={24} />}
         </button>
+
+        {/* Dropdown de Repartidor */}
+        {showDriverMenu && !isAdmin && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setShowDriverMenu(false)} />
+            <div className="absolute left-0 top-12 w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-left">
+              <div className="px-4 py-2 border-b border-slate-50 dark:border-slate-700 mb-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{currentUser?.name}</p>
+                <p className="text-[9px] font-bold text-primary uppercase">Opciones de Repartidor</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowDriverMenu(false);
+                  navigate('/clientes');
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                <Users size={18} className="text-slate-400" /> Clientes
+              </button>
+              <button 
+                onClick={() => {
+                  setShowDriverMenu(false);
+                  navigate('/impresora');
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                <div className="w-5 flex justify-center"><span className="material-symbols-outlined text-[18px] text-slate-400">print</span></div> Config. Impresora
+              </button>
+              <button 
+                onClick={() => {
+                  setShowDriverMenu(false);
+                  handleRefresh();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+              >
+                <RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} /> Actualizar App
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Centro: nombre usuario */}
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center pointer-events-none">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-0.5">
           {isHome ? 'Bienvenido' : 'Navegación'}
         </span>
@@ -113,7 +176,7 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
       </div>
 
       {/* Derecha: Ajustes y Salir */}
-      <div className="flex items-center gap-1 relative">
+      <div className="flex items-center gap-1 relative justify-end">
         <button 
           onClick={() => {
             if (window.confirm('¿Deseas cerrar sesión?')) {
@@ -125,34 +188,17 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
           <LogOut size={22} />
         </button>
 
-        <button 
-          onClick={() => {
-            if (!navigator.onLine) {
-              alert('Debes estar conectado a Internet para buscar actualizaciones.');
-              return;
-            }
-            if (confirm('¿Deseas buscar actualizaciones y refrescar la aplicación?')) {
-              if ('caches' in window) {
-                caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name))));
-              }
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then((registrations) => {
-                  Promise.all(registrations.map((reg) => reg.unregister())).then(() => {
-                    window.location.reload();
-                  });
-                });
-              } else {
-                window.location.reload();
-              }
-            }
-          }}
-          className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 active:scale-95 transition-all relative overflow-hidden"
-          title="Refrescar aplicación"
-        >
-          <span className={`material-symbols-outlined text-2xl ${isSyncing ? 'animate-spin' : ''}`}>
-            sync
-          </span>
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={handleRefresh}
+            className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 active:scale-95 transition-all relative overflow-hidden"
+            title="Refrescar aplicación"
+          >
+            <span className={`material-symbols-outlined text-2xl ${isSyncing ? 'animate-spin' : ''}`}>
+              sync
+            </span>
+          </button>
+        )}
 
         {isAdmin && (
           <button 
@@ -163,14 +209,14 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
           </button>
         )}
 
-        {/* Dropdown de Ajustes */}
-        {showSettings && (
+        {/* Dropdown de Ajustes Admin */}
+        {showSettings && isAdmin && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setShowSettings(false)} />
             <div className="absolute right-0 top-12 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50 animate-in fade-in zoom-in duration-200 origin-top-right">
               <div className="px-4 py-2 border-b border-slate-50 dark:border-slate-700 mb-1">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{currentUser?.name}</p>
-                <p className="text-[9px] font-bold text-primary uppercase">{isAdmin ? 'Administrador' : 'Repartidor'}</p>
+                <p className="text-[9px] font-bold text-primary uppercase">Administrador</p>
               </div>
               <button 
                 onClick={() => {
