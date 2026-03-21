@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { ShoppingCart, Printer, Delete, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth, Banknote, LogOut, Users, LayoutGrid } from 'lucide-react';
+import { ShoppingCart, Printer, Delete, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth, Banknote, LogOut, Users, LayoutGrid, Package } from 'lucide-react';
 import { printTicket } from '../lib/bluetoothPrinter';
 import { Link } from 'react-router-dom';
 import TicketPreview from '../components/TicketPreview';
@@ -467,12 +467,12 @@ export default function Sales() {
                             <button 
                                 onClick={() => {
                                     setMobileCartOpen(false);
-                                    window.location.href = '/clientes';
+                                    window.location.href = '/stock';
                                 }} 
                                 className="flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 text-slate-500"
                             >
-                                <Users size={22} strokeWidth={2} />
-                                <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">Alta Clientes</span>
+                                <Package size={22} strokeWidth={2} />
+                                <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">Stock</span>
                             </button>
                         )}
                     </div>

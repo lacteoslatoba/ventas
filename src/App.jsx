@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings, Users, Menu } from 'lucide-react';
+import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings, Users, Menu, Package } from 'lucide-react';
 import { useStore } from './store';
 import { useBTPrinter } from './lib/useBTPrinter';
 
@@ -10,6 +10,7 @@ import Inventory from './pages/Inventory';
 import UsersPage from './pages/Users';
 import Clients from './pages/Clients';
 import Sales from './pages/Sales';
+import Stock from './pages/Stock';
 import Reports from './pages/Reports';
 import Login from './pages/Login';
 import PrinterSettings from './pages/PrinterSettings';
@@ -269,7 +270,7 @@ const BottomNavigation = ({ currentUser }) => {
       {isAdmin ? (
          <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
       ) : (
-         <NavItem to="/clientes" icon={Users} label="Alta Clientes" active={isActive('/clientes')} />
+         <NavItem to="/stock" icon={Package} label="Stock" active={isActive('/stock')} />
       )}
     </div>
   );
@@ -324,6 +325,7 @@ function App() {
                   <Route path="/inventario" element={<Inventory />} />
                   <Route path="/usuarios" element={<UsersPage />} />
                   <Route path="/clientes" element={<Clients />} />
+                  <Route path="/stock" element={<Stock />} />
                   <Route path="/reportes" element={<Reports />} />
                   <Route path="/impresora" element={<PrinterSettings />} />
                   <Route path="/ticket" element={<TicketConfig />} />
