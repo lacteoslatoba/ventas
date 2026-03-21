@@ -128,10 +128,14 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
         <button 
           onClick={() => {
             if (confirm('¿Deseas buscar actualizaciones y refrescar la aplicación?')) {
+              if ('caches' in window) {
+                caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name))));
+              }
               if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistration().then(reg => {
-                  if (reg) reg.update().then(() => window.location.reload());
-                  else window.location.reload();
+                navigator.serviceWorker.getRegistrations().then((registrations) => {
+                  Promise.all(registrations.map((reg) => reg.unregister())).then(() => {
+                    window.location.reload();
+                  });
                 });
               } else {
                 window.location.reload();

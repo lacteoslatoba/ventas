@@ -194,7 +194,7 @@ export default function Sales() {
                         <div className="flex gap-3 h-[60px]">
                             <button
                                 onClick={() => setGeneratedTicket(null)}
-                                className="w-[30%] h-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-[1.25rem] active:scale-95 transition-all text-[11px] uppercase tracking-wider flex flex-col items-center justify-center gap-0.5"
+                                className="w-[30%] h-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 font-bold rounded-[1.25rem] active:scale-95 transition-all text-[11px] uppercase tracking-wider flex flex-col items-center justify-center gap-0.5"
                             >
                                 <span className="material-symbols-outlined text-xl leading-none">add_shopping_cart</span>
                                 <span className="mt-1">Nueva</span>

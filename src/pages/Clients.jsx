@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Plus, Edit2, Trash2, User, X, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Edit2, Trash2, User, X, CheckCircle, AlertTriangle, ChevronRight } from 'lucide-react';
 
 export default function Clients() {
     const { clients, currentUser, addClient, deleteClient, updateClient } = useStore();
@@ -58,7 +58,7 @@ export default function Clients() {
     const visibleClients = currentUser?.role === 'admin' ? clients : clients.filter(c => c.userId === currentUser?.id);
 
     return (
-        <div className="p-4 md:p-8">
+        <div className="p-4 md:p-8 max-w-5xl mx-auto">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
                     Clientes
@@ -71,25 +71,32 @@ export default function Clients() {
                 </button>
             </div>
 
-            {/* CUADRÍCULA DE CLIENTES (SOLO NOMBRES) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {/* LISTA DE CLIENTES */}
+            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200/60 overflow-hidden">
                 {visibleClients.length === 0 && (
-                    <div className="col-span-full py-12 text-center text-slate-400 italic font-medium bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="py-12 text-center text-slate-400 italic font-medium bg-slate-50">
                         Aún no tienes clientes registrados.
                     </div>
                 )}
-                {visibleClients.map((c) => (
-                    <button
-                        key={c.id}
-                        onClick={() => setSelectedClient(c)}
-                        className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-left transition-all hover:border-primary/40 hover:shadow-md active:scale-95 flex items-center gap-4 group"
-                    >
-                        <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
-                            <User size={24} />
-                        </div>
-                        <h3 className="font-bold text-slate-800 text-[15px] leading-tight line-clamp-2">{c.name}</h3>
-                    </button>
-                ))}
+                {visibleClients.length > 0 && (
+                    <div className="flex flex-col">
+                        {visibleClients.map((c, index) => (
+                            <div
+                                key={c.id}
+                                onClick={() => setSelectedClient(c)}
+                                className={`w-full px-4 py-3 text-left flex items-center gap-3 cursor-pointer ${index !== visibleClients.length - 1 ? 'border-b border-slate-100/50' : ''}`}
+                            >
+                                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
+                                    <User size={18} />
+                                </div>
+                                <h3 className="font-medium text-slate-700 text-sm leading-tight flex-1 truncate">{c.name}</h3>
+                                <div className="text-slate-300">
+                                    <ChevronRight size={16} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* MODAL: DETALLES DEL CLIENTE */}
@@ -146,8 +153,8 @@ export default function Clients() {
 
             {/* MODAL: FORMULARIO ALTA / EDICIÓN */}
             {isFormOpen && (
-                <div className="fixed inset-0 z-[70] flex items-start sm:items-center justify-center p-4 pt-8 sm:pt-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
-                    <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl flex flex-col max-h-[90dvh] my-auto animate-in slide-in-from-bottom-8 duration-300">
+                <div className="fixed inset-0 z-[70] flex items-start sm:items-center justify-center p-4 sm:pt-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
+                    <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[90dvh] mt-4 mb-auto sm:my-auto animate-in slide-in-from-bottom-8 duration-300">
                         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl shrink-0">
                             <h3 className="font-black text-xl text-slate-800 tracking-tight">{editId ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
                             <button
