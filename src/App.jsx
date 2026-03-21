@@ -127,6 +127,10 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
 
         <button 
           onClick={() => {
+            if (!navigator.onLine) {
+              alert('Debes estar conectado a Internet para buscar actualizaciones.');
+              return;
+            }
             if (confirm('¿Deseas buscar actualizaciones y refrescar la aplicación?')) {
               if ('caches' in window) {
                 caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name))));
