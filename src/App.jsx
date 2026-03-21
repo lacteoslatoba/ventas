@@ -260,7 +260,7 @@ function App() {
             <main 
               className="flex-1 overflow-hidden w-full relative scroll-smooth"
             >
-              <div className="h-full overflow-y-auto pb-4 md:pb-8 relative custom-scrollbar">
+              <div className="h-full overflow-y-auto pb-24 md:pb-8 relative custom-scrollbar">
                 <Routes>
                   <Route path="/" element={<Sales />} />
                   <Route path="/menu" element={<MenuPage />} />
