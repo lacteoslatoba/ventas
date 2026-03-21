@@ -205,9 +205,10 @@ export const NavItem = ({ to, icon: Icon, label, active, onClick }) => {
   return <Link to={to} className="focus:outline-none">{content}</Link>;
 };
 
-const BottomNavigation = () => {
+const BottomNavigation = ({ currentUser }) => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
+  const isAdmin = currentUser?.role === 'admin';
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[60px] z-50 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
@@ -215,7 +216,11 @@ const BottomNavigation = () => {
       
       <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
  
-      <NavItem to="/clientes" icon={Users} label="Alta Clientes" active={isActive('/clientes')} />
+      {isAdmin ? (
+         <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
+      ) : (
+         <NavItem to="/clientes" icon={Users} label="Alta Clientes" active={isActive('/clientes')} />
+      )}
     </div>
   );
 };
