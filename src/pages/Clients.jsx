@@ -119,6 +119,17 @@ export default function Clients() {
                                                 <option value="Constitucion">Constitucion</option>
                                                 <option value="La toba">La toba</option>
                                             </select>
+                                        ) : currentUser?.name?.toLowerCase() === 'juan' ? (
+                                            <select
+                                                required
+                                                value={formData.address}
+                                                onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                                className="w-full bg-slate-50 border-2 border-slate-200 focus:border-blue-500 focus:ring-0 rounded-xl py-3 px-4 outline-none transition-colors font-medium text-slate-700 text-base appearance-none"
+                                            >
+                                                <option value="">Selecciona Lugar...</option>
+                                                <option value="Ruta Sur">Ruta Sur</option>
+                                                <option value="La Paz">La Paz</option>
+                                            </select>
                                         ) : (
                                             <input
                                                 type="text"

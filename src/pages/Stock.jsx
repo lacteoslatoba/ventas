@@ -43,22 +43,22 @@ export default function Stock() {
     }, [filteredSales]);
 
     return (
-        <div className="p-4 md:p-8 max-w-5xl mx-auto animate-in fade-in duration-300">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
-                    <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+        <div className="p-4 md:p-8 max-w-5xl mx-auto animate-in fade-in duration-300 relative">
+            <div className="sticky top-0 z-40 bg-[#f6f6f8] dark:bg-[#101622] -mx-4 px-4 sm:-mx-8 sm:px-8 py-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200/50 dark:border-slate-800/50">
+                <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400">
                         <Package size={26} strokeWidth={2.5} />
                     </div>
                     Stock del Día
                 </h1>
                 
-                <div className="w-full sm:w-auto flex items-center gap-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-2.5 px-4 transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
-                    <CalendarIcon size={22} className="text-blue-500" />
+                <div className="w-full sm:w-auto flex items-center gap-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2.5 px-4 transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+                    <CalendarIcon size={22} className="text-blue-500 dark:text-blue-400" />
                     <input 
                         type="date" 
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
-                        className="bg-transparent border-none outline-none font-bold text-slate-700 py-1 text-base cursor-pointer w-full text-center"
+                        className="bg-transparent border-none outline-none font-bold text-slate-700 dark:text-slate-200 py-1 text-base cursor-pointer w-full text-center"
                     />
                 </div>
             </div>
