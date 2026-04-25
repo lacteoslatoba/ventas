@@ -46,6 +46,9 @@ export default function TicketPreview({ config, sale, user, client }) {
         showExtraLine2 = true,
         showFooterLine1 = true,
         showFooterLine2 = true,
+        footerFontSize = 9,
+        footerBold = false,
+        totalToFooterSpacing = 0,
         itemsSectionSpacing = 0,
         headerSpacing = 0,
         footerSpacing = 0,
@@ -123,7 +126,7 @@ export default function TicketPreview({ config, sale, user, client }) {
                     {showItemsHeader && (
                         <>
                             <div className="flex justify-between uppercase font-bold"><span>{itemsHeaderLeft}</span><span>{itemsHeaderRight}</span></div>
-                            <SeparatorComp />
+                            <Separator separatorStyle={separatorStyle} />
                         </>
                     )}
 
@@ -161,7 +164,7 @@ export default function TicketPreview({ config, sale, user, client }) {
                         </div>
                     )}
                     
-                    {showSeparatorFooter && <SeparatorComp />}
+                    {showSeparatorFooter && <Separator separatorStyle={separatorStyle} />}
 
                     <div className={`${centerTotal ? 'text-center' : 'text-right'} leading-[1.2] mt-1 mb-1 uppercase`} style={{ fontSize: `${totalFontSize}px`, fontWeight: totalBold ? 'bold' : 'normal' }}>TOTAL ${displaySale.total.toFixed(2)}</div>
 
@@ -171,14 +174,19 @@ export default function TicketPreview({ config, sale, user, client }) {
                         <div className="text-[9px] opacity-70">
                             <div className="flex justify-between uppercase"><span>EFECTIVO:</span><span>${displaySale.total.toFixed(2)}</span></div>
                             <div className="flex justify-between uppercase"><span>CAMBIO:</span><span>$0.00</span></div>
-                            <SeparatorComp />
+                            <Separator separatorStyle={separatorStyle} />
                         </div>
                     )}
 
-                    <div className="text-center mt-2 uppercase" style={{ marginTop: `${footerSpacing}px` }}>
+                    <div
+                        className="text-center uppercase"
+                        style={{ marginTop: `${(totalToFooterSpacing || 0) * 3 + 4}px`, fontSize: `${footerFontSize}px`, fontWeight: footerBold ? 'bold' : 'normal' }}
+                    >
                         {showFooterLine1 && (footerLine1 || '¡GRACIAS POR SU COMPRA!')}
                     </div>
-                    {showFooterLine2 && footerLine2 && <div className="text-center uppercase">{footerLine2}</div>}
+                    {showFooterLine2 && (footerLine2 || '') && (
+                        <div className="text-center uppercase" style={{ fontSize: `${footerFontSize}px`, fontWeight: footerBold ? 'bold' : 'normal' }}>{footerLine2}</div>
+                    )}
                     {showSignature && <div className="mt-4 uppercase border-t border-black/20 pt-1 text-center text-[8px]">FIRMA DEL CLIENTE</div>}
                 </div>
             </div>
@@ -298,10 +306,15 @@ export default function TicketPreview({ config, sale, user, client }) {
                     </div>
                 )}
 
-                <div className="text-center mt-1 text-[8px]" style={{ marginTop: `${footerSpacing}px` }}>
+                <div
+                    className="text-center"
+                    style={{ marginTop: `${(totalToFooterSpacing || 0) * 3 + 4}px`, fontSize: `${footerFontSize}px`, fontWeight: footerBold ? 'bold' : 'normal' }}
+                >
                     {showFooterLine1 && (footerLine1 || '¡Gracias por su compra!')}
                 </div>
-                {showFooterLine2 && footerLine2 && <div className="text-center text-[8px]">{footerLine2}</div>}
+                {showFooterLine2 && (footerLine2 || '') && (
+                    <div className="text-center" style={{ fontSize: `${footerFontSize}px`, fontWeight: footerBold ? 'bold' : 'normal' }}>{footerLine2}</div>
+                )}
                 {showSignature && (
                     <div className="mt-4 text-[8px] border-t border-black/20 pt-1 text-center">Firma: ________________________</div>
                 )}

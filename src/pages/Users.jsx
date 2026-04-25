@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Plus, Edit2, Trash2, ArrowLeft, Save, User as UserIcon, Phone, Truck, Lock, List } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArrowLeft, Save, User as UserIcon, Phone, Truck, Lock, List, MapPin } from 'lucide-react';
+
+const EMPTY_FORM = { name: '', phone: '', vehicle: '', pin: '', priceList: 'A', lugar1: '', lugar2: '', lugar1activo: false, lugar2activo: false };
 
 export default function Users() {
-    const { users, addUser, deleteUser, updateUser } = useStore();
+    const { users, addUser, deleteUser, updateUser, showToast, showConfirm } = useStore();
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [formData, setFormData] = useState({ name: '', phone: '', vehicle: '', pin: '', priceList: 'A' });
+    const [formData, setFormData] = useState(EMPTY_FORM);
     const [editId, setEditId] = useState(null);
 
     const handleSubmit = (e) => {
@@ -14,32 +16,38 @@ export default function Users() {
             if (editId) updateUser(editId, formData);
             else addUser(formData);
             resetForm();
-            alert("✅ Guardado correctamente");
+            showToast('Guardado correctamente');
         } catch (err) {
-            alert("Error al guardar: " + err.message);
+            showToast('Error al guardar: ' + err.message, 'error');
         }
     };
 
     const resetForm = () => {
-        setFormData({ name: '', phone: '', vehicle: '', pin: '', priceList: 'A' });
+        setFormData(EMPTY_FORM);
         setEditId(null);
         setIsFormOpen(false);
     };
 
     const handleDelete = (id) => {
-        if (window.confirm("¿Seguro que deseas eliminar a este repartidor permanentemente?")) {
-            deleteUser(id);
-            resetForm();
-        }
+        showConfirm({
+            message: '¿Eliminar este repartidor permanentemente?',
+            confirmText: 'Eliminar',
+            danger: true,
+            onConfirm: () => { deleteUser(id); resetForm(); },
+        });
     };
 
     const edit = (user) => {
-        setFormData({ 
-            name: user.name, 
-            phone: user.phone || '', 
-            vehicle: user.vehicle || '', 
+        setFormData({
+            name: user.name,
+            phone: user.phone || '',
+            vehicle: user.vehicle || '',
             pin: user.pin || '',
-            priceList: user.priceList || 'A'
+            priceList: user.priceList || 'A',
+            lugar1: user.lugar1 || '',
+            lugar2: user.lugar2 || '',
+            lugar1activo: user.lugar1activo ?? false,
+            lugar2activo: user.lugar2activo ?? false,
         });
         setEditId(user.id);
         setIsFormOpen(true);
@@ -133,9 +141,49 @@ export default function Users() {
                             </div>
                         </div>
 
+                        {/* Zonas de reparto */}
+                        <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-5">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                <MapPin size={12} /> Zonas de Reparto
+                            </label>
+
+                            {[1, 2].map((n) => {
+                                const lugarKey = `lugar${n}`;
+                                const activoKey = `lugar${n}activo`;
+                                const isActive = formData[activoKey];
+                                return (
+                                    <div key={n} className={`flex items-end gap-3 p-4 rounded-2xl border-2 transition-all ${isActive ? 'border-emerald-400/50 bg-emerald-50/60' : 'border-transparent bg-slate-50'}`}>
+                                        <div className="flex-1">
+                                            <p className="text-[9px] font-black uppercase tracking-widest mb-2 ml-1 transition-colors" style={{ color: isActive ? '#059669' : '#94a3b8' }}>
+                                                Opción {n}
+                                            </p>
+                                            <input
+                                                type="text"
+                                                value={formData[lugarKey]}
+                                                onChange={e => setFormData({ ...formData, [lugarKey]: e.target.value })}
+                                                className="w-full bg-white border-2 border-transparent focus:border-primary/20 rounded-xl p-3 text-slate-800 font-bold outline-none transition-all text-sm"
+                                                placeholder={n === 1 ? 'Ej. Centro' : 'Ej. Colonia Norte'}
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, [activoKey]: !isActive })}
+                                            className={`flex-shrink-0 px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
+                                                isActive
+                                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                                                    : 'bg-white border border-slate-200 text-slate-400 hover:border-emerald-300 hover:text-emerald-500'
+                                            }`}
+                                        >
+                                            {isActive ? '✓ Activo' : 'Activar'}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
                         <div className="flex flex-col sm:flex-row gap-3">
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 className="flex-1 bg-primary text-white py-5 rounded-[2.5rem] shadow-xl shadow-primary/20 font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all text-xs"
                             >
                                 <Save size={20} /> Guardar Repartidor
@@ -165,7 +213,7 @@ export default function Users() {
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2 ml-1">{users.length} Registrados</p>
                 </div>
                 <button
-                    onClick={() => { setEditId(null); setFormData({ name: '', phone: '', vehicle: '', pin: '', priceList: 'A' }); setIsFormOpen(true); }}
+                    onClick={() => { setEditId(null); setFormData(EMPTY_FORM); setIsFormOpen(true); }}
                     className="bg-primary text-white p-4 rounded-3xl shadow-xl shadow-primary/20 active:scale-90 transition-all shrink-0"
                 >
                     <Plus size={24} />
@@ -189,12 +237,20 @@ export default function Users() {
                             </div>
                             <div className="flex-1 truncate">
                                 <h3 className="font-black text-slate-800 text-md leading-tight truncate uppercase tracking-tight">{u.name}</h3>
-                                <div className="flex items-center gap-2 mt-1 font-black uppercase text-[9px] tracking-tighter">
+                                <div className="flex items-center gap-2 mt-1 font-black uppercase text-[9px] tracking-tighter flex-wrap">
                                     <span className={`px-2 py-0.5 rounded-md ${u.priceList === 'A' ? 'bg-blue-50 text-blue-600' : u.priceList === 'B' ? 'bg-orange-50 text-orange-600' : 'bg-purple-50 text-purple-600'}`}>
                                         LISTA {u.priceList || 'A'}
                                     </span>
-                                    {u.phone && <span className="text-slate-400 italic font-medium">{u.phone}</span>}
+                                    {[{ l: u.lugar1, a: u.lugar1activo }, { l: u.lugar2, a: u.lugar2activo }]
+                                        .filter(x => x.l && x.a)
+                                        .map(x => (
+                                            <span key={x.l} className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 flex items-center gap-1">
+                                                <MapPin size={8} /> {x.l}
+                                            </span>
+                                        ))
+                                    }
                                 </div>
+                                {u.phone && <p className="text-[9px] text-slate-400 font-medium mt-0.5">{u.phone}</p>}
                             </div>
                             <div className="text-slate-200 group-hover:text-primary transition-colors">
                                 <Edit2 size={16} />

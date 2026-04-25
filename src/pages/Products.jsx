@@ -3,9 +3,9 @@ import { useStore } from '../store';
 import { Plus, Trash2, Edit2, ArrowLeft, Save, ChevronRight } from 'lucide-react';
 
 export default function Products() {
-    const { products, addProduct, deleteProduct, updateProduct, resetAllStock } = useStore();
+    const { products, addProduct, deleteProduct, updateProduct, resetAllStock, showConfirm } = useStore();
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [formData, setFormData] = useState({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '', stock: '' });
+    const [formData, setFormData] = useState({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '', stock: '', orden: '' });
     const [editId, setEditId] = useState(null);
 
     const handleSubmit = (e) => {
@@ -15,7 +15,8 @@ export default function Products() {
             priceA: Number(formData.priceA) || 0,
             priceB: Number(formData.priceB) || 0,
             priceC: Number(formData.priceC) || 0,
-            stock: Number(formData.stock) || 0
+            stock: Number(formData.stock) || 0,
+            orden: formData.orden !== '' ? Number(formData.orden) : 999
         };
         if (editId) {
             updateProduct(editId, productData);
@@ -26,20 +27,21 @@ export default function Products() {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '', stock: '' });
+        setFormData({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '', stock: '', orden: '' });
         setEditId(null);
         setIsFormOpen(false);
     };
 
     const edit = (product) => {
-        setFormData({ 
-            name: product.name, 
-            priceA: product.priceA || product.price || '', 
-            priceB: product.priceB || '', 
-            priceC: product.priceC || '', 
-            unit: product.unit || 'Pieza', 
+        setFormData({
+            name: product.name,
+            priceA: product.priceA || product.price || '',
+            priceB: product.priceB || '',
+            priceC: product.priceC || '',
+            unit: product.unit || 'Pieza',
             code: product.code || '',
-            stock: product.stock || 0
+            stock: product.stock || 0,
+            orden: product.orden ?? ''
         });
         setEditId(product.id);
         setIsFormOpen(true);
@@ -67,13 +69,17 @@ export default function Products() {
                                     <input required type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900/50 border-2 border-transparent focus:border-primary/20 rounded-2xl p-4 text-slate-800 dark:text-white font-bold outline-none text-lg transition-all" placeholder="Nombre completo" />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-3 gap-4">
                                     <input type="text" value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900/50 border-2 border-transparent focus:border-primary/20 rounded-2xl p-4 text-slate-800 dark:text-white font-bold outline-none" placeholder="Código" />
                                     <select value={formData.unit} onChange={e => setFormData({ ...formData, unit: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900/50 border-2 border-transparent focus:border-primary/20 rounded-2xl p-4 text-slate-800 dark:text-white font-bold outline-none appearance-none">
                                         <option>Pieza</option>
                                         <option>Kg</option>
                                         <option>Gramo</option>
                                     </select>
+                                    <div className="relative">
+                                        <input type="number" min="1" value={formData.orden} onChange={e => setFormData({ ...formData, orden: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900/50 border-2 border-transparent focus:border-primary/20 rounded-2xl p-4 text-slate-800 dark:text-white font-bold outline-none" placeholder="Orden" />
+                                        <span className="absolute top-1 right-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Orden</span>
+                                    </div>
                                 </div>
 
                                 <div>
@@ -136,7 +142,7 @@ export default function Products() {
                             {editId && (
                                 <button 
                                     type="button" 
-                                    onClick={() => { if(window.confirm('¿Eliminar producto permanentemente?')) { deleteProduct(editId); resetForm(); } }} 
+                                    onClick={() => showConfirm({ message: '¿Eliminar este producto permanentemente?', confirmText: 'Eliminar', danger: true, onConfirm: () => { deleteProduct(editId); resetForm(); } })} 
                                     className="p-5 text-red-500 bg-white border border-red-100 rounded-[2rem] font-black uppercase text-[10px] tracking-widest hover:bg-red-50 transition-all flex items-center justify-center gap-2"
                                 >
                                     <Trash2 size={18} /> Eliminar
@@ -157,7 +163,7 @@ export default function Products() {
                     <div className="flex flex-col gap-3 mt-2">
                         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{products.length} Registrados</p>
                         <button
-                            onClick={() => { if(window.confirm('¿Poner TODOS los stocks en 0?')) resetAllStock(); }}
+                            onClick={() => showConfirm({ message: '¿Poner TODOS los stocks en cero?', confirmText: 'Resetear', danger: true, onConfirm: () => resetAllStock() })}
                             className="w-fit bg-red-50 text-red-600 px-3 py-1.5 rounded-xl border border-red-100 font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-sm"
                         >
                             Stock 0
@@ -165,7 +171,7 @@ export default function Products() {
                     </div>
                 </div>
                 <button
-                    onClick={() => { setEditId(null); setFormData({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '', stock: '' }); setIsFormOpen(true); }}
+                    onClick={() => { setEditId(null); setFormData({ name: '', priceA: '', priceB: '', priceC: '', unit: 'Pieza', code: '', stock: '', orden: '' }); setIsFormOpen(true); }}
                     className="bg-primary text-white p-4 rounded-3xl shadow-xl shadow-primary/20 active:scale-90 transition-all shrink-0"
                 >
                     <Plus size={24} />

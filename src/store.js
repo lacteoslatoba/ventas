@@ -87,13 +87,32 @@ export const useStore = create(
                 showSubtitle: true,
                 subtotalAlignment: 'right',
                 subtotalTotalSpacing: 0,
+                showExtraLine1: true,
+                showExtraLine2: true,
                 showFooterLine1: true,
                 showFooterLine2: true,
+                footerFontSize: 9,
+                footerBold: false,
+                totalToFooterSpacing: 0,
                 itemsSectionSpacing: 0,
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));
                 return get().syncToSupabase();
+            },
+
+            // Diálogo de confirmación global
+            confirmDialog: null,
+            showConfirm: ({ message, onConfirm, confirmText = 'Confirmar', danger = false }) => {
+                set({ confirmDialog: { message, onConfirm, confirmText, danger } });
+            },
+            hideConfirm: () => set({ confirmDialog: null }),
+
+            // Toast global
+            toast: null,
+            showToast: (msg, type = 'success') => {
+                set({ toast: { msg, type } });
+                setTimeout(() => set({ toast: null }), 3000);
             },
 
             updateCart: (update) => {
@@ -120,7 +139,11 @@ export const useStore = create(
                 // Usuarios de la base de datos
                 const user = state.users.find(u => (u.name || '').trim().toLowerCase() === cleanUsername && u.pin === cleanPassword);
                 if (user) {
-                    set({ currentUser: { ...user, role: 'repartidor' } });
+                    set({ currentUser: {
+                        ...user,
+                        priceList: user.priceList || user.pricelist || 'A',
+                        role: 'repartidor'
+                    }});
                     return true;
                 }
                 return false;
@@ -200,7 +223,11 @@ export const useStore = create(
                             printCopy: 'doubleCopy'
                         };
 
+                        // Campos que siempre deben ser true — no guardar en Supabase para no contaminar
+                        const alwaysTrueFields = new Set(['showFooterLine1', 'showFooterLine2']);
+
                         Object.keys(payload).forEach(key => {
+                            if (alwaysTrueFields.has(key)) return; // omitir — se restauran como true al cargar
                             const dbCol = legacyMap[key] || key;
                             if (availableCols.includes(dbCol)) {
                                 finalPayload[dbCol] = payload[key];
@@ -238,23 +265,57 @@ export const useStore = create(
                     const freshData = {};
                     const cloudColumns = {};
 
+                    // Mapea columnas que PostgreSQL devuelve en minúsculas a camelCase
+                    const normalizeRow = (tableName, item) => {
+                        const n = { ...item };
+                        if (tableName === 'products') {
+                            if (n.pricea !== undefined && n.priceA === undefined) n.priceA = n.pricea;
+                            if (n.priceb !== undefined && n.priceB === undefined) n.priceB = n.priceb;
+                            if (n.pricec !== undefined && n.priceC === undefined) n.priceC = n.pricec;
+                        }
+                        if (tableName === 'users') {
+                            if (n.pricelist !== undefined && n.priceList === undefined) n.priceList = n.pricelist;
+                            if (n.lugar1activo !== undefined && n.lugar1Activo === undefined) n.lugar1activo = n.lugar1activo;
+                            if (n.lugar2activo !== undefined && n.lugar2Activo === undefined) n.lugar2activo = n.lugar2activo;
+                        }
+                        return n;
+                    };
+
                     for (const tableName of tablesToPull) {
                         const { data, error } = await supabase.from(tableName).select('*');
                         if (!error && data) {
-                            freshData[tableName] = data.map(item => ({ ...item, synced: true }));
+                            freshData[tableName] = data.map(item => ({ ...normalizeRow(tableName, item), synced: true }));
                             if (data.length > 0) cloudColumns[tableName] = Object.keys(data[0]);
                         }
                     }
 
-                    set((state) => ({
-                        ...state,
-                        products: mergeStateHelper(state.products, freshData['products']),
-                        users: mergeStateHelper(state.users, freshData['users']),
-                        clients: mergeStateHelper(state.clients, freshData['clients']),
-                        sales: mergeStateHelper(state.sales, freshData['sales']),
-                        inventory: mergeStateHelper(state.inventory, freshData['inventory']),
-                        cloudColumns: { ...state.cloudColumns, ...cloudColumns }
-                    }));
+                    set((state) => {
+                        const mergedUsers = mergeStateHelper(state.users, freshData['users']);
+
+                        // Refrescar currentUser si es repartidor para que tenga priceList actualizado
+                        let refreshedUser = state.currentUser;
+                        if (state.currentUser && state.currentUser.role !== 'admin') {
+                            const updated = mergedUsers.find(u => u.id === state.currentUser.id);
+                            if (updated) {
+                                refreshedUser = {
+                                    ...updated,
+                                    priceList: updated.priceList || updated.pricelist || 'A',
+                                    role: 'repartidor'
+                                };
+                            }
+                        }
+
+                        return {
+                            ...state,
+                            products: mergeStateHelper(state.products, freshData['products']),
+                            users: mergedUsers,
+                            clients: mergeStateHelper(state.clients, freshData['clients']),
+                            sales: mergeStateHelper(state.sales, freshData['sales']),
+                            inventory: mergeStateHelper(state.inventory, freshData['inventory']),
+                            cloudColumns: { ...state.cloudColumns, ...cloudColumns },
+                            currentUser: refreshedUser,
+                        };
+                    });
 
                     const { data: configData, error: configError } = await supabase.from('ticket_config').select('*').eq('id', 'main').single();
                     if (!configError && configData) {
@@ -286,6 +347,12 @@ export const useStore = create(
                                         cleanData[key] = mappedConfig[key];
                                     }
                                 });
+
+                                // Siempre mostrar líneas de pie de página (nunca dejar que
+                                // Supabase deshabilite la impresión de "Gracias por su compra")
+                                cleanData.showFooterLine1 = true;
+                                cleanData.showFooterLine2 = true;
+                                console.log('[DEBUG Supabase] showFooterLine1 del servidor:', mappedConfig.showFooterLine1, '→ forzado a true');
 
                                 return { 
                                     ticketConfig: { ...s.ticketConfig, ...cleanData, synced: true },
@@ -449,10 +516,37 @@ export const useStore = create(
                     }
                 }
             },
+
+            clearAllSales: async () => {
+                set({ sales: [] });
+                const state = get();
+                if (state.isOnline && supabase) {
+                    try {
+                        await supabase.from('sales').delete().neq('id', 'placeholder');
+                    } catch (error) {
+                        console.error('Error vaciando ventas en la nube:', error);
+                    }
+                }
+            },
         }),
         {
             name: 'ventas-quesos-storage',
-            version: 2,
+            version: 3,
+            migrate: (persistedState, version) => {
+                if (version <= 2) {
+                    // Restablecer campos booleanos de pie de página que pudieron quedar en false por error
+                    return {
+                        ...persistedState,
+                        ticketConfig: {
+                            ...persistedState.ticketConfig,
+                            showFooterLine1: true,
+                            showFooterLine2: persistedState.ticketConfig?.showFooterLine2 ?? true,
+                            synced: false, // Forzar re-sincronización para actualizar Supabase con valores corregidos
+                        }
+                    };
+                }
+                return persistedState;
+            }
         }
     )
 );

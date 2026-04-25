@@ -84,7 +84,7 @@ function Section({ title, icon: Icon, children, onSave, saved }) {
 
 // ─── Componente Principal ─────────────────────────────────────────────────────
 export default function TicketConfig() {
-    const { ticketConfig, updateTicketConfig } = useStore();
+    const { ticketConfig, updateTicketConfig, showToast } = useStore();
     const [form, setForm] = useState(ticketConfig);
     const [saved, setSaved] = useState(false);
     const [showPreview, setShowPreview] = useState(true);
@@ -126,7 +126,7 @@ export default function TicketConfig() {
             setTimeout(() => setSaved(false), 3000);
         } catch (error) {
             console.error('Error al guardar:', error);
-            alert('Error al sincronizar con la base de datos. Se guardó localmente.');
+            showToast('Se guardó localmente (sin conexión)', 'warning');
         } finally {
             setIsSaving(false);
         }
@@ -823,7 +823,7 @@ export default function TicketConfig() {
                                 )}
                                     <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2">
                                         <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
-                                            Espacio antes de Despedida
+                                            Avance de papel al final (líneas)
                                         </label>
                                         <div className="flex items-center gap-4">
                                             <button 
@@ -889,6 +889,63 @@ export default function TicketConfig() {
                                 </div>
                             </div>
                         </div>
+                        {/* Espacio Total → Despedida */}
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2">
+                            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
+                                Espacio entre Total y Despedida
+                            </label>
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => update('totalToFooterSpacing')(Math.max(0, (form.totalToFooterSpacing || 0) - 1))}
+                                    className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                >
+                                    <Minus size={18} />
+                                </button>
+                                <div className="flex-1 text-center bg-white py-2 rounded-xl border border-slate-100 font-black text-primary">
+                                    {form.totalToFooterSpacing || 0}
+                                </div>
+                                <button
+                                    onClick={() => update('totalToFooterSpacing')(Math.min(20, (form.totalToFooterSpacing || 0) + 1))}
+                                    className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all shadow-sm"
+                                >
+                                    <Plus size={18} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Estilo del mensaje de despedida */}
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2 space-y-3">
+                            <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">
+                                Estilo del Mensaje de Despedida
+                            </label>
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs font-bold text-slate-500 w-20">Tamaño</span>
+                                <div className="flex items-center gap-2 flex-1">
+                                    <button
+                                        onClick={() => update('footerFontSize')(Math.max(7, (form.footerFontSize || 9) - 1))}
+                                        className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+                                    >
+                                        <Minus size={14} />
+                                    </button>
+                                    <div className="flex-1 bg-white py-1 rounded-lg border border-slate-100 text-xs font-black text-primary text-center">
+                                        {form.footerFontSize || 9}px
+                                    </div>
+                                    <button
+                                        onClick={() => update('footerFontSize')(Math.min(18, (form.footerFontSize || 9) + 1))}
+                                        className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+                                    >
+                                        <Plus size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                            <Toggle
+                                id="footerBold"
+                                label="Negrita en despedida"
+                                checked={form.footerBold || false}
+                                onChange={update('footerBold')}
+                            />
+                        </div>
+
                         <div className="pt-4 space-y-3 border-t border-slate-100 mt-4">
                             <Toggle
                                 id="showSignature"
@@ -934,28 +991,47 @@ export default function TicketConfig() {
                     </Section>
                     
                     {/* Botón único de guardado al final */}
-                    <div className="pt-4 pb-8">
+                    <div className="pt-6 pb-8">
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className={`w-full py-5 rounded-[2rem] font-black uppercase tracking-widest transition-all active:scale-[0.98] border-2 shadow-sm flex items-center justify-center gap-3 ${
-                                isSaving
-                                ? 'bg-slate-100 border-slate-300 text-slate-400 cursor-not-allowed'
-                                : saved 
-                                ? 'bg-white border-emerald-500 text-emerald-500 shadow-emerald-500/10' 
-                                : 'bg-white border-primary text-primary hover:bg-blue-50 shadow-blue-500/10'
+                            className={`w-full relative overflow-hidden rounded-3xl transition-all duration-300 active:scale-[0.97] disabled:cursor-not-allowed ${
+                                saved
+                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-xl shadow-emerald-500/30'
+                                    : isSaving
+                                        ? 'bg-slate-200'
+                                        : 'bg-gradient-to-r from-primary to-blue-500 shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 hover:from-blue-600 hover:to-primary'
                             }`}
                         >
-                            {isSaving ? (
-                                <><RefreshCw size={22} className="animate-spin" /> SINCRONIZANDO...</>
-                            ) : saved ? (
-                                <><CheckCheck size={22} /> ¡CAMBIOS GUARDADOS EN LA NUBE!</>
-                            ) : (
-                                <><Save size={22} /> GUARDAR CONFIGURACIÓN GLOBAL</>
+                            {/* Shimmer effect cuando no está guardado */}
+                            {!isSaving && !saved && (
+                                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                             )}
+                            <div className="relative flex items-center justify-center gap-3 py-5 px-6">
+                                {isSaving ? (
+                                    <>
+                                        <RefreshCw size={20} className="animate-spin text-slate-400" />
+                                        <span className="font-black text-sm uppercase tracking-widest text-slate-400">Sincronizando...</span>
+                                    </>
+                                ) : saved ? (
+                                    <>
+                                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                                            <CheckCheck size={18} className="text-white" />
+                                        </div>
+                                        <span className="font-black text-sm uppercase tracking-widest text-white">¡Guardado en la nube!</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
+                                            <Save size={18} className="text-white" />
+                                        </div>
+                                        <span className="font-black text-sm uppercase tracking-widest text-white">Guardar Configuración</span>
+                                    </>
+                                )}
+                            </div>
                         </button>
                         <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-4">
-                            Esta configuración se aplicará a todos los repartidores y dispositivos
+                            Se aplica a todos los repartidores y dispositivos
                         </p>
                     </div>
                 </div>

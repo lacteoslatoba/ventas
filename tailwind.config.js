@@ -42,7 +42,16 @@ export default {
           light: '#f6f6f8',
           dark: '#101622',
         }
-      }
+      },
+      keyframes: {
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(200%)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 2.5s infinite',
+      },
     },
   },
   plugins: [],

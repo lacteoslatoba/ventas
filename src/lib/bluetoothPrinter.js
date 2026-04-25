@@ -157,8 +157,22 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         subtotalTotalSpacing = 0,
         showFooterLine1 = true,
         showFooterLine2 = true,
+        footerFontSize = 9,
+        footerBold = false,
+        totalToFooterSpacing = 0,
         itemsSectionSpacing = 0,
     } = config;
+
+    console.log('[DEBUG IMPRESORA] Config de pie de página:', {
+        showFooterLine1,
+        showFooterLine2,
+        footerLine1,
+        footerLine2,
+        ticketTemplate,
+        showCashAndChange,
+        showSignature,
+        raw_showFooterLine1: config.showFooterLine1,
+    });
 
     const chunks = [];
     const add = (...parts) => chunks.push(toBytes(...parts));
@@ -241,8 +255,6 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         const dStr = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
         const tStr = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
         
-        // Aplicar fuente B si el tamaño es muy pequeño
-        if (metadataSize < 9) add(CMD.FONT_B);
         if (metadataBold) add(CMD.BOLD_ON);
 
         const labelFecha = showLabels ? 'FECHA' : '';
@@ -251,7 +263,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
 
         const tId = `#${(ticket.id || '').toUpperCase().slice(-6)}`;
         add(formatMetaLine(showLabels ? 'Ticket' : '', tId));
-        
+
         if (showCustomer) {
             const cName = (client?.name || 'GENERAL').slice(0, 15);
             add(formatMetaLine(showLabels ? 'Cliente' : '', cName));
@@ -262,7 +274,6 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         }
 
         if (metadataBold) add(CMD.BOLD_OFF);
-        if (metadataSize < 9) add(CMD.FONT_A); // Volver a fuente normal
 
         if (showSeparatorItems) add(SEP);
 
@@ -333,18 +344,26 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
             add(SEP);
         }
         
-        add('\r\n', CMD.ALIGN_CENTER);
-        
-        if (showFooterLine1 && footerLine1) {
-            add(footerLine1.toUpperCase() + '\r\n');
-        }
-        if (showFooterLine2 && footerLine2) {
-            add(footerLine2.toUpperCase() + '\r\n');
-        }
+        // Espacio entre TOTAL y mensaje de despedida
+        const footerExtraLines = totalToFooterSpacing > 10 ? 2 : totalToFooterSpacing > 0 ? 1 : 0;
+        if (footerExtraLines > 0) add('\r\n'.repeat(footerExtraLines));
+        add(CMD.ALIGN_CENTER);
+
+        if (footerBold) add(CMD.BOLD_ON);
+        if (footerFontSize > 12) add(CMD.DOUBLE_SIZE);
+
+        const f1 = footerLine1 || '¡Gracias por su compra!';
+        const f2 = footerLine2 || '';
+        if (showFooterLine1) add(f1.toUpperCase() + '\r\n');
+        if (showFooterLine2 && f2) add(f2.toUpperCase() + '\r\n');
+
+        if (footerFontSize > 12) add(CMD.NORMAL_SIZE);
+        if (footerBold) add(CMD.BOLD_OFF);
+
         if (showSignature) add('\r\nFIRMA: __________________\r\n');
-        
-        // Mucho más avance de papel para que salga el pie de página
-        add('\r\n'.repeat(footerSpacing > 0 ? footerSpacing : 6), [ESC, 0x69]); 
+
+        // footerSpacing = líneas de avance de papel al final
+        add('\r\n'.repeat(footerSpacing > 0 ? footerSpacing : 6), [ESC, 0x69]);
     } else {
         // Estándar muy robusto
         add(CMD.INIT);
@@ -369,11 +388,14 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
             if (config.businessNameSize > 16) add(CMD.NORMAL_SIZE);
             if (businessNameBold) add(CMD.BOLD_OFF);
         }
-        
+
+        if (showSubtitle && subtitle) add(subtitle.toUpperCase() + '\r\n');
+        if (showAddress && address) add(address.toUpperCase() + '\r\n');
+        if (showPhone && phone) add(`TEL: ${phone}\r\n`);
+
         if (showSeparatorHeader) add(SEP);
         add(CMD.ALIGN_LEFT);
 
-        if (metadataSize < 9) add(CMD.FONT_B);
         if (metadataBold) add(CMD.BOLD_ON);
 
         const dateObj = new Date(ticket.date || Date.now());
@@ -386,9 +408,8 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
 
         if (showSeller) add(formatMetaLine(showLabels ? 'Repartidor' : '', user?.name || 'Vendedor'));
         if (showCustomer) add(formatMetaLine(showLabels ? 'Cliente' : '', client?.name || 'General'));
-        
+
         if (metadataBold) add(CMD.BOLD_OFF);
-        if (metadataSize < 9) add(CMD.FONT_A);
         
         if (showSeparatorItems) add(SEP);
         
@@ -453,10 +474,23 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         
         if (showSeparatorFooter) add(SEP);
 
-        if (showFooterLine1 && footerLine1) add(footerLine1.toUpperCase() + '\r\n');
-        if (showFooterLine2 && footerLine2) add(footerLine2.toUpperCase() + '\r\n');
-        
-        add('\r\n\r\n\r\n\r\n\r\n\r\n', [ESC, 0x69]);
+        // Espacio entre TOTAL y mensaje de despedida
+        const footerExtraLinesStd = totalToFooterSpacing > 10 ? 2 : totalToFooterSpacing > 0 ? 1 : 0;
+        if (footerExtraLinesStd > 0) add('\r\n'.repeat(footerExtraLinesStd));
+
+        if (footerBold) add(CMD.BOLD_ON);
+        if (footerFontSize > 12) add(CMD.DOUBLE_SIZE);
+
+        const f1Std = footerLine1 || '¡Gracias por su compra!';
+        const f2Std = footerLine2 || '';
+        if (showFooterLine1) add(f1Std.toUpperCase() + '\r\n');
+        if (showFooterLine2 && f2Std) add(f2Std.toUpperCase() + '\r\n');
+
+        if (footerFontSize > 12) add(CMD.NORMAL_SIZE);
+        if (footerBold) add(CMD.BOLD_OFF);
+
+        // footerSpacing = líneas de avance de papel al final
+        add('\r\n'.repeat(footerSpacing > 0 ? footerSpacing : 6), [ESC, 0x69]);
     }
 
     const totalLen = chunks.reduce((n, c) => n + c.length, 0);

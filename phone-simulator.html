@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Simulador Android — Ventas La Toba</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: radial-gradient(ellipse at 60% 20%, #1e3a5f 0%, #0f172a 60%, #020617 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, sans-serif;
+    overflow: auto;
+    padding: 40px 20px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 80%, rgba(99,102,241,.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(251,191,36,.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* ── ESCENA ── */
+  .scene {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── LABEL LATERAL ── */
+  .label {
+    color: rgba(255,255,255,.35);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    user-select: none;
+  }
+
+  /* ── TELÉFONO ── */
+  .phone-wrap {
+    position: relative;
+    filter: drop-shadow(0 40px 80px rgba(0,0,0,.7)) drop-shadow(0 0 1px rgba(255,255,255,.08));
+    transform-origin: center center;
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+  }
+
+  .phone {
+    position: relative;
+    width: 320px;
+    height: 680px;
+    background: linear-gradient(160deg, #1c1c1e 0%, #111 60%, #0a0a0a 100%);
+    border-radius: 48px;
+    padding: 10px;
+    border: 1.5px solid rgba(255,255,255,.12);
+    overflow: visible;
+    transition: width .25s, height .25s, border-radius .25s;
+  }
+
+  .phone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 40%, transparent 60%, rgba(255,255,255,.04) 100%);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Botón power */
+  .btn-power {
+    position: absolute;
+    right: -3px;
+    top: 130px;
+    width: 4px;
+    height: 60px;
+    background: linear-gradient(to bottom, #2a2a2e, #1a1a1c);
+    border-radius: 0 3px 3px 0;
+    border: 1px solid rgba(255,255,255,.08);
+    border-left: none;
+  }
+
+  .btn-vol-up {
+    position: absolute;
+    left: -3px;
+    top: 110px;
+    width: 4px;
+    height: 44px;
+    background: linear-gradient(to bottom, #2a2a2e, #1a1a1c);
+    border-radius: 3px 0 0 3px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-right: none;
+  }
+  .btn-vol-down {
+    position: absolute;
+    left: -3px;
+    top: 164px;
+    width: 4px;
+    height: 44px;
+    background: linear-gradient(to bottom, #2a2a2e, #1a1a1c);
+    border-radius: 3px 0 0 3px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-right: none;
+  }
+
+  /* Pantalla */
+  .screen {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Punch-hole cámara */
+  .punch-hole {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 12px;
+    background: #000;
+    border-radius: 50%;
+    z-index: 20;
+    box-shadow: 0 0 0 1.5px #1c1c1c;
+  }
+  .punch-hole::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 5px; height: 5px;
+    background: radial-gradient(circle at 30% 30%, #3a3a40, #111);
+    border-radius: 50%;
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 36px;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+    z-index: 15;
+    position: relative;
+  }
+  .status-time {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: .01em;
+  }
+  .status-icons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .status-icons svg { fill: #fff; opacity: .9; }
+  .battery-text {
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    opacity: .85;
+    margin-left: 1px;
+  }
+
+  /* Iframe */
+  .app-frame-wrap {
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    background: #fff;
+  }
+  .app-frame {
+    border: none;
+    display: block;
+    transform-origin: top left;
+    /* JS controla width, height y transform */
+  }
+
+  /* Nav bar */
+  .nav-bar {
+    height: 36px;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .nav-pill {
+    width: 100px;
+    height: 4px;
+    background: rgba(255,255,255,.3);
+    border-radius: 4px;
+  }
+
+  /* ── PANEL LATERAL ── */
+  .side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 160px;
+  }
+
+  .panel-title {
+    font-size: 10px;
+    font-weight: 800;
+    color: rgba(255,255,255,.3);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .panel-divider {
+    height: 1px;
+    background: rgba(255,255,255,.08);
+    margin: 4px 0;
+  }
+
+  .ctrl-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    color: rgba(255,255,255,.7);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .15s;
+    backdrop-filter: blur(8px);
+    flex-shrink: 0;
+  }
+  .ctrl-btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.2); }
+  .ctrl-btn:active { transform: scale(.9); }
+  .ctrl-btn.active { background: rgba(99,102,241,.3); border-color: rgba(99,102,241,.5); color: #a5b4fc; }
+
+  .ctrl-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(255,255,255,.25);
+    text-align: center;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .ctrl-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .ctrl-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  /* ── Botones de tamaño ── */
+  .size-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .size-buttons {
+    display: flex;
+    gap: 6px;
+  }
+  .size-btn {
+    flex: 1;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    color: rgba(255,255,255,.55);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .size-btn:hover { background: rgba(255,255,255,.12); color: rgba(255,255,255,.85); }
+  .size-btn.active {
+    background: rgba(99,102,241,.35);
+    border-color: rgba(99,102,241,.6);
+    color: #c7d2fe;
+  }
+
+  /* ── Zoom del contenido ── */
+  .zoom-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .zoom-buttons {
+    display: flex;
+    gap: 6px;
+  }
+  .zoom-btn {
+    flex: 1;
+    height: 32px;
+    border-radius: 9px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    color: rgba(255,255,255,.55);
+    font-size: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .zoom-btn:hover { background: rgba(255,255,255,.12); color: rgba(255,255,255,.85); }
+  .zoom-btn.active {
+    background: rgba(16,185,129,.25);
+    border-color: rgba(16,185,129,.5);
+    color: #6ee7b7;
+  }
+
+  /* URL bar */
+  .url-bar {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 12px;
+    padding: 8px 12px;
+  }
+  .url-bar label {
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(255,255,255,.3);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .url-bar input {
+    width: 100%;
+    background: none;
+    border: none;
+    outline: none;
+    color: #7dd3fc;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: monospace;
+  }
+  .url-go {
+    margin-top: 6px;
+    width: 100%;
+    padding: 6px;
+    background: rgba(99,102,241,.4);
+    border: 1px solid rgba(99,102,241,.5);
+    border-radius: 8px;
+    color: #c7d2fe;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .06em;
+  }
+  .url-go:hover { background: rgba(99,102,241,.6); }
+
+  @media (max-width: 700px) {
+    .scene { gap: 20px; flex-direction: column; }
+    .side-panel { display: none; }
+    .label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <div class="label">Lacteos La Toba · App de Ventas</div>
+
+  <!-- ── TELÉFONO ── -->
+  <div class="phone-wrap" id="phoneWrap">
+    <div class="phone" id="phone">
+      <div class="btn-power"></div>
+      <div class="btn-vol-up"></div>
+      <div class="btn-vol-down"></div>
+
+      <div class="screen">
+        <div class="punch-hole"></div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <span class="status-time" id="clock">00:00</span>
+          <div class="status-icons">
+            <svg width="16" height="13" viewBox="0 0 16 13">
+              <rect x="0" y="9" width="3" height="4" rx="1" opacity=".4"/>
+              <rect x="4.5" y="6" width="3" height="7" rx="1" opacity=".6"/>
+              <rect x="9" y="3" width="3" height="10" rx="1" opacity=".85"/>
+              <rect x="13.5" y="0" width="3" height="13" rx="1"/>
+            </svg>
+            <svg width="15" height="12" viewBox="0 0 15 12">
+              <path d="M7.5 9.5a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z"/>
+              <path d="M3.6 6.6a5.5 5.5 0 0 1 7.8 0" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              <path d="M1 4a9 9 0 0 1 13 0" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".6"/>
+            </svg>
+            <svg width="22" height="12" viewBox="0 0 22 12">
+              <rect x="0" y="1" width="19" height="10" rx="2.5" stroke="#fff" stroke-width="1.2" fill="none"/>
+              <rect x="19.5" y="3.5" width="2" height="5" rx="1" fill="#fff" opacity=".5"/>
+              <rect x="1.5" y="2.5" width="13" height="7" rx="1.5" fill="#4ade80"/>
+            </svg>
+            <span class="battery-text">72</span>
+          </div>
+        </div>
+
+        <!-- App -->
+        <div class="app-frame-wrap" id="frameWrap">
+          <iframe
+            id="appFrame"
+            class="app-frame"
+            src="https://ventas-delta.vercel.app"
+            allow="bluetooth; clipboard-write; clipboard-read"
+            title="App Ventas La Toba"
+          ></iframe>
+        </div>
+
+        <!-- Nav Bar -->
+        <div class="nav-bar">
+          <div class="nav-pill"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL DE CONTROL ── -->
+  <div class="side-panel">
+
+    <!-- Tamaño del teléfono -->
+    <p class="panel-title">Tamaño del teléfono</p>
+    <div class="size-group">
+      <div class="size-buttons">
+        <button class="size-btn" onclick="setPhoneSize('xs')">XS</button>
+        <button class="size-btn" onclick="setPhoneSize('s')">S</button>
+        <button class="size-btn active" id="sizeM" onclick="setPhoneSize('m')">M</button>
+        <button class="size-btn" onclick="setPhoneSize('l')">L</button>
+        <button class="size-btn" onclick="setPhoneSize('xl')">XL</button>
+      </div>
+      <div id="sizeLabel" style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;font-weight:700;">
+        320 × 680 px
+      </div>
+    </div>
+
+    <div class="panel-divider"></div>
+
+    <!-- Zoom del contenido -->
+    <p class="panel-title">Zoom del contenido</p>
+    <div class="zoom-group">
+      <div class="zoom-buttons">
+        <button class="zoom-btn" onclick="setZoom(0.6)">60%</button>
+        <button class="zoom-btn" onclick="setZoom(0.75)">75%</button>
+        <button class="zoom-btn active" id="zoom100" onclick="setZoom(1.0)">100%</button>
+        <button class="zoom-btn" onclick="setZoom(1.25)">125%</button>
+      </div>
+      <div id="zoomLabel" style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;font-weight:700;">
+        Sin zoom
+      </div>
+    </div>
+
+    <div class="panel-divider"></div>
+
+    <!-- Controles -->
+    <p class="panel-title">Controles</p>
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <button class="ctrl-btn" onclick="reloadApp()">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="rgba(255,255,255,.7)"/></svg>
+        </button>
+        <span class="ctrl-label">Recargar</span>
+      </div>
+
+      <div class="ctrl-group">
+        <button class="ctrl-btn" id="btnRotate" onclick="toggleRotate()">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path d="M16.48 2.52c3.27 1.55 5.61 4.72 5.97 8.48h1.5C23.44 4.84 18.29 0 12 0l-.66.03 3.81 3.81 1.33-1.32zm-6.25-.77c-.59-.59-1.54-.59-2.12 0L1.75 8.11c-.59.59-.59 1.54 0 2.12l12.02 12.02c.59.59 1.54.59 2.12 0l6.36-6.36c.59-.59.59-1.54 0-2.12L10.23 1.75zm4.6 19.44L2.81 9.17l6.36-6.36 12.02 12.02-6.36 6.36zm-7.31.29C4.25 19.94 1.91 16.76 1.55 13H.05C.56 19.16 5.71 24 12 24l.66-.03-3.81-3.81-1.33 1.32z" fill="rgba(255,255,255,.7)"/></svg>
+        </button>
+        <span class="ctrl-label">Rotar</span>
+      </div>
+
+      <div class="ctrl-group">
+        <button class="ctrl-btn" onclick="goBack()">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="rgba(255,255,255,.7)"/></svg>
+        </button>
+        <span class="ctrl-label">Atrás</span>
+      </div>
+    </div>
+
+    <div class="panel-divider"></div>
+
+    <!-- URL -->
+    <div class="url-bar">
+      <label>URL de la app</label>
+      <input type="text" id="urlInput" value="https://ventas-delta.vercel.app" />
+      <button class="url-go" onclick="loadUrl()">Cargar ↵</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── RELOJ ──
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('clock').textContent = h + ':' + m;
+  }
+  updateClock();
+  setInterval(updateClock, 10000);
+
+  // ── ESTADO ──
+  const SIZES = {
+    xs: { w: 240, h: 510, r: 36, label: '240 × 510 px' },
+    s:  { w: 280, h: 595, r: 42, label: '280 × 595 px' },
+    m:  { w: 320, h: 680, r: 48, label: '320 × 680 px' },
+    l:  { w: 390, h: 844, r: 54, label: '390 × 844 px' },
+    xl: { w: 430, h: 932, r: 58, label: '430 × 932 px' },
+  };
+
+  let currentSize = 'm';
+  let currentZoom = 1.0;
+  let rotated = false;
+
+  // ── TAMAÑO DEL TELÉFONO ──
+  function setPhoneSize(key) {
+    currentSize = key;
+    applyDimensions();
+    // Botones activos
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById('sizeLabel').textContent = SIZES[key].label;
+  }
+
+  function applyDimensions() {
+    const s = rotated
+      ? { w: SIZES[currentSize].h * 0.56, h: SIZES[currentSize].w * 0.56 }
+      : SIZES[currentSize];
+
+    const phone = document.getElementById('phone');
+    phone.style.width  = (rotated ? SIZES[currentSize].h * 0.56 : SIZES[currentSize].w) + 'px';
+    phone.style.height = (rotated ? SIZES[currentSize].w * 0.56 : SIZES[currentSize].h) + 'px';
+    phone.style.borderRadius = SIZES[currentSize].r + 'px';
+    applyZoom();
+  }
+
+  // ── ZOOM DEL CONTENIDO (iframe scale) ──
+  function setZoom(z) {
+    currentZoom = z;
+    applyZoom();
+    document.querySelectorAll('.zoom-btn').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById('zoomLabel').textContent = z === 1 ? 'Sin zoom' : (z * 100).toFixed(0) + '%';
+  }
+
+  function applyZoom() {
+    const phone    = document.getElementById('phone');
+    const frameWrap = document.getElementById('frameWrap');
+    const iframe   = document.getElementById('appFrame');
+
+    // Dimensiones reales de la pantalla del teléfono (ancho de la caja - padding*2)
+    const pw = parseFloat(phone.style.width  || SIZES[currentSize].w);
+    const ph = parseFloat(phone.style.height || SIZES[currentSize].h);
+    const innerW = pw - 20;
+    const innerH = ph - 20 - 36 - 36; // menos status bar y nav bar
+
+    // El iframe se renderiza a tamaño real / zoom, luego se escala
+    const iframeW = Math.round(innerW / currentZoom);
+    const iframeH = Math.round(innerH / currentZoom);
+
+    iframe.style.width  = iframeW + 'px';
+    iframe.style.height = iframeH + 'px';
+    iframe.style.transform = `scale(${currentZoom})`;
+    iframe.style.transformOrigin = 'top left';
+  }
+
+  // ── ROTAR ──
+  function toggleRotate() {
+    rotated = !rotated;
+    const btn = document.getElementById('btnRotate');
+    btn.classList.toggle('active', rotated);
+    applyDimensions();
+  }
+
+  // ── RECARGAR ──
+  function reloadApp() {
+    const f = document.getElementById('appFrame');
+    f.src = f.src;
+  }
+
+  // ── ATRÁS ──
+  function goBack() {
+    try { document.getElementById('appFrame').contentWindow.history.back(); } catch(e) {}
+  }
+
+  // ── CARGAR URL ──
+  function loadUrl() {
+    const url = document.getElementById('urlInput').value.trim();
+    if (url) document.getElementById('appFrame').src = url;
+  }
+  document.getElementById('urlInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') loadUrl();
+  });
+
+  // ── INIT ──
+  applyZoom();
+</script>
+</body>
+</html>

@@ -6,9 +6,9 @@ import { Link } from 'react-router-dom';
 import TicketPreview from '../components/TicketPreview';
 
 export default function Sales() {
-    const { 
+    const {
         products, clients, users, addSale, currentUser, ticketConfig,
-        cart, updateCart, selectedCartClient, updateSelectedCartClient 
+        cart, updateCart, selectedCartClient, updateSelectedCartClient, showToast
     } = useStore();
     const [generatedTicket, setGeneratedTicket] = useState(null);
     const [btPrinting, setBtPrinting] = useState(false);
@@ -21,6 +21,15 @@ export default function Sales() {
     const [selectedQuantity, setSelectedQuantity] = useState('');
     const [selectedPieces, setSelectedPieces] = useState('');
     const [activeField, setActiveField] = useState('qty'); // 'qty' or 'pieces'
+
+    // Lista de precios activa del usuario (soporta camelCase y lowercase de Supabase)
+    const userPriceList = currentUser?.priceList || currentUser?.pricelist || 'A';
+    const getPrecio = (p) => {
+        if (!p) return 0;
+        if (userPriceList === 'B') return Number(p.priceB || p.priceb) || Number(p.priceA || p.pricea || p.price) || 0;
+        if (userPriceList === 'C') return Number(p.priceC || p.pricec) || Number(p.priceA || p.pricea || p.price) || 0;
+        return Number(p.priceA || p.pricea || p.price) || 0;
+    };
 
     const openProductDialog = (product) => {
         setSelectedProductDialog(product);
@@ -57,23 +66,19 @@ export default function Sales() {
         const numQty = parseFloat(rawQty);
 
         if (isNaN(numQty) || numQty <= 0) {
-            return alert('Por favor, ingresa una cantidad válida');
+            showToast('Ingresa una cantidad válida', 'warning');
+            return;
         }
 
         const rawPieces = (selectedPieces || "0").toString().trim();
         const numPieces = parseInt(rawPieces) || 0;
 
         if (numPieces <= 0) {
-            return alert('Por favor, ingresa el número de piezas (Mandatorio)');
+            showToast('¡Falta el número de piezas!', 'warning');
+            return;
         }
 
-        // Obtener el precio dinámico basado en la lista del usuario
-        let productPrice = Number(selectedProductDialog.price) || 0;
-        const userPriceList = currentUser?.priceList || 'A';
-        
-        if (userPriceList === 'A') productPrice = Number(selectedProductDialog.priceA || selectedProductDialog.price) || 0;
-        else if (userPriceList === 'B') productPrice = Number(selectedProductDialog.priceB || selectedProductDialog.price) || 0;
-        else if (userPriceList === 'C') productPrice = Number(selectedProductDialog.priceC || selectedProductDialog.price) || 0;
+        const productPrice = getPrecio(selectedProductDialog);
 
         updateCart(currentCart => {
             const existing = currentCart.find(item => item.productId === selectedProductDialog.id);
@@ -112,9 +117,9 @@ export default function Sales() {
     const processSale = () => {
         const effectiveUserId = currentUser?.id;
 
-        if (!effectiveUserId) return alert('No hay usuario activo');
-        if (!selectedCartClient) return alert('Selecciona un cliente destino');
-        if (cart.length === 0) return alert('El carrito está vacío');
+        if (!effectiveUserId) { showToast('No hay usuario activo', 'error'); return; }
+        if (!selectedCartClient) { showToast('Selecciona un cliente destino', 'warning'); return; }
+        if (cart.length === 0) { showToast('El carrito está vacío', 'warning'); return; }
 
         const sale = {
             userId: effectiveUserId,
@@ -157,7 +162,7 @@ export default function Sales() {
                         config: ticketConfig,
                     });
                 } catch (err) {
-                    alert('Error al imprimir: ' + err.message);
+                    showToast('Error al imprimir: ' + err.message, 'error');
                 } finally {
                     setBtPrinting(false);
                 }
@@ -363,7 +368,7 @@ export default function Sales() {
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-                    {products.map(p => (
+                    {[...products].sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999)).map(p => (
                         <button
                             key={p.id}
                             onClick={() => openProductDialog(p)}
@@ -374,7 +379,7 @@ export default function Sales() {
 
                             <div className="flex justify-between items-end relative z-10">
                                 <div>
-                                    <p className="text-primary font-black text-lg md:text-xl">${Number(p.price).toFixed(2)}</p>
+                                    <p className="text-primary font-black text-lg md:text-xl">${getPrecio(p).toFixed(2)}</p>
                                     <span className="text-xs text-slate-400 font-medium block">/{p.unit || 'u'}</span>
                                 </div>
                                 <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white transition-colors">
@@ -495,11 +500,7 @@ export default function Sales() {
                                 <div>
                                     <h3 className="font-black text-lg text-slate-800 leading-tight">{selectedProductDialog.name}</h3>
                                     <p className="text-primary font-bold text-sm">
-                                        Precio Lista {currentUser?.priceList || 'A'}: ${
-                                            currentUser?.priceList === 'B' ? (selectedProductDialog.priceB || selectedProductDialog.price) : 
-                                            currentUser?.priceList === 'C' ? (selectedProductDialog.priceC || selectedProductDialog.price) : 
-                                            (selectedProductDialog.priceA || selectedProductDialog.price)
-                                        } / {selectedProductDialog.unit || 'u'}
+                                        Precio Lista {userPriceList}: ${getPrecio(selectedProductDialog).toFixed(2)} / {selectedProductDialog.unit || 'u'}
                                     </p>
                                 </div>
                             </div>
@@ -560,11 +561,7 @@ export default function Sales() {
                                 className="w-full bg-slate-900 text-white font-black h-16 rounded-2xl shadow-xl mt-4 active:scale-95 transition-all text-lg flex justify-center gap-3 items-center group shrink-0"
                             >
                                 <ShoppingCart size={22} className="group-hover:-rotate-12 transition-transform" />
-                                AGREGAR • <span className="text-blue-400 font-black">${((
-                                    currentUser?.priceList === 'B' ? (selectedProductDialog.priceB || selectedProductDialog.price) : 
-                                    currentUser?.priceList === 'C' ? (selectedProductDialog.priceC || selectedProductDialog.price) : 
-                                    (selectedProductDialog.priceA || selectedProductDialog.price)
-                                ) * (parseFloat(selectedQuantity) || 0)).toFixed(2)}</span>
+                                AGREGAR • <span className="text-blue-400 font-black">${(getPrecio(selectedProductDialog) * (parseFloat(selectedQuantity) || 0)).toFixed(2)}</span>
                             </button>
                         </div>
                     </div>

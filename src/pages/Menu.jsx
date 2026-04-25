@@ -8,7 +8,7 @@ import {
 
 export default function Menu() {
   const navigate = useNavigate();
-  const { currentUser, ticketConfig, logout } = useStore();
+  const { currentUser, ticketConfig, logout, showToast } = useStore();
 
   const menuItems = [
     { icon: DollarSign, label: 'Ventas', color: 'text-emerald-500', path: '/ventas' },
@@ -51,7 +51,7 @@ export default function Menu() {
                   } else if (item.path && !isPlaceholder) {
                     navigate(item.path);
                   } else {
-                    alert('Esta sección estará disponible en futuras actualizaciones.');
+                    showToast('Próximamente disponible', 'warning');
                   }
                 }}
                 className={`bg-white dark:bg-slate-800 rounded-xl p-4 flex flex-col items-start gap-4 shadow-sm border border-slate-100 dark:border-slate-700 transition-all text-left active:scale-95 ${isPlaceholder ? 'opacity-60' : 'hover:shadow-md hover:border-slate-200'}`}
