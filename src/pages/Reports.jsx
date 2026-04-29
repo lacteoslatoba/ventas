@@ -238,8 +238,8 @@ export default function Reports() {
             startY: pmY + 3,
             margin: { left: 14, right: 14 },
             body: [
-                ['💵  Efectivo',      `$${efectivoTotal.toFixed(2)}`],
-                ['🏦  Transferencia', `$${transferenciaTotal.toFixed(2)}`],
+                ['Efectivo',      `$${efectivoTotal.toFixed(2)}`],
+                ['Transferencia', `$${transferenciaTotal.toFixed(2)}`],
             ],
             foot: [['TOTAL VENTAS', `$${operatorPDFData.totalMoney.toFixed(2)}`]],
             bodyStyles: { fontSize: 9, lineColor: C_BORDER, lineWidth: 0.2 },
