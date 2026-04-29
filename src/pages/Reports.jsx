@@ -58,6 +58,7 @@ export default function Reports() {
     });
     const productTotals = Object.entries(productMap).sort((a, b) => b[1].money - a[1].money);
     const grandTotalPieces = productTotals.reduce((s, [, v]) => s + v.pieces, 0);
+    const grandTotalQty    = productTotals.reduce((s, [, v]) => s + v.qty, 0);
     const grandTotalMoney  = productTotals.reduce((s, [, v]) => s + v.money, 0);
 
     // Calendar
@@ -200,34 +201,36 @@ export default function Reports() {
                     {productTotals.length > 0 && (
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                             {/* Encabezado */}
-                            <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-4 pt-3 pb-2 border-b border-slate-100 bg-slate-50">
+                            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-1 px-3 pt-3 pb-2 border-b border-slate-100 bg-slate-50">
                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Producto</p>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center w-14">Piezas</p>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right w-20">Precio</p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center w-12">Cant.</p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center w-12">Pzas</p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right w-18">Precio</p>
                             </div>
 
                             {/* Filas */}
                             <div className="divide-y divide-slate-50">
                                 {productTotals.map(([name, { qty, pieces, money, unit }]) => (
-                                    <div key={name} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center px-4 py-2.5">
+                                    <div key={name} className="grid grid-cols-[1fr_auto_auto_auto] gap-1 items-center px-3 py-2.5">
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                                                <span className="text-[10px] font-black text-primary uppercase">{name.charAt(0)}</span>
+                                            <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                                <span className="text-[9px] font-black text-primary uppercase">{name.charAt(0)}</span>
                                             </div>
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-bold text-slate-700 truncate">{name}</p>
-                                                <p className="text-[10px] text-slate-400 font-medium">
-                                                    {qty % 1 === 0 ? qty : qty.toFixed(2)} {unit === 'Kg' ? 'kg' : 'u'}
-                                                </p>
-                                            </div>
+                                            <p className="text-xs font-bold text-slate-700 truncate">{name}</p>
                                         </div>
-                                        <div className="w-14 text-center">
+                                        <div className="w-12 text-center">
+                                            <span className="text-xs font-black text-slate-700">
+                                                {qty % 1 === 0 ? qty : qty.toFixed(2)}
+                                            </span>
+                                            <span className="text-[9px] text-slate-400 ml-0.5">{unit === 'Kg' ? 'kg' : 'u'}</span>
+                                        </div>
+                                        <div className="w-12 text-center">
                                             {pieces > 0
-                                                ? <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">{pieces}</span>
+                                                ? <span className="text-xs font-black text-blue-600">{pieces}</span>
                                                 : <span className="text-slate-300 text-xs">—</span>
                                             }
                                         </div>
-                                        <div className="w-20 text-right">
+                                        <div className="w-18 text-right">
                                             <span className="text-sm font-black text-emerald-600">${money.toFixed(2)}</span>
                                         </div>
                                     </div>
@@ -235,12 +238,17 @@ export default function Reports() {
                             </div>
 
                             {/* Fila de totales */}
-                            <div className="grid grid-cols-[1fr_auto_auto] gap-2 items-center px-4 py-3 bg-slate-800 rounded-b-2xl">
+                            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-1 items-center px-3 py-3 bg-slate-800 rounded-b-2xl">
                                 <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">TOTALES</p>
-                                <div className="w-14 text-center">
+                                <div className="w-12 text-center">
+                                    <span className="text-sm font-black text-slate-300">
+                                        {grandTotalQty % 1 === 0 ? grandTotalQty : grandTotalQty.toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="w-12 text-center">
                                     <span className="text-sm font-black text-blue-300">{grandTotalPieces}</span>
                                 </div>
-                                <div className="w-20 text-right">
+                                <div className="w-18 text-right">
                                     <span className="text-sm font-black text-white">${grandTotalMoney.toFixed(2)}</span>
                                 </div>
                             </div>
