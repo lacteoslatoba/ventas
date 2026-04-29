@@ -14,7 +14,7 @@ const DAYS_SHORT = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
 export default function Reports() {
     const { sales, users, clients, currentUser, ticketConfig, showToast, showConfirm, clearAllSales } = useStore();
     const [filterUser, setFilterUser] = useState('');
-    const [repDateFilter, setRepDateFilter] = useState('');
+    const [repDateFilter, setRepDateFilter] = useState(todayStr);
     const [selectedSale, setSelectedSale] = useState(null);
     const [btPrinting, setBtPrinting] = useState(false);
     const [showPDF, setShowPDF] = useState(false);
@@ -259,38 +259,66 @@ export default function Reports() {
                 </div>
             )}
 
-            {/* ── FILTRO FECHA + BOTÓN PDF (OPERADOR) ── */}
+            {/* ── CALENDARIO FIJO + BOTÓN PDF (OPERADOR) ── */}
             {!isAdmin && (
                 <div className="px-4 md:px-8 mb-3 space-y-2">
-                    <div className="flex gap-2">
-                        <div className="flex-1 flex items-center gap-2 bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-2.5">
-                            <span className="material-symbols-outlined text-slate-400" style={{fontSize:18}}>calendar_month</span>
-                            <input
-                                type="date"
-                                value={repDateFilter}
-                                onChange={e => setRepDateFilter(e.target.value)}
-                                className="flex-1 bg-transparent outline-none text-sm font-bold text-slate-700"
-                            />
-                            {repDateFilter && (
-                                <button onClick={() => setRepDateFilter('')} className="text-slate-400 hover:text-slate-600 active:scale-90 transition-all">
-                                    <span className="material-symbols-outlined" style={{fontSize:18}}>close</span>
-                                </button>
-                            )}
+                    {/* Calendario */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-3">
+                        <div className="flex items-center justify-between mb-2">
+                            <button onClick={prevMonth} className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center active:scale-90 transition-all">
+                                <ChevronLeft size={14} className="text-slate-500" />
+                            </button>
+                            <p className="text-xs font-black text-slate-800 capitalize">
+                                {MONTHS[calMonth.month]} {calMonth.year}
+                            </p>
+                            <button onClick={nextMonth} className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center active:scale-90 transition-all">
+                                <ChevronRight size={14} className="text-slate-500" />
+                            </button>
                         </div>
+                        <div className="grid grid-cols-7 mb-1">
+                            {DAYS_SHORT.map(d => (
+                                <div key={d} className="text-center text-[9px] font-black text-slate-300 uppercase">{d}</div>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-7 gap-y-0.5">
+                            {Array.from({ length: new Date(calMonth.year, calMonth.month, 1).getDay() }).map((_, i) => <div key={`e${i}`} />)}
+                            {Array.from({ length: new Date(calMonth.year, calMonth.month + 1, 0).getDate() }).map((_, i) => {
+                                const day = i + 1;
+                                const dateStr = `${calMonth.year}-${String(calMonth.month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                                const isSelected = dateStr === repDateFilter;
+                                const isToday    = dateStr === todayStr;
+                                const hasSales   = daysWithSales.has(dateStr);
+                                return (
+                                    <button
+                                        key={day}
+                                        onClick={() => setRepDateFilter(dateStr)}
+                                        className={`flex flex-col items-center justify-center w-full py-1.5 rounded-xl transition-all active:scale-90
+                                            ${isSelected ? 'bg-primary text-white shadow-sm shadow-primary/30'
+                                            : isToday    ? 'ring-2 ring-primary/30 text-primary font-black'
+                                            : 'hover:bg-slate-50 text-slate-700'}`}
+                                    >
+                                        <span className={`text-[12px] font-black leading-none ${isSelected ? 'text-white' : ''}`}>{day}</span>
+                                        {hasSales && <span className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/70' : 'bg-emerald-500'}`} />}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Info + PDF */}
+                    <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-black text-primary uppercase tracking-widest capitalize">
+                            {new Date(repDateFilter + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            {' · '}{sortedSales.length} {sortedSales.length === 1 ? 'venta' : 'ventas'}
+                        </p>
                         <button
                             onClick={() => setShowPDF(true)}
-                            className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white font-black text-xs px-4 rounded-2xl shadow-md shadow-red-500/25 active:scale-95 transition-all uppercase tracking-wide"
+                            className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white font-black text-xs px-4 py-2 rounded-xl shadow-md shadow-red-500/25 active:scale-95 transition-all uppercase tracking-wide"
                         >
                             <span className="material-symbols-outlined" style={{fontSize:16}}>picture_as_pdf</span>
                             PDF
                         </button>
                     </div>
-                    {repDateFilter && (
-                        <p className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">
-                            {new Date(repDateFilter + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
-                            {' · '}{sortedSales.length} {sortedSales.length === 1 ? 'venta' : 'ventas'}
-                        </p>
-                    )}
                 </div>
             )}
 
