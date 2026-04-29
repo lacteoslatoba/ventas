@@ -136,85 +136,176 @@ export default function Reports() {
         const pageWidth = doc.internal.pageSize.getWidth();
         const businessName = (ticketConfig?.businessName || 'LACTEOS LA TOBA').toUpperCase();
 
-        // Encabezado
+        // Paleta de colores clara
+        const C_HEAD_BG   = [241, 245, 249]; // slate-100
+        const C_HEAD_TEXT = [30,  41,  59];  // slate-800
+        const C_FOOT_BG   = [226, 232, 240]; // slate-200
+        const C_BORDER    = [203, 213, 225]; // slate-300
+        const C_ALT       = [248, 250, 252]; // slate-50
+        const C_RED_BG    = [254, 226, 226]; // red-100
+        const C_RED_TEXT  = [153, 27,  27];  // red-800
+
+        // ── Encabezado del documento ──────────────────────────────────────
         doc.setFontSize(14); doc.setFont('helvetica', 'bold');
         doc.text(businessName, pageWidth / 2, 20, { align: 'center' });
-
-        doc.setFontSize(12);
+        doc.setFontSize(11); doc.setFont('helvetica', 'normal');
         doc.text('Reporte de Ventas del Día', pageWidth / 2, 28, { align: 'center' });
-
-        doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
         const fechaCap = operatorPDFData.fechaLabel.charAt(0).toUpperCase() + operatorPDFData.fechaLabel.slice(1);
-        doc.text(fechaCap, pageWidth / 2, 36, { align: 'center' });
-        doc.text(`Repartidor: ${currentUser?.name || ''}`, pageWidth / 2, 42, { align: 'center' });
-        doc.text(`${operatorPDFData.ventasCount} venta${operatorPDFData.ventasCount !== 1 ? 's' : ''} registrada${operatorPDFData.ventasCount !== 1 ? 's' : ''}`, pageWidth / 2, 48, { align: 'center' });
+        doc.text(fechaCap, pageWidth / 2, 35, { align: 'center' });
+        doc.text(`Repartidor: ${currentUser?.name || ''}`, pageWidth / 2, 41, { align: 'center' });
+        doc.text(`${operatorPDFData.ventasCount} venta${operatorPDFData.ventasCount !== 1 ? 's' : ''} registrada${operatorPDFData.ventasCount !== 1 ? 's' : ''}`, pageWidth / 2, 47, { align: 'center' });
 
-        // Tabla clientes
+        // ── Filas por venta individual con método de pago ─────────────────
+        const fechaPDF  = repDateFilter || todayStr;
+        const ventasPDF = (sales || []).filter(s =>
+            s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
+        );
+
+        const saleRows = ventasPDF.map(sale => {
+            const client = clients.find(c => c.id === sale.clientId);
+            const pieces = (sale.items || []).reduce((s, it) => s + (Number(it.pieces) || 0), 0);
+            const kg     = (sale.items || [])
+                .filter(it => (it.unit || '').toLowerCase() === 'kg')
+                .reduce((s, it) => s + (Number(it.quantity) || 0), 0);
+            const pm = (sale.paymentMethod || sale.paymentmethod || 'efectivo') === 'transferencia'
+                ? 'Transferencia' : 'Efectivo';
+            return [
+                client?.name || 'General',
+                pieces > 0 ? String(pieces) : '—',
+                kg > 0 ? kg.toFixed(2) : '—',
+                `$${Number(sale.total).toFixed(2)}`,
+                pm,
+            ];
+        });
+
+        const footPieces = saleRows.reduce((s, r) => s + (r[1] === '—' ? 0 : Number(r[1])), 0);
+        const footKg     = saleRows.reduce((s, r) => s + (r[2] === '—' ? 0 : Number(r[2])), 0);
+
+        // Alineación por columna (índice → halign)
+        const COL_ALIGN = ['left', 'center', 'center', 'right', 'center'];
+        const fixAlign = (data) => {
+            data.cell.styles.halign = COL_ALIGN[data.column.index] || 'left';
+        };
+
         autoTable(doc, {
-            startY: 56,
-            margin: { left: 15, right: 15 },
-            head: [['Cliente', 'Piezas', 'Kg', 'Importe']],
-            body: operatorPDFData.clientRows.length > 0
-                ? operatorPDFData.clientRows.map(r => [
-                    r.name,
-                    r.pieces > 0 ? String(r.pieces) : '—',
-                    r.kg > 0 ? r.kg.toFixed(2) : '—',
-                    `$${r.money.toFixed(2)}`,
-                ])
-                : [['Sin ventas registradas', '', '', '']],
-            foot: [['TOTAL',
-                operatorPDFData.totalPieces > 0 ? String(operatorPDFData.totalPieces) : '—',
-                operatorPDFData.totalKg > 0 ? operatorPDFData.totalKg.toFixed(2) : '—',
+            startY: 54,
+            margin: { left: 14, right: 14 },
+            head: [['Cliente', 'Piezas', 'Kg', 'Importe', 'Forma de Pago']],
+            body: saleRows.length > 0
+                ? saleRows
+                : [['Sin ventas registradas', '', '', '', '']],
+            foot: [[
+                'TOTAL',
+                footPieces > 0 ? String(footPieces) : '—',
+                footKg     > 0 ? footKg.toFixed(2)  : '—',
                 `$${operatorPDFData.totalMoney.toFixed(2)}`,
+                '',
             ]],
-            headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold', fontSize: 9 },
-            footStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold', fontSize: 10 },
-            bodyStyles: { fontSize: 9 },
-            alternateRowStyles: { fillColor: [248, 250, 252] },
+            headStyles: { fillColor: C_HEAD_BG, textColor: C_HEAD_TEXT, fontStyle: 'bold', fontSize: 9, lineColor: C_BORDER, lineWidth: 0.3 },
+            footStyles: { fillColor: C_FOOT_BG, textColor: C_HEAD_TEXT, fontStyle: 'bold', fontSize: 9, lineColor: C_BORDER, lineWidth: 0.3 },
+            bodyStyles: { fontSize: 9, lineColor: C_BORDER, lineWidth: 0.2 },
+            alternateRowStyles: { fillColor: C_ALT },
             columnStyles: {
                 0: { cellWidth: 'auto' },
-                1: { halign: 'center', cellWidth: 22 },
-                2: { halign: 'center', cellWidth: 22 },
-                3: { halign: 'right',  cellWidth: 32 },
+                1: { cellWidth: 16 },
+                2: { cellWidth: 16 },
+                3: { cellWidth: 26 },
+                4: { cellWidth: 28 },
+            },
+            didParseCell: fixAlign,
+        });
+
+        // ── Resumen por forma de pago ─────────────────────────────────────
+        const efectivoTotal      = ventasPDF
+            .filter(s => (s.paymentMethod || s.paymentmethod || 'efectivo') !== 'transferencia')
+            .reduce((s, sale) => s + Number(sale.total), 0);
+        const transferenciaTotal = ventasPDF
+            .filter(s => (s.paymentMethod || s.paymentmethod) === 'transferencia')
+            .reduce((s, sale) => s + Number(sale.total), 0);
+
+        const pmY = doc.lastAutoTable.finalY + 8;
+        doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...C_HEAD_TEXT);
+        doc.text('Resumen por Forma de Pago', 14, pmY);
+
+        const C_GREEN_BG   = [220, 252, 231]; // emerald-100
+        const C_GREEN_TEXT = [6,   95,  70];  // emerald-900
+        const C_BLUE_BG    = [219, 234, 254]; // blue-100
+        const C_BLUE_TEXT  = [30,  64,  175]; // blue-800
+
+        autoTable(doc, {
+            startY: pmY + 3,
+            margin: { left: 14, right: 14 },
+            body: [
+                ['💵  Efectivo',      `$${efectivoTotal.toFixed(2)}`],
+                ['🏦  Transferencia', `$${transferenciaTotal.toFixed(2)}`],
+            ],
+            foot: [['TOTAL VENTAS', `$${operatorPDFData.totalMoney.toFixed(2)}`]],
+            bodyStyles: { fontSize: 9, lineColor: C_BORDER, lineWidth: 0.2 },
+            footStyles: { fillColor: C_FOOT_BG, textColor: C_HEAD_TEXT, fontStyle: 'bold', fontSize: 9, lineColor: C_BORDER, lineWidth: 0.3 },
+            alternateRowStyles: { fillColor: C_ALT },
+            columnStyles: {
+                0: { cellWidth: 'auto', halign: 'left'  },
+                1: { cellWidth: 36,     halign: 'right' },
+            },
+            didParseCell: (data) => {
+                if (data.section === 'body') {
+                    if (data.row.index === 0) {
+                        data.cell.styles.fillColor = C_GREEN_BG;
+                        data.cell.styles.textColor = C_GREEN_TEXT;
+                    } else {
+                        data.cell.styles.fillColor = C_BLUE_BG;
+                        data.cell.styles.textColor = C_BLUE_TEXT;
+                    }
+                }
+                if (data.section === 'foot') {
+                    data.cell.styles.halign = data.column.index === 1 ? 'right' : 'left';
+                }
             },
         });
 
-        // Sección de gastos
+        // ── Gastos del día ────────────────────────────────────────────────
         if (operatorPDFData.expenses.length > 0) {
             const gY = doc.lastAutoTable.finalY + 8;
-            doc.setFontSize(10); doc.setFont('helvetica', 'bold');
-            doc.text('Gastos del Día', 15, gY);
+            doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...C_RED_TEXT);
+            doc.text('Gastos del Día', 14, gY);
+            doc.setTextColor(0, 0, 0);
             autoTable(doc, {
-                startY: gY + 4,
-                margin: { left: 15, right: 15 },
+                startY: gY + 3,
+                margin: { left: 14, right: 14 },
                 head: [['Descripción', 'Monto']],
                 body: operatorPDFData.expenses.map(e => [e.description, `$${Number(e.amount).toFixed(2)}`]),
                 foot: [['Total Gastos', `$${operatorPDFData.totalExpenses.toFixed(2)}`]],
-                headStyles: { fillColor: [239, 68, 68], textColor: 255, fontStyle: 'bold', fontSize: 9 },
-                footStyles: { fillColor: [239, 68, 68], textColor: 255, fontStyle: 'bold', fontSize: 10 },
-                bodyStyles: { fontSize: 9 },
-                alternateRowStyles: { fillColor: [255, 245, 245] },
+                headStyles: { fillColor: C_RED_BG, textColor: C_RED_TEXT, fontStyle: 'bold', fontSize: 9, lineColor: [252, 165, 165], lineWidth: 0.3 },
+                footStyles: { fillColor: C_RED_BG, textColor: C_RED_TEXT, fontStyle: 'bold', fontSize: 9, lineColor: [252, 165, 165], lineWidth: 0.3 },
+                bodyStyles: { fontSize: 9, lineColor: C_BORDER, lineWidth: 0.2 },
+                alternateRowStyles: { fillColor: [255, 241, 242] },
                 columnStyles: {
-                    0: { cellWidth: 'auto' },
-                    1: { halign: 'right', cellWidth: 32 },
+                    0: { cellWidth: 'auto', halign: 'left'  },
+                    1: { cellWidth: 30,     halign: 'right' },
+                },
+                didParseCell: (data) => {
+                    if (data.section === 'foot') data.cell.styles.halign = data.column.index === 1 ? 'right' : 'left';
                 },
             });
         }
 
-        // Total neto
-        const netY = doc.lastAutoTable.finalY + 8;
-        doc.setDrawColor(30, 41, 59);
-        doc.setLineWidth(0.5);
-        doc.line(15, netY - 2, pageWidth - 15, netY - 2);
-        doc.setFontSize(12); doc.setFont('helvetica', 'bold');
-        doc.text('Total Neto del Día:', 15, netY + 4);
-        doc.setFontSize(13);
-        doc.text(`$${operatorPDFData.netTotal.toFixed(2)}`, pageWidth - 15, netY + 4, { align: 'right' });
+        // ── Total neto ────────────────────────────────────────────────────
+        const netY = doc.lastAutoTable.finalY + 10;
+        doc.setDrawColor(...C_BORDER);
+        doc.setLineWidth(0.4);
+        doc.line(14, netY - 3, pageWidth - 14, netY - 3);
+        doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...C_HEAD_TEXT);
+        doc.text('Total Neto del Día:', 14, netY + 3);
+        doc.text(`$${operatorPDFData.netTotal.toFixed(2)}`, pageWidth - 14, netY + 3, { align: 'right' });
 
-        // Pie
-        const footerY = netY + 16;
-        doc.setFontSize(9); doc.setFont('helvetica', 'italic');
-        doc.text(ticketConfig?.footerLine1 || '¡Gracias por su trabajo!', pageWidth / 2, footerY, { align: 'center' });
+        // ── Pie ───────────────────────────────────────────────────────────
+        doc.setFontSize(8); doc.setFont('helvetica', 'italic');
+        doc.setTextColor(148, 163, 184);
+        doc.text(ticketConfig?.footerLine1 || '¡Gracias por su trabajo!', pageWidth / 2, netY + 14, { align: 'center' });
 
         const fileName = `Reporte_${(currentUser?.name || 'Repartidor').replace(/\s+/g, '_')}_${repDateFilter || todayStr}.pdf`;
         doc.save(fileName);
