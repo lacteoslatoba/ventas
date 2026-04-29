@@ -50,12 +50,15 @@ export default function Reports() {
     daySales.forEach(sale => {
         (sale?.items || []).forEach(it => {
             if (!it.name) return;
-            if (!productMap[it.name]) productMap[it.name] = { qty: 0, pieces: 0, unit: it.unit || 'u' };
+            if (!productMap[it.name]) productMap[it.name] = { qty: 0, pieces: 0, money: 0, unit: it.unit || 'u' };
             productMap[it.name].qty    += (Number(it.quantity) || 0);
             productMap[it.name].pieces += (Number(it.pieces)   || 0);
+            productMap[it.name].money  += (Number(it.quantity) || 0) * (Number(it.price) || 0);
         });
     });
-    const productTotals = Object.entries(productMap).sort((a, b) => b[1].qty - a[1].qty);
+    const productTotals = Object.entries(productMap).sort((a, b) => b[1].money - a[1].money);
+    const grandTotalPieces = productTotals.reduce((s, [, v]) => s + v.pieces, 0);
+    const grandTotalMoney  = productTotals.reduce((s, [, v]) => s + v.money, 0);
 
     // Calendar
     const daysInMonth   = new Date(calMonth.year, calMonth.month + 1, 0).getDate();
@@ -196,29 +199,50 @@ export default function Reports() {
                     {/* ── DESGLOSE POR PRODUCTO ── */}
                     {productTotals.length > 0 && (
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                            <div className="px-4 pt-3 pb-2 border-b border-slate-50">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Productos vendidos</p>
+                            {/* Encabezado */}
+                            <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-4 pt-3 pb-2 border-b border-slate-100 bg-slate-50">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Producto</p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center w-14">Piezas</p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right w-20">Precio</p>
                             </div>
+
+                            {/* Filas */}
                             <div className="divide-y divide-slate-50">
-                                {productTotals.map(([name, { qty, pieces, unit }]) => (
-                                    <div key={name} className="flex items-center px-4 py-2.5 gap-3">
-                                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                                            <span className="text-[10px] font-black text-primary uppercase">{name.charAt(0)}</span>
+                                {productTotals.map(([name, { qty, pieces, money, unit }]) => (
+                                    <div key={name} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center px-4 py-2.5">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                                <span className="text-[10px] font-black text-primary uppercase">{name.charAt(0)}</span>
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-bold text-slate-700 truncate">{name}</p>
+                                                <p className="text-[10px] text-slate-400 font-medium">
+                                                    {qty % 1 === 0 ? qty : qty.toFixed(2)} {unit === 'Kg' ? 'kg' : 'u'}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <p className="flex-1 text-sm font-bold text-slate-700 truncate">{name}</p>
-                                        <div className="text-right shrink-0 flex items-center gap-2">
-                                            <span className="text-sm font-black text-slate-800">
-                                                {qty % 1 === 0 ? qty : qty.toFixed(2)}
-                                                <span className="text-[10px] font-bold text-slate-400 ml-0.5">{unit === 'Kg' ? 'kg' : 'u'}</span>
-                                            </span>
-                                            {pieces > 0 && (
-                                                <span className="text-xs font-black text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-lg">
-                                                    {pieces} pzas
-                                                </span>
-                                            )}
+                                        <div className="w-14 text-center">
+                                            {pieces > 0
+                                                ? <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">{pieces}</span>
+                                                : <span className="text-slate-300 text-xs">—</span>
+                                            }
+                                        </div>
+                                        <div className="w-20 text-right">
+                                            <span className="text-sm font-black text-emerald-600">${money.toFixed(2)}</span>
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+
+                            {/* Fila de totales */}
+                            <div className="grid grid-cols-[1fr_auto_auto] gap-2 items-center px-4 py-3 bg-slate-800 rounded-b-2xl">
+                                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">TOTALES</p>
+                                <div className="w-14 text-center">
+                                    <span className="text-sm font-black text-blue-300">{grandTotalPieces}</span>
+                                </div>
+                                <div className="w-20 text-right">
+                                    <span className="text-sm font-black text-white">${grandTotalMoney.toFixed(2)}</span>
+                                </div>
                             </div>
                         </div>
                     )}
