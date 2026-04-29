@@ -85,26 +85,32 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
   const isHome = location.pathname === '/' || (!isAdmin && location.pathname === '/ventas');
   const [showSettings, setShowSettings] = React.useState(false);
   const [showDriverMenu, setShowDriverMenu] = React.useState(false);
+  const [modal, setModal] = React.useState(null); // { title, message, onConfirm }
+  const { showToast } = useStore();
+
+  const openModal = (title, message, onConfirm) =>
+    setModal({ title, message, onConfirm });
+  const closeModal = () => setModal(null);
+
+  const doRefresh = () => {
+    if ('caches' in window) {
+      caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))));
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs =>
+        Promise.all(regs.map(r => r.unregister())).then(() => window.location.reload())
+      );
+    } else {
+      window.location.reload();
+    }
+  };
 
   const handleRefresh = () => {
     if (!navigator.onLine) {
-      alert('Debes estar conectado a Internet para buscar actualizaciones.');
+      showToast('Conéctate a Internet para actualizar', 'error');
       return;
     }
-    if (confirm('¿Deseas buscar actualizaciones y refrescar la aplicación?')) {
-      if ('caches' in window) {
-        caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name))));
-      }
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          Promise.all(registrations.map((reg) => reg.unregister())).then(() => {
-            window.location.reload();
-          });
-        });
-      } else {
-        window.location.reload();
-      }
-    }
+    openModal('Actualizar App', '¿Buscar actualizaciones y refrescar la aplicación?', doRefresh);
   };
 
   return (
@@ -178,12 +184,8 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
 
       {/* Derecha: Ajustes y Salir */}
       <div className="flex items-center gap-1 relative justify-end">
-        <button 
-          onClick={() => {
-            if (window.confirm('¿Deseas cerrar sesión?')) {
-              useStore.getState().logout();
-            }
-          }}
+        <button
+          onClick={() => openModal('Cerrar sesión', '¿Seguro que deseas salir?', () => useStore.getState().logout())}
           className="w-10 h-10 rounded-xl flex items-center justify-center text-red-500 active:scale-95 transition-all"
         >
           <LogOut size={22} />
@@ -235,6 +237,30 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
           </>
         )}
       </div>
+
+      {/* Modal de confirmación personalizado */}
+      {modal && (
+        <div className="fixed inset-0 z-[200] flex items-end justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-4 duration-200">
+            <h3 className="text-base font-black text-slate-800 dark:text-slate-100 mb-1">{modal.title}</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{modal.message}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={closeModal}
+                className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-sm active:scale-95 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { closeModal(); modal.onConfirm(); }}
+                className="flex-1 py-3 rounded-2xl bg-primary text-white font-black text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
