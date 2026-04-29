@@ -29,6 +29,7 @@ export const useStore = create(
             users: [],
             clients: [],
             sales: [],
+            expenses: [],
             cart: [],
             selectedCartClient: '', // Cambiado de selectedClient para evitar confusión
             cloudColumns: {}, // Historial de columnas conocidas en Supabase
@@ -95,6 +96,7 @@ export const useStore = create(
                 footerBold: false,
                 totalToFooterSpacing: 0,
                 itemsSectionSpacing: 0,
+                showPaymentMethod: true,
             },
             updateTicketConfig: (config) => {
                 set((state) => ({ ticketConfig: { ...state.ticketConfig, ...config, synced: false } }));
@@ -148,7 +150,7 @@ export const useStore = create(
                 }
                 return false;
             },
-            logout: () => set({ currentUser: null }),
+            logout: () => set({ currentUser: null, cart: [], selectedCartClient: '' }),
 
             // Estado de Red / Nube
             isOnline: navigator.onLine,
@@ -158,14 +160,16 @@ export const useStore = create(
             setOnlineStatus: (status) => set({ isOnline: status }),
 
             // Motor de Sincronización Automática (Subida)
-            syncToSupabase: async () => {
+            syncToSupabase: async (notify = false) => {
                 const state = get();
                 if (!state.isOnline || !supabase) return;
 
                 set({ isSyncing: true });
 
                 try {
-                    const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales'];
+                    const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses'];
+                    const totalPending = tablesToSync.reduce((acc, t) => acc + (state[t]?.filter(i => !i.synced).length || 0), 0)
+                        + (state.ticketConfig && !state.ticketConfig.synced ? 1 : 0);
                     const successTables = [];
 
                     for (const tableName of tablesToSync) {
@@ -181,6 +185,19 @@ export const useStore = create(
                                 knownCols.forEach(col => {
                                     if (item[col] !== undefined) filtered[col] = item[col];
                                 });
+
+                                // Mapear campos camelCase locales a columnas lowercase de Supabase
+                                if (tableName === 'sales') {
+                                    if (knownCols.includes('paymentmethod') && item.paymentMethod !== undefined) {
+                                        filtered['paymentmethod'] = item.paymentMethod;
+                                    }
+                                }
+                                if (tableName === 'expenses') {
+                                    if (knownCols.includes('userid') && item.userId !== undefined) {
+                                        filtered['userid'] = item.userId;
+                                    }
+                                }
+
                                 return filtered;
                             });
 
@@ -249,6 +266,10 @@ export const useStore = create(
                         }
                     }
 
+                    if (notify && totalPending > 0) {
+                        get().showToast(`${totalPending} cambio${totalPending !== 1 ? 's' : ''} sincronizado${totalPending !== 1 ? 's' : ''} ✓`, 'success');
+                    }
+
                 } catch (error) {
                     console.error('Error sincronizando con la nube:', error);
                 } finally {
@@ -261,7 +282,7 @@ export const useStore = create(
                 if (!get().isOnline || !supabase) return;
                 set({ isSyncing: true });
                 try {
-                    const tablesToPull = ['products', 'users', 'clients', 'sales', 'inventory'];
+                    const tablesToPull = ['products', 'users', 'clients', 'sales', 'inventory', 'expenses'];
                     const freshData = {};
                     const cloudColumns = {};
 
@@ -277,6 +298,12 @@ export const useStore = create(
                             if (n.pricelist !== undefined && n.priceList === undefined) n.priceList = n.pricelist;
                             if (n.lugar1activo !== undefined && n.lugar1Activo === undefined) n.lugar1activo = n.lugar1activo;
                             if (n.lugar2activo !== undefined && n.lugar2Activo === undefined) n.lugar2activo = n.lugar2activo;
+                        }
+                        if (tableName === 'sales') {
+                            if (n.paymentmethod !== undefined && n.paymentMethod === undefined) n.paymentMethod = n.paymentmethod;
+                        }
+                        if (tableName === 'expenses') {
+                            if (n.userid !== undefined && n.userId === undefined) n.userId = n.userid;
                         }
                         return n;
                     };
@@ -307,11 +334,12 @@ export const useStore = create(
 
                         return {
                             ...state,
-                            products: mergeStateHelper(state.products, freshData['products']),
-                            users: mergedUsers,
-                            clients: mergeStateHelper(state.clients, freshData['clients']),
-                            sales: mergeStateHelper(state.sales, freshData['sales']),
+                            products:  mergeStateHelper(state.products,  freshData['products']),
+                            users:     mergedUsers,
+                            clients:   mergeStateHelper(state.clients,   freshData['clients']),
+                            sales:     mergeStateHelper(state.sales,     freshData['sales']),
                             inventory: mergeStateHelper(state.inventory, freshData['inventory']),
+                            expenses:  mergeStateHelper(state.expenses,  freshData['expenses']),
                             cloudColumns: { ...state.cloudColumns, ...cloudColumns },
                             currentUser: refreshedUser,
                         };
@@ -352,7 +380,7 @@ export const useStore = create(
                                 // Supabase deshabilite la impresión de "Gracias por su compra")
                                 cleanData.showFooterLine1 = true;
                                 cleanData.showFooterLine2 = true;
-                                console.log('[DEBUG Supabase] showFooterLine1 del servidor:', mappedConfig.showFooterLine1, '→ forzado a true');
+                                // showFooterLine1 siempre forzado a true (independiente del valor en Supabase)
 
                                 return { 
                                     ticketConfig: { ...s.ticketConfig, ...cleanData, synced: true },
@@ -514,6 +542,20 @@ export const useStore = create(
                     } catch (error) {
                         console.error('Error eliminando venta en la nube:', error);
                     }
+                }
+            },
+
+            // Gastos operativos
+            addExpense: (expense) => {
+                const newExpense = { ...expense, id: crypto.randomUUID(), synced: false };
+                set(state => ({ expenses: [...state.expenses, newExpense] }));
+                get().syncToSupabase();
+            },
+            deleteExpense: async (id) => {
+                set(state => ({ expenses: state.expenses.filter(e => e.id !== id) }));
+                const state = get();
+                if (state.isOnline && supabase) {
+                    await supabase.from('expenses').delete().eq('id', id);
                 }
             },
 

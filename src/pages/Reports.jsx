@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store';
 import { printTicket } from '../lib/bluetoothPrinter';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 
 const toLocalDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -12,12 +12,14 @@ const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto
 const DAYS_SHORT = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
 
 export default function Reports() {
-    const { sales, users, clients, currentUser, ticketConfig, showToast, showConfirm, clearAllSales } = useStore();
+    const { sales, users, clients, expenses, currentUser, ticketConfig, showToast, showConfirm, clearAllSales, addExpense, deleteExpense } = useStore();
     const [filterUser, setFilterUser] = useState('');
     const [repDateFilter, setRepDateFilter] = useState(todayStr);
     const [selectedSale, setSelectedSale] = useState(null);
     const [btPrinting, setBtPrinting] = useState(false);
-    const [showPDF, setShowPDF] = useState(false);
+    const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [expenseDesc, setExpenseDesc] = useState('');
+    const [expenseAmount, setExpenseAmount] = useState('');
 
     const now = new Date();
     const [selectedDate, setSelectedDate] = useState(todayStr);
@@ -47,6 +49,15 @@ export default function Reports() {
     const dayTotal = daySales.reduce((s, sale) => s + (Number(sale?.total) || 0), 0);
     const dayCount = daySales.length;
 
+    // Totales por método de pago
+    const efectivoTotal = sortedSales
+        .filter(s => (s.paymentMethod || s.paymentmethod || 'efectivo') !== 'transferencia')
+        .reduce((acc, s) => acc + Number(s.total), 0);
+    const transferTotal = sortedSales
+        .filter(s => (s.paymentMethod || s.paymentmethod) === 'transferencia')
+        .reduce((acc, s) => acc + Number(s.total), 0);
+    const granTotal = sortedSales.reduce((acc, s) => acc + Number(s.total), 0);
+
     const productMap = {};
     daySales.forEach(sale => {
         (sale?.items || []).forEach(it => {
@@ -61,6 +72,153 @@ export default function Reports() {
     const grandTotalPieces = productTotals.reduce((s, [, v]) => s + v.pieces, 0);
     const grandTotalQty    = productTotals.reduce((s, [, v]) => s + v.qty, 0);
     const grandTotalMoney  = productTotals.reduce((s, [, v]) => s + v.money, 0);
+
+    // Gastos del día (operador)
+    const dayExpenses = useMemo(() => {
+        if (isAdmin) return [];
+        const dateKey = repDateFilter || todayStr;
+        return (expenses || []).filter(e =>
+            (e.userId || e.userid) === currentUser?.id && toLocalDate(e.date) === dateKey
+        );
+    }, [expenses, repDateFilter, currentUser, isAdmin]);
+
+    const totalExpenses = useMemo(() =>
+        dayExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0),
+    [dayExpenses]);
+
+    // Datos para el PDF del operador (agrupados por cliente + gastos)
+    const operatorPDFData = useMemo(() => {
+        if (isAdmin) return null;
+        const fechaPDF = repDateFilter || todayStr;
+        const ventasPDF = (sales || []).filter(s =>
+            s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
+        );
+        const fechaLabel = new Date(fechaPDF + 'T12:00:00').toLocaleDateString('es-MX', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
+        const clientMap = {};
+        ventasPDF.forEach(sale => {
+            const client = clients.find(c => c.id === sale.clientId);
+            const key = sale.clientId || '__general__';
+            const name = client?.name || 'General';
+            if (!clientMap[key]) clientMap[key] = { name, pieces: 0, kg: 0, money: 0 };
+            (sale.items || []).forEach(it => {
+                clientMap[key].pieces += Number(it.pieces) || 0;
+                if ((it.unit || '').toLowerCase() === 'kg') clientMap[key].kg += Number(it.quantity) || 0;
+                clientMap[key].money += (Number(it.quantity) || 0) * (Number(it.price) || 0);
+            });
+        });
+        const clientRows = Object.values(clientMap).sort((a, b) => b.money - a.money);
+        const expensesForDay = (expenses || []).filter(e =>
+            (e.userId || e.userid) === currentUser?.id && toLocalDate(e.date) === fechaPDF
+        );
+        const totalMoney    = clientRows.reduce((s, r) => s + r.money, 0);
+        const expTotal      = expensesForDay.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+        return {
+            fechaLabel,
+            ventasCount: ventasPDF.length,
+            clientRows,
+            totalPieces:    clientRows.reduce((s, r) => s + r.pieces, 0),
+            totalKg:        clientRows.reduce((s, r) => s + r.kg, 0),
+            totalMoney,
+            expenses:       expensesForDay,
+            totalExpenses:  expTotal,
+            netTotal:       totalMoney - expTotal,
+        };
+    }, [isAdmin, repDateFilter, sales, clients, currentUser, expenses]);
+
+    // Generar PDF directo con jsPDF (carga diferida para no aumentar el bundle inicial)
+    const generatePDF = async () => {
+        if (!operatorPDFData) return;
+        const { default: jsPDF } = await import('jspdf');
+        const { default: autoTable } = await import('jspdf-autotable');
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const businessName = (ticketConfig?.businessName || 'LACTEOS LA TOBA').toUpperCase();
+
+        // Encabezado
+        doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+        doc.text(businessName, pageWidth / 2, 20, { align: 'center' });
+
+        doc.setFontSize(12);
+        doc.text('Reporte de Ventas del Día', pageWidth / 2, 28, { align: 'center' });
+
+        doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+        const fechaCap = operatorPDFData.fechaLabel.charAt(0).toUpperCase() + operatorPDFData.fechaLabel.slice(1);
+        doc.text(fechaCap, pageWidth / 2, 36, { align: 'center' });
+        doc.text(`Repartidor: ${currentUser?.name || ''}`, pageWidth / 2, 42, { align: 'center' });
+        doc.text(`${operatorPDFData.ventasCount} venta${operatorPDFData.ventasCount !== 1 ? 's' : ''} registrada${operatorPDFData.ventasCount !== 1 ? 's' : ''}`, pageWidth / 2, 48, { align: 'center' });
+
+        // Tabla clientes
+        autoTable(doc, {
+            startY: 56,
+            margin: { left: 15, right: 15 },
+            head: [['Cliente', 'Piezas', 'Kg', 'Importe']],
+            body: operatorPDFData.clientRows.length > 0
+                ? operatorPDFData.clientRows.map(r => [
+                    r.name,
+                    r.pieces > 0 ? String(r.pieces) : '—',
+                    r.kg > 0 ? r.kg.toFixed(2) : '—',
+                    `$${r.money.toFixed(2)}`,
+                ])
+                : [['Sin ventas registradas', '', '', '']],
+            foot: [['TOTAL',
+                operatorPDFData.totalPieces > 0 ? String(operatorPDFData.totalPieces) : '—',
+                operatorPDFData.totalKg > 0 ? operatorPDFData.totalKg.toFixed(2) : '—',
+                `$${operatorPDFData.totalMoney.toFixed(2)}`,
+            ]],
+            headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+            footStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold', fontSize: 10 },
+            bodyStyles: { fontSize: 9 },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            columnStyles: {
+                0: { cellWidth: 'auto' },
+                1: { halign: 'center', cellWidth: 22 },
+                2: { halign: 'center', cellWidth: 22 },
+                3: { halign: 'right',  cellWidth: 32 },
+            },
+        });
+
+        // Sección de gastos
+        if (operatorPDFData.expenses.length > 0) {
+            const gY = doc.lastAutoTable.finalY + 8;
+            doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+            doc.text('Gastos del Día', 15, gY);
+            autoTable(doc, {
+                startY: gY + 4,
+                margin: { left: 15, right: 15 },
+                head: [['Descripción', 'Monto']],
+                body: operatorPDFData.expenses.map(e => [e.description, `$${Number(e.amount).toFixed(2)}`]),
+                foot: [['Total Gastos', `$${operatorPDFData.totalExpenses.toFixed(2)}`]],
+                headStyles: { fillColor: [239, 68, 68], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+                footStyles: { fillColor: [239, 68, 68], textColor: 255, fontStyle: 'bold', fontSize: 10 },
+                bodyStyles: { fontSize: 9 },
+                alternateRowStyles: { fillColor: [255, 245, 245] },
+                columnStyles: {
+                    0: { cellWidth: 'auto' },
+                    1: { halign: 'right', cellWidth: 32 },
+                },
+            });
+        }
+
+        // Total neto
+        const netY = doc.lastAutoTable.finalY + 8;
+        doc.setDrawColor(30, 41, 59);
+        doc.setLineWidth(0.5);
+        doc.line(15, netY - 2, pageWidth - 15, netY - 2);
+        doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+        doc.text('Total Neto del Día:', 15, netY + 4);
+        doc.setFontSize(13);
+        doc.text(`$${operatorPDFData.netTotal.toFixed(2)}`, pageWidth - 15, netY + 4, { align: 'right' });
+
+        // Pie
+        const footerY = netY + 16;
+        doc.setFontSize(9); doc.setFont('helvetica', 'italic');
+        doc.text(ticketConfig?.footerLine1 || '¡Gracias por su trabajo!', pageWidth / 2, footerY, { align: 'center' });
+
+        const fileName = `Reporte_${(currentUser?.name || 'Repartidor').replace(/\s+/g, '_')}_${repDateFilter || todayStr}.pdf`;
+        doc.save(fileName);
+    };
 
     // Calendar
     const daysInMonth   = new Date(calMonth.year, calMonth.month + 1, 0).getDate();
@@ -186,12 +344,12 @@ export default function Reports() {
 
                     {/* ── STATS DEL DÍA ── */}
                     <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-3 shadow-md shadow-emerald-500/20">
-                            <p className="text-[8px] font-black text-emerald-100 uppercase tracking-widest mb-1">Total del día</p>
-                            <p className="text-xl font-black text-white leading-none">${dayTotal.toFixed(2)}</p>
-                            <p className="text-[9px] text-emerald-200 font-bold mt-0.5 capitalize truncate">{selDateLabel}</p>
+                        <div className="bg-white rounded-2xl p-3 border-2 border-blue-200 shadow-sm">
+                            <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1">Total del día</p>
+                            <p className="text-xl font-black text-blue-700 leading-none">${dayTotal.toFixed(2)}</p>
+                            <p className="text-[9px] text-slate-400 font-bold mt-0.5 capitalize truncate">{selDateLabel}</p>
                         </div>
-                        <div className="bg-white rounded-2xl p-3 border border-slate-100 shadow-sm">
+                        <div className="bg-white rounded-2xl p-3 border-2 border-blue-100 shadow-sm">
                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Transacciones</p>
                             <p className="text-xl font-black text-slate-800 leading-none">{dayCount}</p>
                             <p className="text-[9px] text-slate-400 font-bold mt-0.5">{dayCount === 1 ? 'venta registrada' : 'ventas registradas'}</p>
@@ -200,57 +358,53 @@ export default function Reports() {
 
                     {/* ── DESGLOSE POR PRODUCTO ── */}
                     {productTotals.length > 0 && (
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="bg-white rounded-2xl border-2 border-blue-100 shadow-sm overflow-hidden">
                             {/* Encabezado */}
-                            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-1 px-3 pt-3 pb-2 border-b border-slate-100 bg-slate-50">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Producto</p>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center w-12">Cant.</p>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center w-12">Pzas</p>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right w-18">Precio</p>
+                            <div className="grid grid-cols-[1fr_52px_52px_84px] px-3 pt-3 pb-2 border-b border-blue-100 bg-blue-50">
+                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Producto</p>
+                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest text-right">Cant.</p>
+                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest text-right">Pzas</p>
+                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest text-right">Importe</p>
                             </div>
 
                             {/* Filas */}
-                            <div className="divide-y divide-slate-50">
+                            <div className="divide-y divide-slate-100">
                                 {productTotals.map(([name, { qty, pieces, money, unit }]) => (
-                                    <div key={name} className="grid grid-cols-[1fr_auto_auto_auto] gap-1 items-center px-3 py-2.5">
+                                    <div key={name} className="grid grid-cols-[1fr_52px_52px_84px] items-center px-3 py-2.5">
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                                                <span className="text-[9px] font-black text-primary uppercase">{name.charAt(0)}</span>
+                                            <div className="w-6 h-6 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                                                <span className="text-[9px] font-black text-blue-500 uppercase">{name.charAt(0)}</span>
                                             </div>
                                             <p className="text-xs font-bold text-slate-700 truncate">{name}</p>
                                         </div>
-                                        <div className="w-12 text-center">
-                                            <span className="text-xs font-black text-slate-700">
-                                                {qty % 1 === 0 ? qty : qty.toFixed(2)}
-                                            </span>
+                                        <div className="text-right pr-1">
+                                            <span className="text-xs font-black text-slate-700">{qty % 1 === 0 ? qty : qty.toFixed(2)}</span>
                                             <span className="text-[9px] text-slate-400 ml-0.5">{unit === 'Kg' ? 'kg' : 'u'}</span>
                                         </div>
-                                        <div className="w-12 text-center">
+                                        <div className="text-right pr-1">
                                             {pieces > 0
                                                 ? <span className="text-xs font-black text-blue-600">{pieces}</span>
                                                 : <span className="text-slate-300 text-xs">—</span>
                                             }
                                         </div>
-                                        <div className="w-18 text-right">
-                                            <span className="text-sm font-black text-emerald-600">${money.toFixed(2)}</span>
+                                        <div className="text-right">
+                                            <span className="text-sm font-black text-slate-800">${money.toFixed(2)}</span>
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
                             {/* Fila de totales */}
-                            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-1 items-center px-3 py-3 bg-slate-800 rounded-b-2xl">
-                                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">TOTALES</p>
-                                <div className="w-12 text-center">
-                                    <span className="text-sm font-black text-slate-300">
-                                        {grandTotalQty % 1 === 0 ? grandTotalQty : grandTotalQty.toFixed(2)}
-                                    </span>
+                            <div className="grid grid-cols-[1fr_52px_52px_84px] items-center px-3 py-3 bg-blue-50 border-t-2 border-blue-200 rounded-b-2xl">
+                                <p className="text-[9px] font-black text-blue-700 uppercase tracking-widest">TOTALES</p>
+                                <div className="text-right pr-1">
+                                    <span className="text-sm font-black text-slate-700">{grandTotalQty % 1 === 0 ? grandTotalQty : grandTotalQty.toFixed(2)}</span>
                                 </div>
-                                <div className="w-12 text-center">
-                                    <span className="text-sm font-black text-blue-300">{grandTotalPieces}</span>
+                                <div className="text-right pr-1">
+                                    <span className="text-sm font-black text-blue-600">{grandTotalPieces}</span>
                                 </div>
-                                <div className="w-18 text-right">
-                                    <span className="text-sm font-black text-white">${grandTotalMoney.toFixed(2)}</span>
+                                <div className="text-right">
+                                    <span className="text-sm font-black text-blue-700">${grandTotalMoney.toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>
@@ -312,7 +466,7 @@ export default function Reports() {
                             {' · '}{sortedSales.length} {sortedSales.length === 1 ? 'venta' : 'ventas'}
                         </p>
                         <button
-                            onClick={() => setShowPDF(true)}
+                            onClick={generatePDF}
                             className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white font-black text-xs px-4 py-2 rounded-xl shadow-md shadow-red-500/25 active:scale-95 transition-all uppercase tracking-wide"
                         >
                             <span className="material-symbols-outlined" style={{fontSize:16}}>picture_as_pdf</span>
@@ -323,13 +477,13 @@ export default function Reports() {
             )}
 
             {/* ── LISTA DE VENTAS ── */}
-            <div className="px-4 md:px-8 pb-24">
+            <div className="px-4 md:px-8 pb-6">
                 {/* Cabecera columnas */}
-                <div className="grid grid-cols-[70px_1fr_auto] gap-2 px-3 mb-1.5">
+                <div className="grid grid-cols-[72px_1fr_90px] gap-2 px-3 mb-1.5">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">
                         {isAdmin ? 'Hora' : 'Fecha'}
                     </span>
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Cliente</span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Cliente / Productos</span>
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Total</span>
                 </div>
 
@@ -349,19 +503,21 @@ export default function Reports() {
                         const dateObj = new Date(sale.date);
                         const fecha   = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' });
                         const hora    = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                        const pm      = sale.paymentMethod || sale.paymentmethod || 'efectivo';
+                        const isTransfer = pm === 'transferencia';
 
                         return (
                             <button
                                 key={sale.id}
                                 onClick={() => setSelectedSale(sale)}
                                 style={{ animationDelay: `${i * 25}ms` }}
-                                className="w-full grid grid-cols-[70px_1fr_auto] gap-2 items-center bg-white rounded-2xl px-3 py-3 shadow-sm border border-slate-100 hover:border-primary/30 hover:shadow-md active:scale-[0.98] transition-all text-left animate-in fade-in"
+                                className="w-full grid grid-cols-[72px_1fr_90px] gap-2 items-start bg-white rounded-2xl px-3 py-3 shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-md active:scale-[0.98] transition-all text-left animate-in fade-in"
                             >
-                                <div className="shrink-0">
+                                <div className="shrink-0 pt-0.5">
                                     {isAdmin ? (
                                         <>
                                             <p className="text-xs font-black text-slate-800 leading-tight">{hora}</p>
-                                            <p className="text-[10px] font-bold text-primary/70 leading-tight mt-0.5">{seller}</p>
+                                            <p className="text-[10px] font-bold text-blue-500 leading-tight mt-0.5">{seller}</p>
                                         </>
                                     ) : (
                                         <>
@@ -371,22 +527,173 @@ export default function Reports() {
                                     )}
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-sm font-bold text-slate-800 leading-snug break-words">{client?.name || 'General'}</p>
+                                    <p className="text-sm font-bold text-slate-800 leading-snug">{client?.name || 'General'}</p>
                                     {sale.items?.length > 0 && (
                                         <p className="text-[10px] text-slate-400 font-medium leading-tight truncate">
                                             {sale.items.map(it => it.name).join(', ')}
                                         </p>
                                     )}
+                                    <span className={`inline-flex items-center gap-1 mt-1 text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-md ${
+                                        isTransfer ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    }`}>
+                                        <span className="material-symbols-outlined" style={{fontSize:10}}>{isTransfer ? 'account_balance' : 'payments'}</span>
+                                        {isTransfer ? 'Transferencia' : 'Efectivo'}
+                                    </span>
                                 </div>
                                 <div className="text-right shrink-0">
-                                    <p className="text-sm font-black text-emerald-600 whitespace-nowrap">${Number(sale.total).toFixed(2)}</p>
-                                    <p className="text-[9px] text-slate-300 font-bold">{sale.items?.length || 0} art.</p>
+                                    <p className="text-base font-black text-slate-800 whitespace-nowrap">${Number(sale.total).toFixed(2)}</p>
+                                    <p className="text-[9px] text-slate-400 font-bold">{sale.items?.length || 0} art.</p>
                                 </div>
                             </button>
                         );
                     })}
                 </div>
+
+                {/* ── RESUMEN TOTAL POR MÉTODO DE PAGO ── */}
+                {sortedSales.length > 0 && (
+                    <div className="mt-3 mb-24 bg-white rounded-2xl border-2 border-blue-200 overflow-hidden shadow-sm">
+                        <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+                            <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">Resumen de Cobro</p>
+                        </div>
+                        <div className="divide-y divide-slate-100">
+                            {efectivoTotal > 0 && (
+                                <div className="flex items-center justify-between px-4 py-2.5">
+                                    <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-emerald-500" style={{fontSize:16}}>payments</span>
+                                        <span className="text-xs font-bold text-slate-600">Efectivo</span>
+                                    </div>
+                                    <span className="text-sm font-black text-emerald-700">${efectivoTotal.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {transferTotal > 0 && (
+                                <div className="flex items-center justify-between px-4 py-2.5">
+                                    <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-blue-500" style={{fontSize:16}}>account_balance</span>
+                                        <span className="text-xs font-bold text-slate-600">Transferencia</span>
+                                    </div>
+                                    <span className="text-sm font-black text-blue-700">${transferTotal.toFixed(2)}</span>
+                                </div>
+                            )}
+                            <div className="flex items-center justify-between px-4 py-3 bg-blue-50">
+                                <span className="text-xs font-black text-blue-700 uppercase tracking-widest">Total del Día</span>
+                                <span className="text-base font-black text-blue-700">${granTotal.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {/* ── GASTOS DEL DÍA (solo operador) ── */}
+            {!isAdmin && (
+                <div className="px-4 md:px-8 pb-24">
+                    <div className="flex items-center justify-between mb-2 mt-2">
+                        <p className="text-xs font-black text-slate-600 uppercase tracking-widest">Gastos del Día</p>
+                        <button
+                            onClick={() => setShowExpenseModal(true)}
+                            className="w-8 h-8 bg-primary text-white rounded-xl flex items-center justify-center active:scale-90 transition-all shadow-sm shadow-primary/25"
+                        >
+                            <Plus size={16} />
+                        </button>
+                    </div>
+
+                    {dayExpenses.length === 0 ? (
+                        <p className="text-center text-xs text-slate-300 font-medium py-4">Sin gastos registrados</p>
+                    ) : (
+                        <div className="space-y-1.5">
+                            {dayExpenses.map(exp => (
+                                <div key={exp.id} className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-100 animate-in fade-in">
+                                    <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                        <span className="material-symbols-outlined text-red-400" style={{fontSize:16}}>receipt_long</span>
+                                    </div>
+                                    <p className="flex-1 text-sm font-bold text-slate-700 truncate">{exp.description}</p>
+                                    <p className="text-sm font-black text-red-500 shrink-0">-${Number(exp.amount).toFixed(2)}</p>
+                                    <button
+                                        onClick={() => deleteExpense(exp.id)}
+                                        className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-red-500 active:scale-90 transition-all rounded-lg"
+                                    >
+                                        <Trash2 size={15} />
+                                    </button>
+                                </div>
+                            ))}
+
+                            {/* Resumen de totales */}
+                            <div className="mt-3 bg-white border border-slate-200 rounded-2xl px-4 py-3 grid grid-cols-2 gap-2 shadow-sm">
+                                <div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Ventas</p>
+                                    <p className="text-base font-black text-emerald-600">${dayTotal.toFixed(2)}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Gastos</p>
+                                    <p className="text-base font-black text-red-500">-${totalExpenses.toFixed(2)}</p>
+                                </div>
+                                <div className="col-span-2 border-t border-slate-100 pt-2 flex items-center justify-between">
+                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Neto del día</p>
+                                    <p className="text-lg font-black text-slate-800">${(dayTotal - totalExpenses).toFixed(2)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Modal agregar gasto */}
+            {showExpenseModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-150">
+                    <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+                        <h3 className="text-base font-black text-slate-800 dark:text-slate-100 mb-4">Agregar Gasto</h3>
+                        <div className="space-y-3 mb-5">
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Descripción</label>
+                                <input
+                                    type="text"
+                                    value={expenseDesc}
+                                    onChange={e => setExpenseDesc(e.target.value)}
+                                    placeholder="Ej: Gasto"
+                                    autoFocus
+                                    className="w-full bg-slate-50 dark:bg-slate-700 rounded-2xl px-4 py-3 font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Monto ($)</label>
+                                <input
+                                    type="number"
+                                    value={expenseAmount}
+                                    onChange={e => setExpenseAmount(e.target.value)}
+                                    placeholder="0.00"
+                                    inputMode="decimal"
+                                    className="w-full bg-slate-50 dark:bg-slate-700 rounded-2xl px-4 py-3 font-black text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-primary/20 text-lg"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setShowExpenseModal(false); setExpenseDesc(''); setExpenseAmount(''); }}
+                                className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-sm active:scale-95 transition-all"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const amount = Number(expenseAmount);
+                                    if (!expenseDesc.trim() || !amount || amount <= 0) { showToast('Completa descripción y monto', 'warning'); return; }
+                                    addExpense({
+                                        userId: currentUser.id,
+                                        date: new Date(repDateFilter + 'T12:00:00').toISOString(),
+                                        description: expenseDesc.trim(),
+                                        amount,
+                                    });
+                                    setShowExpenseModal(false);
+                                    setExpenseDesc('');
+                                    setExpenseAmount('');
+                                }}
+                                className="flex-1 py-3 rounded-2xl bg-primary text-white font-black text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                            >
+                                Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── DETALLE DE VENTA ── */}
             {selectedSale && (() => {
@@ -438,6 +745,25 @@ export default function Reports() {
                                         <p className="text-sm font-black text-slate-700 truncate">{seller}</p>
                                     </div>
                                 </div>
+
+                                {/* Forma de pago */}
+                                {(() => {
+                                    const pm = selectedSale.paymentMethod || selectedSale.paymentmethod || 'efectivo';
+                                    const isTransfer = pm === 'transferencia';
+                                    return (
+                                        <div className={`mx-4 mt-2 flex items-center gap-3 px-4 py-3 rounded-xl border ${isTransfer ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                                            <span className="material-symbols-outlined" style={{fontSize:20, color: isTransfer ? '#3b82f6' : '#10b981'}}>
+                                                {isTransfer ? 'account_balance' : 'payments'}
+                                            </span>
+                                            <div>
+                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Forma de Pago</p>
+                                                <p className={`text-sm font-black ${isTransfer ? 'text-blue-700' : 'text-emerald-700'}`}>
+                                                    {isTransfer ? 'Transferencia' : 'Efectivo'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
 
                                 <div className="mx-4 mt-3 mb-2">
                                     <div className="flex items-center justify-between mb-2">
@@ -539,148 +865,6 @@ export default function Reports() {
                 </div>
             )}
 
-            {/* ── OVERLAY PDF OPERADOR ── */}
-            {showPDF && !isAdmin && (() => {
-                const fechaPDF  = repDateFilter || todayStr;
-                const ventasPDF = (sales || []).filter(s =>
-                    s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
-                );
-                const fechaLabel = new Date(fechaPDF + 'T12:00:00').toLocaleDateString('es-MX', {
-                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-                });
-                const totalDia = ventasPDF.reduce((s, v) => s + (Number(v.total) || 0), 0);
-
-                // Agrupar productos
-                const pMap = {};
-                ventasPDF.forEach(sale => {
-                    (sale.items || []).forEach(it => {
-                        if (!it.name) return;
-                        if (!pMap[it.name]) pMap[it.name] = { qty: 0, pieces: 0, money: 0, unit: it.unit || 'u' };
-                        const q = Number(it.quantity) || 0;
-                        pMap[it.name].qty    += q;
-                        pMap[it.name].pieces += Number(it.pieces) || 0;
-                        pMap[it.name].money  += q * (Number(it.price) || 0);
-                    });
-                });
-                const prodRows = Object.entries(pMap).sort((a, b) => b[1].money - a[1].money);
-
-                return (
-                    <div className="fixed inset-0 z-[150] bg-slate-100 flex flex-col no-print-hide">
-                        {/* Barra superior */}
-                        <div className="bg-white border-b border-slate-200 flex items-center gap-3 px-4 py-3 shrink-0 no-print">
-                            <button onClick={() => setShowPDF(false)} className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition-all">
-                                <span className="material-symbols-outlined text-slate-600" style={{fontSize:22}}>arrow_back</span>
-                            </button>
-                            <p className="flex-1 font-black text-slate-800 text-sm">Reporte del Día</p>
-                            <button
-                                onClick={() => window.print()}
-                                className="flex items-center gap-2 bg-red-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-md shadow-red-500/25 active:scale-95 transition-all"
-                            >
-                                <span className="material-symbols-outlined" style={{fontSize:16}}>print</span>
-                                Guardar PDF
-                            </button>
-                        </div>
-
-                        {/* Contenido del reporte */}
-                        <div className="flex-1 overflow-y-auto p-4" id="pdf-report-content">
-                            <div className="max-w-lg mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-
-                                {/* Cabecera */}
-                                <div className="bg-slate-800 text-white px-6 py-5 text-center">
-                                    <p className="text-xs font-black tracking-widest text-slate-400 uppercase mb-1">{ticketConfig?.businessName || 'LACTEOS LA TOBA'}</p>
-                                    <p className="text-lg font-black">Reporte de Ventas</p>
-                                    <p className="text-sm text-slate-300 mt-1 capitalize">{fechaLabel}</p>
-                                    <p className="text-xs text-slate-400 mt-0.5">Repartidor: {currentUser?.name}</p>
-                                </div>
-
-                                {/* Resumen */}
-                                <div className="grid grid-cols-2 divide-x divide-slate-100 border-b border-slate-100">
-                                    <div className="p-4 text-center">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ventas</p>
-                                        <p className="text-2xl font-black text-slate-800">{ventasPDF.length}</p>
-                                    </div>
-                                    <div className="p-4 text-center">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
-                                        <p className="text-2xl font-black text-emerald-600">${totalDia.toFixed(2)}</p>
-                                    </div>
-                                </div>
-
-                                {/* Tabla productos */}
-                                {prodRows.length > 0 && (
-                                    <div className="px-4 pt-4 pb-2">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Productos vendidos</p>
-                                        <table className="w-full text-sm border-collapse">
-                                            <thead>
-                                                <tr className="bg-slate-50">
-                                                    <th className="text-left text-[10px] font-black text-slate-400 uppercase px-2 py-1.5">Producto</th>
-                                                    <th className="text-center text-[10px] font-black text-slate-400 uppercase px-2 py-1.5">Cant</th>
-                                                    <th className="text-center text-[10px] font-black text-slate-400 uppercase px-2 py-1.5">Pzas</th>
-                                                    <th className="text-right text-[10px] font-black text-slate-400 uppercase px-2 py-1.5">Importe</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {prodRows.map(([name, { qty, pieces, money, unit }]) => (
-                                                    <tr key={name} className="border-t border-slate-50">
-                                                        <td className="px-2 py-2 font-bold text-slate-700 text-xs">{name}</td>
-                                                        <td className="px-2 py-2 text-center text-xs font-bold text-slate-600">
-                                                            {qty % 1 === 0 ? qty : qty.toFixed(2)}<span className="text-slate-400 ml-0.5">{unit === 'Kg' ? 'kg' : 'u'}</span>
-                                                        </td>
-                                                        <td className="px-2 py-2 text-center text-xs font-black text-blue-600">{pieces > 0 ? pieces : '—'}</td>
-                                                        <td className="px-2 py-2 text-right text-xs font-black text-emerald-600">${money.toFixed(2)}</td>
-                                                    </tr>
-                                                ))}
-                                                <tr className="bg-slate-800 text-white">
-                                                    <td className="px-2 py-2 font-black text-xs uppercase tracking-wider" colSpan={3}>Total</td>
-                                                    <td className="px-2 py-2 text-right font-black text-sm">${totalDia.toFixed(2)}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-
-                                {/* Lista de ventas */}
-                                <div className="px-4 pt-3 pb-4">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Detalle de ventas</p>
-                                    {ventasPDF.length === 0 ? (
-                                        <p className="text-sm text-slate-400 text-center py-4">Sin ventas registradas</p>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            {[...ventasPDF].reverse().map((sale, i) => {
-                                                const client  = clients.find(c => c.id === sale.clientId);
-                                                const hora = new Date(sale.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-                                                return (
-                                                    <div key={i} className="flex items-start gap-3 py-2 border-b border-slate-50 last:border-0">
-                                                        <span className="text-xs font-black text-slate-400 w-12 shrink-0 mt-0.5">{hora}</span>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-xs font-black text-slate-700">{client?.name || 'General'}</p>
-                                                            <p className="text-[10px] text-slate-400 truncate">{(sale.items || []).map(it => it.name).join(', ')}</p>
-                                                        </div>
-                                                        <span className="text-xs font-black text-emerald-600 shrink-0">${Number(sale.total).toFixed(2)}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="bg-slate-50 px-4 py-3 text-center border-t border-slate-100">
-                                    <p className="text-[10px] text-slate-400 font-medium">{ticketConfig?.footerLine1 || '¡Gracias por su trabajo!'}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* CSS de impresión */}
-                        <style>{`
-                            @media print {
-                                body > * { display: none !important; }
-                                #pdf-report-content { display: block !important; position: fixed; inset: 0; overflow: visible; padding: 0; background: white; }
-                                #pdf-report-content > * { box-shadow: none !important; border-radius: 0 !important; }
-                                .no-print { display: none !important; }
-                            }
-                        `}</style>
-                    </div>
-                );
-            })()}
         </div>
     );
 }

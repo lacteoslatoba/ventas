@@ -444,6 +444,13 @@ export default function TicketConfig() {
                                 onChange={update('showCashAndChange')}
                                 desc="Muestra u oculta un desglose del pago en efectivo y el cambio"
                             />
+                            <Toggle
+                                id="showPaymentMethod"
+                                label="Forma de Pago"
+                                checked={form.showPaymentMethod ?? true}
+                                onChange={update('showPaymentMethod')}
+                                desc="Muestra Efectivo o Transferencia en el ticket"
+                            />
                         </div>
 
                         <div className="mt-6 pt-6 border-t border-slate-100 space-y-4">

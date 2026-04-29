@@ -161,6 +161,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         footerBold = false,
         totalToFooterSpacing = 0,
         itemsSectionSpacing = 0,
+        showPaymentMethod = true,
     } = config;
 
     console.log('[DEBUG IMPRESORA] Config de pie de página:', {
@@ -271,6 +272,10 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         if (showSeller) {
             const sName = (user?.name || 'VENDEDOR').slice(0, 15);
             add(formatMetaLine(showLabels ? 'Repartidor' : '', sName));
+        }
+        if (showPaymentMethod) {
+            const pm = ticket.paymentMethod === 'transferencia' ? 'TRANSFERENCIA' : 'EFECTIVO';
+            add(formatMetaLine(showLabels ? 'Pago' : '', pm));
         }
 
         if (metadataBold) add(CMD.BOLD_OFF);
@@ -408,9 +413,13 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
 
         if (showSeller) add(formatMetaLine(showLabels ? 'Repartidor' : '', user?.name || 'Vendedor'));
         if (showCustomer) add(formatMetaLine(showLabels ? 'Cliente' : '', client?.name || 'General'));
+        if (showPaymentMethod) {
+            const pm = ticket.paymentMethod === 'transferencia' ? 'TRANSFERENCIA' : 'EFECTIVO';
+            add(formatMetaLine(showLabels ? 'Pago' : '', pm));
+        }
 
         if (metadataBold) add(CMD.BOLD_OFF);
-        
+
         if (showSeparatorItems) add(SEP);
         
         if (showItemsHeader) {

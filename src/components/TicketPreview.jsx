@@ -52,6 +52,7 @@ export default function TicketPreview({ config, sale, user, client }) {
         itemsSectionSpacing = 0,
         headerSpacing = 0,
         footerSpacing = 0,
+        showPaymentMethod = true,
     } = config || {};
 
 
@@ -61,6 +62,7 @@ export default function TicketPreview({ config, sale, user, client }) {
         id: 'PREVIEW',
         date: new Date().toISOString(),
         total: 165.00,
+        paymentMethod: 'efectivo',
         items: [
             { name: 'QUESO OAXACA', quantity: 2, price: 60, unit: 'kg' },
             { name: 'REQUESON', quantity: 1, price: 45, unit: 'u' }
@@ -120,6 +122,7 @@ export default function TicketPreview({ config, sale, user, client }) {
                     
                     {showCustomer && <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>{showLabels ? 'Cliente' : ''}</span><span className="uppercase text-right">{displayClient.name}</span></div>}
                     {showSeller && <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>{showLabels ? 'Repartidor' : ''}</span><span className="uppercase text-right">{displayUser.name}</span></div>}
+                    {showPaymentMethod && <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>{showLabels ? 'Pago' : ''}</span><span className="uppercase text-right">{(displaySale.paymentMethod || 'efectivo') === 'transferencia' ? 'TRANSFERENCIA' : 'EFECTIVO'}</span></div>}
 
                     {showSeparatorItems && <Separator separatorStyle={separatorStyle} />}
 
@@ -246,6 +249,11 @@ export default function TicketPreview({ config, sale, user, client }) {
                     {showCustomer && (
                         <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
                             <span>{showLabels ? 'Cliente :' : ''}</span> <span className="uppercase">{displayClient.name}</span>
+                        </div>
+                    )}
+                    {showPaymentMethod && (
+                        <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
+                            <span>{showLabels ? 'Pago   :' : ''}</span> <span className="uppercase">{(displaySale.paymentMethod || 'efectivo') === 'transferencia' ? 'Transferencia' : 'Efectivo'}</span>
                         </div>
                     )}
                 </div>
