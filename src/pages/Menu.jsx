@@ -36,6 +36,12 @@ export default function Menu() {
           </div>
         </div>
 
+        {/* Versión */}
+        <div className="mb-4 px-1 flex items-center gap-2">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Actualización:</span>
+          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 dark:text-slate-400 px-2 py-0.5 rounded-full">{__BUILD_TIME__}</span>
+        </div>
+
         {/* Grid of Menus */}
         <div className="grid grid-cols-2 gap-3">
           {menuItems.map((item, index) => {
