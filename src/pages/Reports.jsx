@@ -17,6 +17,7 @@ export default function Reports() {
     const [repDateFilter, setRepDateFilter] = useState('');
     const [selectedSale, setSelectedSale] = useState(null);
     const [btPrinting, setBtPrinting] = useState(false);
+    const [showPDF, setShowPDF] = useState(false);
 
     const now = new Date();
     const [selectedDate, setSelectedDate] = useState(todayStr);
@@ -258,28 +259,34 @@ export default function Reports() {
                 </div>
             )}
 
-            {/* ── FILTRO FECHA REPARTIDOR ── */}
+            {/* ── FILTRO FECHA + BOTÓN PDF (OPERADOR) ── */}
             {!isAdmin && (
-                <div className="px-4 md:px-8 mb-3">
-                    <div className="flex items-center gap-2 bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-2.5">
-                        <span className="material-symbols-outlined text-slate-400" style={{fontSize:18}}>calendar_month</span>
-                        <input
-                            type="date"
-                            value={repDateFilter}
-                            onChange={e => setRepDateFilter(e.target.value)}
-                            className="flex-1 bg-transparent outline-none text-sm font-bold text-slate-700"
-                        />
-                        {repDateFilter && (
-                            <button
-                                onClick={() => setRepDateFilter('')}
-                                className="text-slate-400 hover:text-slate-600 active:scale-90 transition-all"
-                            >
-                                <span className="material-symbols-outlined" style={{fontSize:18}}>close</span>
-                            </button>
-                        )}
+                <div className="px-4 md:px-8 mb-3 space-y-2">
+                    <div className="flex gap-2">
+                        <div className="flex-1 flex items-center gap-2 bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-2.5">
+                            <span className="material-symbols-outlined text-slate-400" style={{fontSize:18}}>calendar_month</span>
+                            <input
+                                type="date"
+                                value={repDateFilter}
+                                onChange={e => setRepDateFilter(e.target.value)}
+                                className="flex-1 bg-transparent outline-none text-sm font-bold text-slate-700"
+                            />
+                            {repDateFilter && (
+                                <button onClick={() => setRepDateFilter('')} className="text-slate-400 hover:text-slate-600 active:scale-90 transition-all">
+                                    <span className="material-symbols-outlined" style={{fontSize:18}}>close</span>
+                                </button>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setShowPDF(true)}
+                            className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white font-black text-xs px-4 rounded-2xl shadow-md shadow-red-500/25 active:scale-95 transition-all uppercase tracking-wide"
+                        >
+                            <span className="material-symbols-outlined" style={{fontSize:16}}>picture_as_pdf</span>
+                            PDF
+                        </button>
                     </div>
                     {repDateFilter && (
-                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1.5 ml-1">
+                        <p className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">
                             {new Date(repDateFilter + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
                             {' · '}{sortedSales.length} {sortedSales.length === 1 ? 'venta' : 'ventas'}
                         </p>
@@ -503,6 +510,149 @@ export default function Reports() {
                     </div>
                 </div>
             )}
+
+            {/* ── OVERLAY PDF OPERADOR ── */}
+            {showPDF && !isAdmin && (() => {
+                const fechaPDF  = repDateFilter || todayStr;
+                const ventasPDF = (sales || []).filter(s =>
+                    s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
+                );
+                const fechaLabel = new Date(fechaPDF + 'T12:00:00').toLocaleDateString('es-MX', {
+                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+                });
+                const totalDia = ventasPDF.reduce((s, v) => s + (Number(v.total) || 0), 0);
+
+                // Agrupar productos
+                const pMap = {};
+                ventasPDF.forEach(sale => {
+                    (sale.items || []).forEach(it => {
+                        if (!it.name) return;
+                        if (!pMap[it.name]) pMap[it.name] = { qty: 0, pieces: 0, money: 0, unit: it.unit || 'u' };
+                        const q = Number(it.quantity) || 0;
+                        pMap[it.name].qty    += q;
+                        pMap[it.name].pieces += Number(it.pieces) || 0;
+                        pMap[it.name].money  += q * (Number(it.price) || 0);
+                    });
+                });
+                const prodRows = Object.entries(pMap).sort((a, b) => b[1].money - a[1].money);
+
+                return (
+                    <div className="fixed inset-0 z-[150] bg-slate-100 flex flex-col no-print-hide">
+                        {/* Barra superior */}
+                        <div className="bg-white border-b border-slate-200 flex items-center gap-3 px-4 py-3 shrink-0 no-print">
+                            <button onClick={() => setShowPDF(false)} className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition-all">
+                                <span className="material-symbols-outlined text-slate-600" style={{fontSize:22}}>arrow_back</span>
+                            </button>
+                            <p className="flex-1 font-black text-slate-800 text-sm">Reporte del Día</p>
+                            <button
+                                onClick={() => window.print()}
+                                className="flex items-center gap-2 bg-red-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-md shadow-red-500/25 active:scale-95 transition-all"
+                            >
+                                <span className="material-symbols-outlined" style={{fontSize:16}}>print</span>
+                                Guardar PDF
+                            </button>
+                        </div>
+
+                        {/* Contenido del reporte */}
+                        <div className="flex-1 overflow-y-auto p-4" id="pdf-report-content">
+                            <div className="max-w-lg mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+
+                                {/* Cabecera */}
+                                <div className="bg-slate-800 text-white px-6 py-5 text-center">
+                                    <p className="text-xs font-black tracking-widest text-slate-400 uppercase mb-1">{ticketConfig?.businessName || 'LACTEOS LA TOBA'}</p>
+                                    <p className="text-lg font-black">Reporte de Ventas</p>
+                                    <p className="text-sm text-slate-300 mt-1 capitalize">{fechaLabel}</p>
+                                    <p className="text-xs text-slate-400 mt-0.5">Repartidor: {currentUser?.name}</p>
+                                </div>
+
+                                {/* Resumen */}
+                                <div className="grid grid-cols-2 divide-x divide-slate-100 border-b border-slate-100">
+                                    <div className="p-4 text-center">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ventas</p>
+                                        <p className="text-2xl font-black text-slate-800">{ventasPDF.length}</p>
+                                    </div>
+                                    <div className="p-4 text-center">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
+                                        <p className="text-2xl font-black text-emerald-600">${totalDia.toFixed(2)}</p>
+                                    </div>
+                                </div>
+
+                                {/* Tabla productos */}
+                                {prodRows.length > 0 && (
+                                    <div className="px-4 pt-4 pb-2">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Productos vendidos</p>
+                                        <table className="w-full text-sm border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-50">
+                                                    <th className="text-left text-[10px] font-black text-slate-400 uppercase px-2 py-1.5">Producto</th>
+                                                    <th className="text-center text-[10px] font-black text-slate-400 uppercase px-2 py-1.5">Cant</th>
+                                                    <th className="text-center text-[10px] font-black text-slate-400 uppercase px-2 py-1.5">Pzas</th>
+                                                    <th className="text-right text-[10px] font-black text-slate-400 uppercase px-2 py-1.5">Importe</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {prodRows.map(([name, { qty, pieces, money, unit }]) => (
+                                                    <tr key={name} className="border-t border-slate-50">
+                                                        <td className="px-2 py-2 font-bold text-slate-700 text-xs">{name}</td>
+                                                        <td className="px-2 py-2 text-center text-xs font-bold text-slate-600">
+                                                            {qty % 1 === 0 ? qty : qty.toFixed(2)}<span className="text-slate-400 ml-0.5">{unit === 'Kg' ? 'kg' : 'u'}</span>
+                                                        </td>
+                                                        <td className="px-2 py-2 text-center text-xs font-black text-blue-600">{pieces > 0 ? pieces : '—'}</td>
+                                                        <td className="px-2 py-2 text-right text-xs font-black text-emerald-600">${money.toFixed(2)}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="bg-slate-800 text-white">
+                                                    <td className="px-2 py-2 font-black text-xs uppercase tracking-wider" colSpan={3}>Total</td>
+                                                    <td className="px-2 py-2 text-right font-black text-sm">${totalDia.toFixed(2)}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                {/* Lista de ventas */}
+                                <div className="px-4 pt-3 pb-4">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Detalle de ventas</p>
+                                    {ventasPDF.length === 0 ? (
+                                        <p className="text-sm text-slate-400 text-center py-4">Sin ventas registradas</p>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {[...ventasPDF].reverse().map((sale, i) => {
+                                                const client  = clients.find(c => c.id === sale.clientId);
+                                                const hora = new Date(sale.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                                                return (
+                                                    <div key={i} className="flex items-start gap-3 py-2 border-b border-slate-50 last:border-0">
+                                                        <span className="text-xs font-black text-slate-400 w-12 shrink-0 mt-0.5">{hora}</span>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-xs font-black text-slate-700">{client?.name || 'General'}</p>
+                                                            <p className="text-[10px] text-slate-400 truncate">{(sale.items || []).map(it => it.name).join(', ')}</p>
+                                                        </div>
+                                                        <span className="text-xs font-black text-emerald-600 shrink-0">${Number(sale.total).toFixed(2)}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="bg-slate-50 px-4 py-3 text-center border-t border-slate-100">
+                                    <p className="text-[10px] text-slate-400 font-medium">{ticketConfig?.footerLine1 || '¡Gracias por su trabajo!'}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* CSS de impresión */}
+                        <style>{`
+                            @media print {
+                                body > * { display: none !important; }
+                                #pdf-report-content { display: block !important; position: fixed; inset: 0; overflow: visible; padding: 0; background: white; }
+                                #pdf-report-content > * { box-shadow: none !important; border-radius: 0 !important; }
+                                .no-print { display: none !important; }
+                            }
+                        `}</style>
+                    </div>
+                );
+            })()}
         </div>
     );
 }
