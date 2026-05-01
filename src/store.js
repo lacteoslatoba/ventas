@@ -142,6 +142,7 @@ export const useStore = create(
                     if (!error && data.session) {
                         if (cleanUsername === 'admin') {
                             set({ currentUser: { id: 'admin', name: 'Administrador', role: 'admin' } });
+                            get().fetchFromSupabase();
                             return true;
                         }
                         const { data: userData } = await supabase
@@ -155,6 +156,7 @@ export const useStore = create(
                                 priceList: userData.priceList || userData.pricelist || 'A',
                                 role: userData.role || 'repartidor'
                             }});
+                            get().fetchFromSupabase();
                             return true;
                         }
                     }
@@ -190,8 +192,9 @@ export const useStore = create(
                 if (!session) return;
 
                 const username = (session.user.email || '').split('@')[0];
-                if (username === 'admin') {
+                if (username === 'administrador') {
                     set({ currentUser: { id: 'admin', name: 'Administrador', role: 'admin' } });
+                    get().fetchFromSupabase();
                     return;
                 }
                 const { data: userData } = await supabase
@@ -205,6 +208,7 @@ export const useStore = create(
                         priceList: userData.priceList || userData.pricelist || 'A',
                         role: userData.role || 'repartidor'
                     }});
+                    get().fetchFromSupabase();
                 }
             },
 
@@ -336,6 +340,9 @@ export const useStore = create(
             // Descarga de datos oficiales desde Supabase
             fetchFromSupabase: async () => {
                 if (!get().isOnline || !supabase) return;
+                // Con RLS activo, las lecturas requieren sesión Auth
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
                 set({ isSyncing: true });
                 try {
                     const tablesToPull = ['products', 'users', 'clients', 'sales', 'inventory', 'expenses'];
