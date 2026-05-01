@@ -464,7 +464,7 @@ function App() {
                   <Route path="/productos" element={<AdminRoute currentUser={currentUser}><Products /></AdminRoute>} />
                   <Route path="/inventario" element={<AdminRoute currentUser={currentUser}><Inventory /></AdminRoute>} />
                   <Route path="/usuarios" element={<AdminRoute currentUser={currentUser}><UsersPage /></AdminRoute>} />
-                  <Route path="/impresora" element={<AdminRoute currentUser={currentUser}><PrinterSettings /></AdminRoute>} />
+                  <Route path="/impresora" element={<PrinterSettings />} />
                   <Route path="/ticket" element={<AdminRoute currentUser={currentUser}><TicketConfig /></AdminRoute>} />
                 </Routes>
               </div>
