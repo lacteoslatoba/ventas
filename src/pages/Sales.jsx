@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { ShoppingCart, Printer, Delete, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth, Banknote, LogOut, Users, LayoutGrid, Package } from 'lucide-react';
+import { ShoppingCart, Printer, Delete, Trash2, CheckCircle, ChevronUp, ChevronLeft, ChevronRight, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth, Banknote, LogOut, Users, LayoutGrid, Package } from 'lucide-react';
+
+const MONTHS_S = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS_S   = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
 import { printTicket } from '../lib/bluetoothPrinter';
 import { Link } from 'react-router-dom';
 import TicketPreview from '../components/TicketPreview';
@@ -10,8 +13,15 @@ export default function Sales() {
         products, clients, users, addSale, currentUser, ticketConfig,
         cart, updateCart, selectedCartClient, updateSelectedCartClient, showToast
     } = useStore();
+    const todayStr = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD en local
+    const [saleDate, setSaleDate] = useState(todayStr);
+    const _now = new Date();
+    const [calMonth, setCalMonth] = useState({ year: _now.getFullYear(), month: _now.getMonth() });
+    const prevMonthS = () => setCalMonth(p => p.month === 0 ? { year: p.year-1, month: 11 } : { ...p, month: p.month-1 });
+    const nextMonthS = () => setCalMonth(p => p.month === 11 ? { year: p.year+1, month: 0  } : { ...p, month: p.month+1 });
     const [generatedTicket, setGeneratedTicket] = useState(null);
     const [btPrinting, setBtPrinting] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState('efectivo');
 
     // Mobile Cart State
     const [mobileCartOpen, setMobileCartOpen] = useState(false);
@@ -121,18 +131,24 @@ export default function Sales() {
         if (!selectedCartClient) { showToast('Selecciona un cliente destino', 'warning'); return; }
         if (cart.length === 0) { showToast('El carrito está vacío', 'warning'); return; }
 
+        const now = new Date();
+        const [y, m, d] = saleDate.split('-').map(Number);
+        const saleDateTime = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds());
         const sale = {
             userId: effectiveUserId,
             clientId: selectedCartClient,
             items: cart,
             total,
-            date: new Date().toISOString()
+            paymentMethod,
+            date: saleDateTime.toISOString()
         };
 
         addSale(sale);
         setGeneratedTicket({ ...sale, id: Date.now().toString() });
         updateCart([]);
         updateSelectedCartClient('');
+        setPaymentMethod('efectivo');
+        setSaleDate(todayStr);
         setMobileCartOpen(false);
     };
 
@@ -287,14 +303,93 @@ export default function Sales() {
                 )}
             </div>
             
-            <div className="px-5 py-4 bg-white border-b border-slate-100 shrink-0">
-                <label className="block text-slate-400 font-black mb-1.5 uppercase text-[10px] tracking-widest">Información de Entrega</label>
-                <select value={selectedCartClient} onChange={e => updateSelectedCartClient(e.target.value)} className="w-full bg-slate-50 border-none shadow-inner focus:ring-2 focus:ring-primary/20 p-4 rounded-2xl font-black outline-none text-slate-800 transition-all">
-                    <option value="">Selecciona Cliente / Tienda...</option>
-                    {clients
-                        .filter(c => currentUser?.role === 'admin' ? true : c.userId === currentUser?.id)
-                        .map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+            <div className="px-5 py-4 bg-white border-b border-slate-100 shrink-0 space-y-3">
+                <div>
+                    <label className="block text-slate-400 font-black mb-1.5 uppercase text-[10px] tracking-widest">Información de Entrega</label>
+                    <select value={selectedCartClient} onChange={e => updateSelectedCartClient(e.target.value)} className="w-full bg-slate-50 border-none shadow-inner focus:ring-2 focus:ring-primary/20 p-4 rounded-2xl font-black outline-none text-slate-800 transition-all">
+                        <option value="">Selecciona Cliente / Tienda...</option>
+                        {clients
+                            .filter(c => currentUser?.role === 'admin' ? true : c.userId === currentUser?.id)
+                            .map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                </div>
+
+                <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Fecha de la Venta</label>
+                        {saleDate !== todayStr && (
+                            <button onClick={() => { setSaleDate(todayStr); setCalMonth({ year: _now.getFullYear(), month: _now.getMonth() }); }}
+                                className="text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase tracking-wide">
+                                Hoy
+                            </button>
+                        )}
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-3 shadow-inner">
+                        {/* Navegación mes */}
+                        <div className="flex items-center justify-between mb-2">
+                            <button onClick={prevMonthS} className="w-7 h-7 rounded-lg border border-slate-200 bg-white flex items-center justify-center active:scale-90 transition-all hover:border-slate-400">
+                                <ChevronLeft size={14} className="text-slate-500" />
+                            </button>
+                            <p className="text-xs font-black text-slate-800 capitalize tracking-wide">
+                                {MONTHS_S[calMonth.month]} {calMonth.year}
+                            </p>
+                            <button onClick={nextMonthS} disabled={`${calMonth.year}-${String(calMonth.month+1).padStart(2,'0')}` >= todayStr.slice(0,7)}
+                                className="w-7 h-7 rounded-lg border border-slate-200 bg-white flex items-center justify-center active:scale-90 transition-all hover:border-slate-400 disabled:opacity-30">
+                                <ChevronRight size={14} className="text-slate-500" />
+                            </button>
+                        </div>
+                        {/* Cabecera días */}
+                        <div className="grid grid-cols-7 mb-1 border-b border-slate-200 pb-1">
+                            {DAYS_S.map(d => <div key={d} className="text-center text-[9px] font-black text-slate-400 uppercase">{d}</div>)}
+                        </div>
+                        {/* Días */}
+                        <div className="grid grid-cols-7 gap-y-0.5">
+                            {Array.from({ length: new Date(calMonth.year, calMonth.month, 1).getDay() }).map((_,i) => <div key={`e${i}`} />)}
+                            {Array.from({ length: new Date(calMonth.year, calMonth.month+1, 0).getDate() }).map((_,i) => {
+                                const day     = i + 1;
+                                const dateStr = `${calMonth.year}-${String(calMonth.month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                                const isSel   = dateStr === saleDate;
+                                const isToday = dateStr === todayStr;
+                                const isFut   = dateStr > todayStr;
+                                return (
+                                    <button key={day} disabled={isFut} onClick={() => setSaleDate(dateStr)}
+                                        className={`flex items-center justify-center w-full py-1.5 rounded-lg text-[12px] font-black transition-all active:scale-90
+                                            ${isFut ? 'opacity-20 cursor-not-allowed text-slate-400'
+                                            : isSel  ? 'bg-slate-900 text-white'
+                                            : isToday ? 'ring-2 ring-slate-900 text-slate-900'
+                                            : 'hover:bg-slate-200 text-slate-700'}`}>
+                                        {day}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        {/* Fecha seleccionada */}
+                        <p className="text-center text-[10px] font-bold text-slate-500 mt-2 pt-2 border-t border-slate-200 capitalize">
+                            {new Date(saleDate + 'T12:00:00').toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long' })}
+                        </p>
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-slate-400 font-black mb-2 uppercase text-[10px] tracking-widest">Forma de Pago</label>
+                    <div className="flex gap-2">
+                        {[
+                            { value: 'efectivo',       label: 'Efectivo',       icon: 'payments',         activeClass: 'border-emerald-500 bg-emerald-50', dotClass: 'border-emerald-500 bg-emerald-500', textClass: 'text-emerald-700' },
+                            { value: 'transferencia',  label: 'Transferencia',  icon: 'account_balance',  activeClass: 'border-blue-500 bg-blue-50',        dotClass: 'border-blue-500 bg-blue-500',        textClass: 'text-blue-700'    },
+                        ].map(opt => (
+                            <label
+                                key={opt.value}
+                                className={`flex-1 flex items-center gap-2.5 px-3.5 py-3 rounded-2xl cursor-pointer transition-all border-2 select-none ${paymentMethod === opt.value ? opt.activeClass : 'border-slate-200 bg-slate-50'}`}
+                            >
+                                <input type="radio" name="paymentMethod" value={opt.value} checked={paymentMethod === opt.value} onChange={() => setPaymentMethod(opt.value)} className="hidden" />
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${paymentMethod === opt.value ? opt.dotClass : 'border-slate-300 bg-white'}`}>
+                                    {paymentMethod === opt.value && <div className="w-2 h-2 rounded-full bg-white" />}
+                                </div>
+                                <span className={`text-xs font-black uppercase tracking-wide leading-none ${paymentMethod === opt.value ? opt.textClass : 'text-slate-500'}`}>{opt.label}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-2 md:p-5 pb-[120px] lg:pb-5">

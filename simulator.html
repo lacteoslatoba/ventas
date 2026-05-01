@@ -1,475 +1,220 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Simulador Android - Ventas</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<title>Simulador · Ventas App</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+    background:#f0f0f0;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-family:system-ui,-apple-system,sans-serif;
+    gap:20px;
+    padding:20px;
+}
 
-    body {
-      background: #0f0f1a;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-family: sans-serif;
-      overflow-x: hidden;
-    }
+/* ── Toolbar ── */
+.bar{
+    display:flex;align-items:center;gap:8px;
+    background:#fff;border:1px solid #ddd;
+    border-radius:14px;padding:8px 14px;
+    flex-wrap:wrap;justify-content:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+.bar-sep{width:1px;height:22px;background:#ddd;margin:0 2px}
+.bar-label{color:#999;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
 
-    /* ── Barra de herramientas ── */
-    .toolbar {
-      width: 100%;
-      background: #1e1e2e;
-      border-bottom: 1px solid #2a2a3e;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      flex-shrink: 0;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
+.sz{
+    background:transparent;border:1.5px solid #ddd;color:#888;
+    font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;
+    padding:5px 16px;border-radius:8px;cursor:pointer;transition:all .15s;
+    display:flex;flex-direction:column;align-items:center;gap:1px;
+}
+.sz small{font-size:9px;font-weight:600;color:#bbb;letter-spacing:.04em}
+.sz:hover{border-color:#999;color:#555}
+.sz.on{background:#111;border-color:#111;color:#fff}
+.sz.on small{color:#999}
 
-    .toolbar-label {
-      color: #888;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
+.url-wrap{
+    display:flex;align-items:center;gap:6px;
+    background:#f5f5f5;border:1.5px solid #ddd;
+    border-radius:8px;padding:4px 10px;
+}
+#urlInput{
+    background:transparent;border:none;outline:none;
+    color:#666;font-size:11px;width:200px;
+}
+.ico{
+    background:transparent;border:1.5px solid #ddd;color:#888;
+    width:30px;height:30px;border-radius:8px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;transition:all .15s;
+}
+.ico:hover{border-color:#999;color:#333}
 
-    .size-btn {
-      background: #2a2a3e;
-      color: #aaa;
-      border: 1px solid #3a3a5e;
-      border-radius: 6px;
-      padding: 5px 12px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
+/* ── Stage ── */
+.stage{display:flex;flex-direction:column;align-items:center;gap:8px}
+.dname{color:#888;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;transition:all .3s}
 
-    .size-btn:hover { background: #3a3a5e; color: #fff; }
-    .size-btn.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+/* ── Phone shell ── */
+.phone{
+    background:linear-gradient(150deg,#242424 0%,#181818 100%);
+    border-radius:54px;
+    border:1.5px solid #323232;
+    box-shadow:
+        0 0 0 1px #0c0c0c,
+        inset 0 0 0 1.5px #2d2d2d,
+        0 70px 120px rgba(0,0,0,.95),
+        0 0 0 8px #111;
+    position:relative;
+    padding:17px 13px 24px;
+    transition:all .35s cubic-bezier(.4,0,.2,1);
+}
 
-    .divider { width: 1px; height: 22px; background: #2a2a3e; }
+/* Left buttons (volume + mute) */
+.btn-l{position:absolute;left:-3.5px;top:108px;display:flex;flex-direction:column;gap:9px}
+.btn-l div{width:3.5px;background:#262626;border-radius:2px 0 0 2px}
 
-    .reload-btn {
-      background: #4f46e5;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 5px 14px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: background 0.15s;
-    }
-    .reload-btn:hover { background: #4338ca; }
-    .reload-btn:active { transform: scale(0.96); }
+/* Right button (power) */
+.btn-r{position:absolute;right:-3.5px;top:130px;width:3.5px;height:72px;background:#262626;border-radius:0 2px 2px 0}
 
-    .reload-icon {
-      width: 14px;
-      height: 14px;
-      animation: none;
-    }
-    .reload-btn.spinning .reload-icon {
-      animation: spin 0.5s linear;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
+/* Screen */
+.screen{
+    background:#000;border-radius:42px;overflow:hidden;
+    position:relative;transition:all .35s cubic-bezier(.4,0,.2,1);
+}
 
-    .dim-label {
-      color: #555;
-      font-size: 11px;
-    }
+/* Status bar */
+.sbar{
+    position:absolute;top:0;left:0;right:0;height:50px;z-index:15;
+    pointer-events:none;display:flex;align-items:flex-start;
+    justify-content:space-between;padding:15px 24px 0;
+}
+.sbar-time{color:#fff;font-size:13px;font-weight:700}
+.sbar-r{display:flex;align-items:center;gap:5px}
 
-    /* ── Zona scrolleable ── */
-    .scroll-area {
-      flex: 1;
-      width: 100%;
-      overflow-y: auto;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 30px 20px 60px;
-    }
+/* Home indicator */
+.home-ind{
+    position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+    width:130px;height:4px;background:rgba(255,255,255,.22);border-radius:3px;
+    pointer-events:none;z-index:15;
+}
 
-    /* ── Dispositivo ── */
-    .device-wrapper {
-      transform-origin: top center;
-      transition: transform 0.2s;
-    }
-
-    .device {
-      position: relative;
-      width: 393px;
-      height: 852px;
-      background: #111;
-      border-radius: 52px;
-      box-shadow:
-        0 0 0 2px #2a2a2a,
-        0 0 0 7px #1a1a1a,
-        0 0 0 9px #3a3a3a,
-        0 40px 100px rgba(0,0,0,0.9);
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Botón de encendido (derecha) */
-    .device::before {
-      content: '';
-      position: absolute;
-      right: -4px;
-      top: 160px;
-      width: 4px;
-      height: 70px;
-      background: #2a2a2a;
-      border-radius: 0 3px 3px 0;
-    }
-
-    /* Botones de volumen (izquierda) */
-    .device::after {
-      content: '';
-      position: absolute;
-      left: -4px;
-      top: 120px;
-      width: 4px;
-      height: 45px;
-      background: #2a2a2a;
-      border-radius: 3px 0 0 3px;
-      box-shadow: 0 65px 0 #2a2a2a;
-    }
-
-    /* ── Pantalla ── */
-    .screen {
-      flex: 1;
-      background: #000;
-      border-radius: 40px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
-
-    /* Notch tipo pill (Pixel/Android 12+) */
-    .notch {
-      position: absolute;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 14px;
-      height: 14px;
-      background: #0a0a0a;
-      border-radius: 50%;
-      z-index: 20;
-      border: 2px solid #1a1a1a;
-    }
-
-    /* ── Barra de estado ── */
-    .status-bar {
-      background: rgba(0,0,0,0.85);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 12px 24px 5px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-shrink: 0;
-      z-index: 10;
-    }
-
-    .status-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* ── iFrame ── */
-    .app-frame {
-      flex: 1;
-      border: none;
-      width: 100%;
-      display: block;
-      background: #fff;
-    }
-
-    /* ── Barra de navegación Android ── */
-    .nav-bar {
-      background: #000;
-      padding: 8px 0 12px;
-      display: flex;
-      justify-content: space-evenly;
-      align-items: center;
-      flex-shrink: 0;
-      border-radius: 0 0 40px 40px;
-    }
-
-    .nav-btn {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border-radius: 50%;
-      transition: background 0.15s;
-    }
-    .nav-btn:hover { background: rgba(255,255,255,0.08); }
-    .nav-btn:active { background: rgba(255,255,255,0.15); }
-
-    .nav-btn svg {
-      width: 20px;
-      height: 20px;
-      fill: rgba(255,255,255,0.75);
-    }
-
-    /* Píldora inferior */
-    .nav-pill {
-      width: 110px;
-      height: 4px;
-      background: #333;
-      border-radius: 10px;
-      margin: 6px auto 0;
-    }
-
-    /* ── Info bajo el teléfono ── */
-    .device-info {
-      text-align: center;
-      margin-top: 16px;
-      color: #444;
-      font-size: 12px;
-    }
-    .device-info a { color: #555; text-decoration: underline; }
-    .device-info a:hover { color: #888; }
-  </style>
+iframe{display:block;border:none}
+.dim{color:#bbb;font-size:10px;font-weight:700;letter-spacing:.04em;margin-top:2px}
+.hint{color:#aaa;font-size:10px;font-weight:600;text-align:center;letter-spacing:.04em;line-height:1.6;max-width:360px}
+</style>
 </head>
 <body>
 
-  <!-- Barra de herramientas -->
-  <div class="toolbar">
-    <span class="toolbar-label">Tamaño</span>
+<!-- Toolbar -->
+<div class="bar">
+    <span class="bar-label">Tamaño</span>
+    <button class="sz" data-s="s">S<small>360 × 780</small></button>
+    <button class="sz on" data-s="m">M<small>393 × 852</small></button>
+    <button class="sz" data-s="l">L<small>430 × 932</small></button>
+    <div class="bar-sep"></div>
+    <div class="url-wrap">
+        <span style="color:#444;font-size:11px">🔗</span>
+        <input id="urlInput" value="http://localhost:5173" placeholder="URL de la app"/>
+    </div>
+    <button class="ico" onclick="reloadApp()" title="Recargar">↻</button>
+    <button class="ico" onclick="openTab()" title="Abrir en pestaña">↗</button>
+</div>
 
-    <button class="size-btn" onclick="setScale(0.65)" data-scale="0.65">Pequeño</button>
-    <button class="size-btn active" onclick="setScale(0.85)" data-scale="0.85">Mediano</button>
-    <button class="size-btn" onclick="setScale(1.0)" data-scale="1.0">Grande</button>
-    <button class="size-btn" onclick="setScale(1.15)" data-scale="1.15">Completo</button>
+<!-- Phone -->
+<div class="stage">
+    <div class="dname" id="dname">iPhone 15 · M — Estándar</div>
 
-    <div class="divider"></div>
+    <div class="phone" id="phone">
 
-    <span class="toolbar-label">Letras</span>
-    <button class="size-btn" onclick="setFontSize(80)"  data-font="80">A-</button>
-    <button class="size-btn active" onclick="setFontSize(100)" data-font="100">A</button>
-    <button class="size-btn" onclick="setFontSize(115)" data-font="115">A+</button>
-    <button class="size-btn" onclick="setFontSize(130)" data-font="130">A++</button>
+        <!-- Volume + mute left -->
+        <div class="btn-l">
+            <div style="height:30px"></div>
+            <div style="height:58px"></div>
+            <div style="height:58px"></div>
+        </div>
+        <!-- Power right -->
+        <div class="btn-r"></div>
 
-    <div class="divider"></div>
-
-    <button class="reload-btn" id="reloadBtn" onclick="reloadApp()">
-      <svg class="reload-icon" viewBox="0 0 24 24" fill="white">
-        <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4C7.58 4 4 7.58 4 12s3.58 8 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-      </svg>
-      Recargar
-    </button>
-
-    <div class="divider"></div>
-
-    <span class="dim-label" id="dimLabel">393 × 852</span>
-  </div>
-
-  <!-- Área scrolleable -->
-  <div class="scroll-area">
-    <div class="device-wrapper" id="deviceWrapper">
-      <div class="device">
-        <div class="screen">
-          <div class="notch"></div>
-
-          <!-- Barra de estado -->
-          <div class="status-bar">
-            <span id="clock">12:00</span>
-            <div class="status-right">
-              <!-- Señal celular -->
-              <svg width="16" height="11" viewBox="0 0 16 11" fill="white">
-                <rect x="0" y="7" width="3" height="4" rx="0.5"/>
-                <rect x="4.5" y="4.5" width="3" height="6.5" rx="0.5"/>
-                <rect x="9" y="2" width="3" height="9" rx="0.5"/>
-                <rect x="13.5" y="0" width="2.5" height="11" rx="0.5"/>
-              </svg>
-              <!-- WiFi -->
-              <svg width="15" height="11" viewBox="0 0 20 14" fill="white">
-                <path d="M10 10.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
-                <path d="M10 6.5c1.9 0 3.6.8 4.8 2L16.5 7C14.9 5.2 12.6 4 10 4S5.1 5.2 3.5 7L5.2 8.5C6.4 7.3 8.1 6.5 10 6.5z"/>
-                <path d="M10 2.5c2.9 0 5.5 1.2 7.4 3.1L19 4C16.7 1.5 13.5 0 10 0S3.3 1.5 1 4l1.6 1.6C4.5 3.7 7.1 2.5 10 2.5z"/>
-              </svg>
-              <!-- Batería -->
-              <svg width="24" height="11" viewBox="0 0 24 11" fill="white">
-                <rect x="0" y="1" width="20" height="9" rx="2" stroke="white" stroke-width="1.2" fill="none"/>
-                <rect x="1.5" y="2.5" width="15" height="6" rx="1" fill="white"/>
-                <path d="M21.5 3.5v4c1.1-.5 1.5-1.2 1.5-2s-.4-1.5-1.5-2z"/>
-              </svg>
+        <div class="screen" id="screen">
+            <!-- Status bar -->
+            <div class="sbar">
+                <span class="sbar-time" id="clk">9:41</span>
+                <div class="sbar-r">
+                    <!-- Signal bars -->
+                    <svg width="17" height="12" fill="#fff" viewBox="0 0 17 12">
+                        <rect x="0"    y="6"  width="3" height="6"  rx="1" opacity=".4"/>
+                        <rect x="4.5"  y="4"  width="3" height="8"  rx="1" opacity=".6"/>
+                        <rect x="9"    y="1.5"width="3" height="10.5" rx="1" opacity=".8"/>
+                        <rect x="13.5" y="0"  width="3" height="12" rx="1"/>
+                    </svg>
+                    <!-- Wifi -->
+                    <svg width="15" height="12" fill="#fff" viewBox="0 0 15 12">
+                        <circle cx="7.5" cy="11" r="1.5"/>
+                        <path d="M4.3 8.2C5.2 7.3 6.3 6.8 7.5 6.8s2.3.5 3.2 1.4l1.2-1.3C10.6 5.6 9.1 5 7.5 5S4.4 5.6 3.1 6.9z" opacity=".65"/>
+                        <path d="M1.6 5.5C3 4.1 5.2 3.2 7.5 3.2s4.5.9 5.9 2.3l1.2-1.3C12.8 2.6 10.3 1.5 7.5 1.5S2.2 2.6.4 4.2z" opacity=".3"/>
+                    </svg>
+                    <!-- Battery -->
+                    <svg width="26" height="12" fill="#fff" viewBox="0 0 26 12">
+                        <rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="rgba(255,255,255,.35)" stroke-width="1" fill="none"/>
+                        <rect x="22" y="3.5" width="2.5" height="5" rx="1.2" opacity=".4"/>
+                        <rect x="2" y="2" width="16" height="8" rx="1.5"/>
+                    </svg>
+                </div>
             </div>
-          </div>
 
-          <!-- App -->
-          <iframe
-            id="appFrame"
-            class="app-frame"
-            src="http://localhost:5173"
-            title="Ventas App"
-            allow="camera; microphone; bluetooth"
-            tabindex="0"
-          ></iframe>
+            <iframe id="fr" src="http://localhost:5173"></iframe>
+            <div class="home-ind"></div>
+        </div>
+    </div>
 
-          <!-- Nav Android -->
-          <div class="nav-bar">
-            <div class="nav-btn" title="Atrás" onclick="iframeBack()">
-              <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-            </div>
-            <div class="nav-btn" title="Inicio" onclick="iframeHome()">
-              <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            </div>
-            <div class="nav-btn" title="Recientes">
-              <svg viewBox="0 0 24 24">
-                <rect x="3" y="3" width="7" height="7" rx="1.5" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
-                <rect x="14" y="3" width="7" height="7" rx="1.5" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
-                <rect x="3" y="14" width="7" height="7" rx="1.5" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
-                <rect x="14" y="14" width="7" height="7" rx="1.5" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
-              </svg>
-            </div>
-          </div>
+    <div class="dim" id="dim">393 × 852 px</div>
+</div>
 
-        </div><!-- /screen -->
-      </div><!-- /device -->
+<p class="hint">Presiona <strong style="color:#333">S · M · L</strong> para cambiar tamaño &nbsp;·&nbsp; <strong style="color:#333">↻</strong> para recargar</p>
 
-      <div class="device-info">
-        Pixel 8 · 393×852 px &nbsp;·&nbsp;
-        <a href="http://localhost:5173" target="_blank">abrir en pestaña ↗</a>
-      </div>
-    </div><!-- /device-wrapper -->
-  </div><!-- /scroll-area -->
+<script>
+const SIZES = {
+    s:{ w:360, h:780, name:'iPhone SE · S  —  Compacto'  },
+    m:{ w:393, h:852, name:'iPhone 15 · M  —  Estándar'  },
+    l:{ w:430, h:932, name:'iPhone 15 Plus · L  —  Grande'},
+};
 
-  <script>
-    let currentScale = 0.85;
-    let currentFontSize = 100;
+function applySize(k){
+    const {w,h,name} = SIZES[k];
+    const sc = document.getElementById('screen');
+    const fr = document.getElementById('fr');
+    sc.style.width  = w+'px';
+    sc.style.height = h+'px';
+    fr.style.width  = w+'px';
+    fr.style.height = h+'px';
+    document.getElementById('dname').textContent = name;
+    document.getElementById('dim').textContent   = w+' × '+h+' px';
+    document.querySelectorAll('.sz').forEach(b=>b.classList.toggle('on', b.dataset.s===k));
+}
 
-    // Reloj
-    function updateClock() {
-      const now = new Date();
-      const h = now.getHours().toString().padStart(2, '0');
-      const m = now.getMinutes().toString().padStart(2, '0');
-      document.getElementById('clock').textContent = h + ':' + m;
-    }
-    updateClock();
-    setInterval(updateClock, 15000);
+document.querySelectorAll('.sz').forEach(b=>b.addEventListener('click',()=>applySize(b.dataset.s)));
 
-    // Escala
-    function setScale(scale) {
-      currentScale = scale;
-      document.getElementById('deviceWrapper').style.transform = `scale(${scale})`;
-      document.querySelectorAll('.size-btn').forEach(btn => {
-        btn.classList.toggle('active', parseFloat(btn.dataset.scale) === scale);
-      });
-      const w = Math.round(393 * scale);
-      const h = Math.round(852 * scale);
-      document.getElementById('dimLabel').textContent = `${w} × ${h}`;
-    }
+const inp = document.getElementById('urlInput');
+inp.addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('fr').src=e.target.value; });
+inp.addEventListener('change',  e=>{ document.getElementById('fr').src=e.target.value; });
 
-    // Aplicar escala inicial
-    setScale(0.85);
+function reloadApp(){ const f=document.getElementById('fr'); f.src=f.src; }
+function openTab(){ window.open(inp.value,'_blank'); }
 
-    // Tamaño de letra
-    function setFontSize(pct) {
-      currentFontSize = pct;
-      document.querySelectorAll('[data-font]').forEach(btn => {
-        btn.classList.toggle('active', parseInt(btn.dataset.font) === pct);
-      });
-      applyFontSize();
-    }
+(function tick(){
+    const n=new Date();
+    document.getElementById('clk').textContent=
+        String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+    setTimeout(tick,15000);
+})();
 
-    function applyFontSize() {
-      const frame = document.getElementById('appFrame');
-      try {
-        const doc = frame.contentDocument || frame.contentWindow.document;
-        let style = doc.getElementById('__sim_font_style');
-        if (!style) {
-          style = doc.createElement('style');
-          style.id = '__sim_font_style';
-          doc.head.appendChild(style);
-        }
-        style.textContent = `html { font-size: ${currentFontSize}% !important; }`;
-      } catch(e) {
-        // cross-origin: inyectar via src zoom fallback
-        frame.style.zoom = currentFontSize / 100;
-      }
-    }
-
-
-    // Recargar
-    function reloadApp() {
-      const btn = document.getElementById('reloadBtn');
-      const icon = btn.querySelector('.reload-icon');
-      btn.classList.add('spinning');
-      icon.style.animation = 'spin 0.5s linear';
-      setTimeout(() => { icon.style.animation = 'none'; }, 550);
-      document.getElementById('appFrame').src = document.getElementById('appFrame').src;
-    }
-
-    // Botón atrás del iframe
-    function iframeBack() {
-      try { document.getElementById('appFrame').contentWindow.history.back(); } catch(e) {}
-    }
-
-    // Botón inicio del iframe
-    function iframeHome() {
-      document.getElementById('appFrame').src = 'http://localhost:5173';
-    }
-
-    // ── Foco y teclado ──────────────────────────────────────────────
-    const frame = document.getElementById('appFrame');
-    const screen = document.querySelector('.screen');
-
-    // Al hacer clic en la pantalla del dispositivo, enfocar el iframe
-    screen.addEventListener('click', () => {
-      frame.focus();
-    });
-
-    // Auto-foco al cargar
-    frame.addEventListener('load', () => {
-      frame.focus();
-      if (currentFontSize !== 100) applyFontSize();
-    });
-
-    // Reenviar teclas del padre al iframe cuando el iframe NO es el foco activo
-    document.addEventListener('keydown', (e) => {
-      // Si el foco está en un input/button del toolbar, no reenviar
-      const tag = document.activeElement?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return;
-
-      try {
-        const iframeDoc = frame.contentDocument || frame.contentWindow.document;
-        const active = iframeDoc.activeElement;
-        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
-          // Ya hay un campo enfocado dentro del iframe — no interferir
-          return;
-        }
-        // Enviar el evento al iframe
-        const cloned = new KeyboardEvent(e.type, e);
-        iframeDoc.dispatchEvent(cloned);
-      } catch(err) { /* cross-origin: ignorar */ }
-    });
-
-    // Indicador visual de foco
-    frame.addEventListener('focus', () => screen.style.outline = '2px solid rgba(79,70,229,0.4)');
-    frame.addEventListener('blur',  () => screen.style.outline = 'none');
-  </script>
+applySize('m');
+</script>
 </body>
 </html>

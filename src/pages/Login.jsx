@@ -7,7 +7,15 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
+    const [lastSync, setLastSync] = useState(() => localStorage.getItem('lastSync') || null);
     const { login, isOnline, isSyncing, fetchFromSupabase } = useStore();
+
+    const handleSync = async () => {
+        await fetchFromSupabase();
+        const now = new Date().toISOString();
+        localStorage.setItem('lastSync', now);
+        setLastSync(now);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -152,15 +160,28 @@ export default function Login() {
                             </button>
 
                             {isOnline && (
-                                <button
-                                    type="button"
-                                    onClick={() => fetchFromSupabase()}
-                                    disabled={isSyncing}
-                                    className="w-full flex justify-center gap-2 items-center py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl border border-slate-100 text-xs font-bold transition-all disabled:opacity-50"
-                                >
-                                    <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
-                                    {isSyncing ? "Actualizando Base de Datos..." : "Actualizar Datos Online"}
-                                </button>
+                                <div className="flex flex-col items-center gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={handleSync}
+                                        disabled={isSyncing}
+                                        className="w-full flex justify-center gap-2 items-center py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl border border-slate-100 text-xs font-bold transition-all disabled:opacity-50"
+                                    >
+                                        <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+                                        {isSyncing ? "Actualizando Base de Datos..." : "Actualizar Datos Online"}
+                                    </button>
+                                    {lastSync && (
+                                        <p className="text-[10px] text-slate-400 font-medium">
+                                            Última actualización:{' '}
+                                            <span className="font-black text-slate-500">
+                                                {new Date(lastSync).toLocaleString('es-MX', {
+                                                    day: '2-digit', month: 'short', year: 'numeric',
+                                                    hour: '2-digit', minute: '2-digit',
+                                                })}
+                                            </span>
+                                        </p>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </form>

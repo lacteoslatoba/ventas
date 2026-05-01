@@ -12,7 +12,7 @@ const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto
 const DAYS_SHORT = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
 
 export default function Reports() {
-    const { sales, users, clients, expenses, currentUser, ticketConfig, showToast, showConfirm, clearAllSales, addExpense, deleteExpense } = useStore();
+    const { sales, users, clients, expenses, currentUser, ticketConfig, showToast, showConfirm, clearAllSales, addExpense, deleteExpense, deleteSale } = useStore();
     const [filterUser, setFilterUser] = useState('');
     const [repDateFilter, setRepDateFilter] = useState(todayStr);
     const [selectedSale, setSelectedSale] = useState(null);
@@ -127,6 +127,116 @@ export default function Reports() {
         };
     }, [isAdmin, repDateFilter, sales, clients, currentUser, expenses]);
 
+    // Generar imagen PNG renderizando HTML (idéntico al PDF)
+    const generateImage = async () => {
+        if (!operatorPDFData) return;
+
+        const { default: html2canvas } = await import('html2canvas');
+
+        const fechaPDF  = repDateFilter || todayStr;
+        const ventasPDF = (sales || []).filter(s =>
+            s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
+        );
+
+        const saleRows = ventasPDF.map(sale => {
+            const client = clients.find(c => c.id === sale.clientId);
+            const pieces = (sale.items || []).reduce((s, it) => s + (Number(it.pieces) || 0), 0);
+            const kg     = (sale.items || [])
+                .filter(it => (it.unit || '').toLowerCase() === 'kg')
+                .reduce((s, it) => s + (Number(it.quantity) || 0), 0);
+            const pm = (sale.paymentMethod || sale.paymentmethod || 'efectivo') === 'transferencia'
+                ? 'Transferencia' : 'Efectivo';
+            return [client?.name || 'General', pieces > 0 ? pieces : '—', kg > 0 ? kg.toFixed(2) : '—', `$${Number(sale.total).toFixed(2)}`, pm];
+        });
+
+        const footPieces  = saleRows.reduce((s, r) => s + (r[1] === '—' ? 0 : Number(r[1])), 0);
+        const footKg      = saleRows.reduce((s, r) => s + (r[2] === '—' ? 0 : parseFloat(r[2])), 0);
+        const efectivoImg = ventasPDF.filter(s => (s.paymentMethod || s.paymentmethod || 'efectivo') !== 'transferencia').reduce((s, x) => s + Number(x.total), 0);
+        const transferImg = ventasPDF.filter(s => (s.paymentMethod || s.paymentmethod) === 'transferencia').reduce((s, x) => s + Number(x.total), 0);
+        const fechaCap    = operatorPDFData.fechaLabel.charAt(0).toUpperCase() + operatorPDFData.fechaLabel.slice(1);
+        const bizName     = (ticketConfig?.businessName || 'LACTEOS LA TOBA').toUpperCase();
+
+        const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+        const tableHTML = (headers, rows, foot, colStyles) => `
+            <table style="width:100%;border-collapse:collapse;margin-bottom:14px;border:1px solid #000;font-family:Arial,sans-serif">
+                <thead><tr>${headers.map((h,i) => `<th style="background:#000;color:#fff;font-size:11px;font-weight:700;padding:10px 12px;text-align:${colStyles[i]||'left'}">${esc(h)}</th>`).join('')}</tr></thead>
+                <tbody>${rows.map((r,ri) => `<tr style="background:${ri%2===1?'#f8f8f8':'#fff'}">${r.map((c,i) => `<td style="font-size:12px;padding:8px 12px;color:#141414;border:0.5px solid #c8c8c8;text-align:${colStyles[i]||'left'}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+                <tfoot><tr style="border-top:2px solid #000">${foot.map((c,i) => `<td style="font-size:12px;font-weight:700;padding:9px 12px;background:#f8f8f8;border:0.5px solid #c8c8c8;text-align:${colStyles[i]||'left'}">${esc(c)}</td>`).join('')}</tr></tfoot>
+            </table>`;
+
+        const html = `
+        <div style="width:794px;background:#fff;padding:44px;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;color:#141414">
+            <div style="border-top:2px solid #000;margin-bottom:14px"></div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+                <div>
+                    <div style="font-size:20px;font-weight:800;color:#141414;margin-bottom:4px">${esc(bizName)}</div>
+                    <div style="font-size:11px;color:#787878">REPORTE DE VENTAS</div>
+                </div>
+                <div style="text-align:right;font-size:10px;color:#787878;line-height:1.8">
+                    <div>${esc(fechaCap)}</div>
+                    <div>Repartidor: ${esc(currentUser?.name || '')}</div>
+                    <div>${operatorPDFData.ventasCount} venta${operatorPDFData.ventasCount !== 1 ? 's' : ''}</div>
+                </div>
+            </div>
+            <div style="border-top:1px solid #000;margin-bottom:14px"></div>
+
+            <div style="font-size:10px;font-weight:700;color:#787878;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">DETALLE DE VENTAS</div>
+            ${tableHTML(
+                ['Cliente','Piezas','Kg','Importe','Forma de Pago'],
+                saleRows.length > 0 ? saleRows : [['Sin ventas registradas','','','','']],
+                ['TOTAL', footPieces > 0 ? footPieces : '—', footKg > 0 ? footKg.toFixed(2) : '—', `$${operatorPDFData.totalMoney.toFixed(2)}`, ''],
+                ['left','center','center','right','center']
+            )}
+
+            <div style="font-size:10px;font-weight:700;color:#787878;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">RESUMEN DE COBRO</div>
+            ${tableHTML(
+                ['Forma de Pago','Importe'],
+                [['Efectivo',`$${efectivoImg.toFixed(2)}`],['Transferencia',`$${transferImg.toFixed(2)}`]],
+                ['TOTAL VENTAS',`$${operatorPDFData.totalMoney.toFixed(2)}`],
+                ['left','right']
+            )}
+
+            ${operatorPDFData.expenses.length > 0 ? `
+            <div style="font-size:10px;font-weight:700;color:#787878;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">GASTOS DEL DÍA</div>
+            ${tableHTML(
+                ['Descripción','Monto'],
+                operatorPDFData.expenses.map(e => [e.description, `$${Number(e.amount).toFixed(2)}`]),
+                ['Total Gastos',`$${operatorPDFData.totalExpenses.toFixed(2)}`],
+                ['left','right']
+            )}` : ''}
+
+            <div style="border-top:2px solid #000;padding-top:14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <span style="font-size:16px;font-weight:800">Total Neto del Día:</span>
+                <span style="font-size:16px;font-weight:800">$${operatorPDFData.netTotal.toFixed(2)}</span>
+            </div>
+            <div style="border-top:0.5px solid #c8c8c8;padding-top:10px;text-align:center;font-size:10px;color:#787878;font-style:italic">
+                ${esc(ticketConfig?.footerLine1 || '¡Gracias por su trabajo!')}
+            </div>
+        </div>`;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:794px';
+        wrapper.innerHTML = html;
+        document.body.appendChild(wrapper);
+
+        try {
+            const canvas = await html2canvas(wrapper.firstElementChild, {
+                scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 794,
+            });
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a   = document.createElement('a');
+                a.href    = url;
+                a.download = `Reporte_${(currentUser?.name || 'Repartidor').replace(/\s+/g,'_')}_${repDateFilter || todayStr}.png`;
+                document.body.appendChild(a); a.click();
+                document.body.removeChild(a); URL.revokeObjectURL(url);
+            }, 'image/png');
+        } finally {
+            document.body.removeChild(wrapper);
+        }
+    };
+
     // Generar PDF directo con jsPDF (carga diferida para no aumentar el bundle inicial)
     const generatePDF = async () => {
         if (!operatorPDFData) return;
@@ -136,27 +246,39 @@ export default function Reports() {
         const pageWidth = doc.internal.pageSize.getWidth();
         const businessName = (ticketConfig?.businessName || 'LACTEOS LA TOBA').toUpperCase();
 
-        // Paleta de colores clara
-        const C_HEAD_BG   = [241, 245, 249]; // slate-100
-        const C_HEAD_TEXT = [30,  41,  59];  // slate-800
-        const C_FOOT_BG   = [226, 232, 240]; // slate-200
-        const C_BORDER    = [203, 213, 225]; // slate-300
-        const C_ALT       = [248, 250, 252]; // slate-50
-        const C_RED_BG    = [254, 226, 226]; // red-100
-        const C_RED_TEXT  = [153, 27,  27];  // red-800
+        // ── Paleta monocromática (mismo tema que la UI) ───────────────────
+        const BLACK     = [0,   0,   0  ];
+        const WHITE     = [255, 255, 255];
+        const GRAY_50   = [248, 248, 248];
+        const GRAY_200  = [200, 200, 200];
+        const GRAY_400  = [120, 120, 120];
+        const GRAY_900  = [20,  20,  20 ];
 
-        // ── Encabezado del documento ──────────────────────────────────────
-        doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-        doc.text(businessName, pageWidth / 2, 20, { align: 'center' });
-        doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-        doc.text('Reporte de Ventas del Día', pageWidth / 2, 28, { align: 'center' });
-        doc.setFontSize(9);
+        // ── Encabezado ────────────────────────────────────────────────────
+        // Línea superior negra
+        doc.setDrawColor(...BLACK); doc.setLineWidth(0.8);
+        doc.line(14, 12, pageWidth - 14, 12);
+
+        doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...GRAY_900);
+        doc.text(businessName, 14, 22);
+
+        doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...GRAY_400);
+        doc.text('REPORTE DE VENTAS', 14, 29);
+
+        // Info derecha
         const fechaCap = operatorPDFData.fechaLabel.charAt(0).toUpperCase() + operatorPDFData.fechaLabel.slice(1);
-        doc.text(fechaCap, pageWidth / 2, 35, { align: 'center' });
-        doc.text(`Repartidor: ${currentUser?.name || ''}`, pageWidth / 2, 41, { align: 'center' });
-        doc.text(`${operatorPDFData.ventasCount} venta${operatorPDFData.ventasCount !== 1 ? 's' : ''} registrada${operatorPDFData.ventasCount !== 1 ? 's' : ''}`, pageWidth / 2, 47, { align: 'center' });
+        doc.setFontSize(8); doc.setTextColor(...GRAY_400);
+        doc.text(fechaCap, pageWidth - 14, 22, { align: 'right' });
+        doc.text(`Repartidor: ${currentUser?.name || ''}`, pageWidth - 14, 28, { align: 'right' });
+        doc.text(`${operatorPDFData.ventasCount} venta${operatorPDFData.ventasCount !== 1 ? 's' : ''}`, pageWidth - 14, 34, { align: 'right' });
 
-        // ── Filas por venta individual con método de pago ─────────────────
+        // Línea separadora bajo encabezado
+        doc.setDrawColor(...BLACK); doc.setLineWidth(0.5);
+        doc.line(14, 37, pageWidth - 14, 37);
+
+        // ── Filas por venta ───────────────────────────────────────────────
         const fechaPDF  = repDateFilter || todayStr;
         const ventasPDF = (sales || []).filter(s =>
             s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
@@ -182,14 +304,16 @@ export default function Reports() {
         const footPieces = saleRows.reduce((s, r) => s + (r[1] === '—' ? 0 : Number(r[1])), 0);
         const footKg     = saleRows.reduce((s, r) => s + (r[2] === '—' ? 0 : Number(r[2])), 0);
 
-        // Alineación por columna (índice → halign)
         const COL_ALIGN = ['left', 'center', 'center', 'right', 'center'];
-        const fixAlign = (data) => {
-            data.cell.styles.halign = COL_ALIGN[data.column.index] || 'left';
-        };
+        const fixAlign  = (data) => { data.cell.styles.halign = COL_ALIGN[data.column.index] || 'left'; };
+
+        // Label sección
+        doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...GRAY_400);
+        doc.text('DETALLE DE VENTAS', 14, 44);
 
         autoTable(doc, {
-            startY: 54,
+            startY: 46,
             margin: { left: 14, right: 14 },
             head: [['Cliente', 'Piezas', 'Kg', 'Importe', 'Forma de Pago']],
             body: saleRows.length > 0
@@ -202,10 +326,11 @@ export default function Reports() {
                 `$${operatorPDFData.totalMoney.toFixed(2)}`,
                 '',
             ]],
-            headStyles: { fillColor: C_HEAD_BG, textColor: C_HEAD_TEXT, fontStyle: 'bold', fontSize: 9, lineColor: C_BORDER, lineWidth: 0.3 },
-            footStyles: { fillColor: C_FOOT_BG, textColor: C_HEAD_TEXT, fontStyle: 'bold', fontSize: 9, lineColor: C_BORDER, lineWidth: 0.3 },
-            bodyStyles: { fontSize: 9, lineColor: C_BORDER, lineWidth: 0.2 },
-            alternateRowStyles: { fillColor: C_ALT },
+            headStyles: { fillColor: BLACK, textColor: WHITE, fontStyle: 'bold', fontSize: 9, lineColor: BLACK, lineWidth: 0.3 },
+            footStyles: { fillColor: GRAY_50, textColor: GRAY_900, fontStyle: 'bold', fontSize: 9, lineColor: GRAY_200, lineWidth: 0.3 },
+            bodyStyles: { fontSize: 9, textColor: GRAY_900, lineColor: GRAY_200, lineWidth: 0.2 },
+            alternateRowStyles: { fillColor: GRAY_50 },
+            tableLineColor: BLACK, tableLineWidth: 0.3,
             columnStyles: {
                 0: { cellWidth: 'auto' },
                 1: { cellWidth: 16 },
@@ -213,7 +338,13 @@ export default function Reports() {
                 3: { cellWidth: 26 },
                 4: { cellWidth: 28 },
             },
-            didParseCell: fixAlign,
+            didParseCell: (data) => {
+                fixAlign(data);
+                if (data.section === 'foot' && data.row.index === 0) {
+                    data.cell.styles.lineColor  = BLACK;
+                    data.cell.styles.lineWidth  = { top: 0.6, right: 0.2, bottom: 0.2, left: 0.2 };
+                }
+            },
         });
 
         // ── Resumen por forma de pago ─────────────────────────────────────
@@ -224,64 +355,52 @@ export default function Reports() {
             .filter(s => (s.paymentMethod || s.paymentmethod) === 'transferencia')
             .reduce((s, sale) => s + Number(sale.total), 0);
 
-        const pmY = doc.lastAutoTable.finalY + 8;
-        doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...C_HEAD_TEXT);
-        doc.text('Resumen por Forma de Pago', 14, pmY);
-
-        const C_GREEN_BG   = [220, 252, 231]; // emerald-100
-        const C_GREEN_TEXT = [6,   95,  70];  // emerald-900
-        const C_BLUE_BG    = [219, 234, 254]; // blue-100
-        const C_BLUE_TEXT  = [30,  64,  175]; // blue-800
+        const pmY = doc.lastAutoTable.finalY + 7;
+        doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...GRAY_400);
+        doc.text('RESUMEN DE COBRO', 14, pmY);
 
         autoTable(doc, {
-            startY: pmY + 3,
+            startY: pmY + 2,
             margin: { left: 14, right: 14 },
+            head: [['Forma de Pago', 'Importe']],
             body: [
                 ['Efectivo',      `$${efectivoTotal.toFixed(2)}`],
                 ['Transferencia', `$${transferenciaTotal.toFixed(2)}`],
             ],
             foot: [['TOTAL VENTAS', `$${operatorPDFData.totalMoney.toFixed(2)}`]],
-            bodyStyles: { fontSize: 9, lineColor: C_BORDER, lineWidth: 0.2 },
-            footStyles: { fillColor: C_FOOT_BG, textColor: C_HEAD_TEXT, fontStyle: 'bold', fontSize: 9, lineColor: C_BORDER, lineWidth: 0.3 },
-            alternateRowStyles: { fillColor: C_ALT },
+            headStyles: { fillColor: BLACK, textColor: WHITE, fontStyle: 'bold', fontSize: 9, lineColor: BLACK, lineWidth: 0.3 },
+            footStyles: { fillColor: GRAY_50, textColor: GRAY_900, fontStyle: 'bold', fontSize: 9, lineColor: GRAY_200, lineWidth: 0.3 },
+            bodyStyles: { fontSize: 9, textColor: GRAY_900, lineColor: GRAY_200, lineWidth: 0.2 },
+            alternateRowStyles: { fillColor: GRAY_50 },
+            tableLineColor: BLACK, tableLineWidth: 0.3,
             columnStyles: {
                 0: { cellWidth: 'auto', halign: 'left'  },
                 1: { cellWidth: 36,     halign: 'right' },
             },
             didParseCell: (data) => {
-                if (data.section === 'body') {
-                    if (data.row.index === 0) {
-                        data.cell.styles.fillColor = C_GREEN_BG;
-                        data.cell.styles.textColor = C_GREEN_TEXT;
-                    } else {
-                        data.cell.styles.fillColor = C_BLUE_BG;
-                        data.cell.styles.textColor = C_BLUE_TEXT;
-                    }
-                }
-                if (data.section === 'foot') {
-                    data.cell.styles.halign = data.column.index === 1 ? 'right' : 'left';
-                }
+                if (data.section === 'foot') data.cell.styles.halign = data.column.index === 1 ? 'right' : 'left';
             },
         });
 
         // ── Gastos del día ────────────────────────────────────────────────
         if (operatorPDFData.expenses.length > 0) {
-            const gY = doc.lastAutoTable.finalY + 8;
-            doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...C_RED_TEXT);
-            doc.text('Gastos del Día', 14, gY);
-            doc.setTextColor(0, 0, 0);
+            const gY = doc.lastAutoTable.finalY + 7;
+            doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...GRAY_400);
+            doc.text('GASTOS DEL DÍA', 14, gY);
+
             autoTable(doc, {
-                startY: gY + 3,
+                startY: gY + 2,
                 margin: { left: 14, right: 14 },
                 head: [['Descripción', 'Monto']],
                 body: operatorPDFData.expenses.map(e => [e.description, `$${Number(e.amount).toFixed(2)}`]),
                 foot: [['Total Gastos', `$${operatorPDFData.totalExpenses.toFixed(2)}`]],
-                headStyles: { fillColor: C_RED_BG, textColor: C_RED_TEXT, fontStyle: 'bold', fontSize: 9, lineColor: [252, 165, 165], lineWidth: 0.3 },
-                footStyles: { fillColor: C_RED_BG, textColor: C_RED_TEXT, fontStyle: 'bold', fontSize: 9, lineColor: [252, 165, 165], lineWidth: 0.3 },
-                bodyStyles: { fontSize: 9, lineColor: C_BORDER, lineWidth: 0.2 },
-                alternateRowStyles: { fillColor: [255, 241, 242] },
+                headStyles: { fillColor: BLACK, textColor: WHITE, fontStyle: 'bold', fontSize: 9, lineColor: BLACK, lineWidth: 0.3 },
+                footStyles: { fillColor: GRAY_50, textColor: GRAY_900, fontStyle: 'bold', fontSize: 9, lineColor: GRAY_200, lineWidth: 0.3 },
+                bodyStyles: { fontSize: 9, textColor: GRAY_900, lineColor: GRAY_200, lineWidth: 0.2 },
+                alternateRowStyles: { fillColor: GRAY_50 },
+                tableLineColor: BLACK, tableLineWidth: 0.3,
                 columnStyles: {
                     0: { cellWidth: 'auto', halign: 'left'  },
                     1: { cellWidth: 30,     halign: 'right' },
@@ -293,19 +412,22 @@ export default function Reports() {
         }
 
         // ── Total neto ────────────────────────────────────────────────────
-        const netY = doc.lastAutoTable.finalY + 10;
-        doc.setDrawColor(...C_BORDER);
-        doc.setLineWidth(0.4);
-        doc.line(14, netY - 3, pageWidth - 14, netY - 3);
-        doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...C_HEAD_TEXT);
-        doc.text('Total Neto del Día:', 14, netY + 3);
-        doc.text(`$${operatorPDFData.netTotal.toFixed(2)}`, pageWidth - 14, netY + 3, { align: 'right' });
+        const netY = doc.lastAutoTable.finalY + 8;
+        doc.setDrawColor(...BLACK); doc.setLineWidth(0.8);
+        doc.line(14, netY, pageWidth - 14, netY);
+
+        doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...GRAY_900);
+        doc.text('Total Neto del Día:', 14, netY + 8);
+        doc.text(`$${operatorPDFData.netTotal.toFixed(2)}`, pageWidth - 14, netY + 8, { align: 'right' });
+
+        doc.setDrawColor(...GRAY_200); doc.setLineWidth(0.3);
+        doc.line(14, netY + 12, pageWidth - 14, netY + 12);
 
         // ── Pie ───────────────────────────────────────────────────────────
-        doc.setFontSize(8); doc.setFont('helvetica', 'italic');
-        doc.setTextColor(148, 163, 184);
-        doc.text(ticketConfig?.footerLine1 || '¡Gracias por su trabajo!', pageWidth / 2, netY + 14, { align: 'center' });
+        doc.setFontSize(7); doc.setFont('helvetica', 'italic');
+        doc.setTextColor(...GRAY_400);
+        doc.text(ticketConfig?.footerLine1 || '¡Gracias por su trabajo!', pageWidth / 2, netY + 20, { align: 'center' });
 
         const fileName = `Reporte_${(currentUser?.name || 'Repartidor').replace(/\s+/g, '_')}_${repDateFilter || todayStr}.pdf`;
         doc.save(fileName);
@@ -334,13 +456,13 @@ export default function Reports() {
     const selDateLabel = selDateObj.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
 
     return (
-        <div className="min-h-screen bg-transparent">
+        <div className="min-h-screen bg-white">
 
             {/* ── HEADER ── */}
-            <div className="px-4 pt-5 pb-3 md:px-8 flex items-center justify-between">
+            <div className="px-4 pt-5 pb-4 md:px-8 flex items-center justify-between border-b-2 border-gray-900">
                 <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em]">Sistema de ventas</p>
-                    <h1 className="text-xl font-black text-slate-800 tracking-tight">Reporte de Ventas</h1>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{ticketConfig?.businessName || 'Lacteos La Toba'}</p>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mt-0.5">Reporte de Ventas</h1>
                 </div>
                 {isAdmin && (
                     <button
@@ -349,7 +471,7 @@ export default function Reports() {
                             confirmText: 'Vaciar todo', danger: true,
                             onConfirm: async () => { await clearAllSales(); showToast('Ventas eliminadas', 'success'); },
                         })}
-                        className="w-9 h-9 bg-red-50 border border-red-100 text-red-400 rounded-xl flex items-center justify-center active:scale-90 transition-all"
+                        className="w-9 h-9 bg-white border border-gray-300 text-gray-400 rounded-lg flex items-center justify-center active:scale-90 transition-all hover:border-red-400 hover:text-red-400"
                         title="Vaciar todas las ventas"
                     >
                         <span className="material-symbols-outlined" style={{fontSize:18}}>delete_sweep</span>
@@ -359,13 +481,13 @@ export default function Reports() {
 
             {/* ── BLOQUE EXCLUSIVO ADMIN ── */}
             {isAdmin && (
-                <div className="px-4 md:px-8 space-y-3 mb-2">
+                <div className="px-4 md:px-8 space-y-3 mb-2 pt-4">
 
                     {/* Selector de repartidor — pills */}
                     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                         <button
                             onClick={() => setFilterUser('')}
-                            className={`shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${!filterUser ? 'bg-primary text-white shadow-md shadow-primary/25' : 'bg-white border border-slate-200 text-slate-500'}`}
+                            className={`shrink-0 px-3 py-1.5 rounded text-[11px] font-black uppercase tracking-wider transition-all border ${!filterUser ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-500 hover:border-gray-900'}`}
                         >
                             Todos
                         </button>
@@ -373,7 +495,7 @@ export default function Reports() {
                             <button
                                 key={u.id}
                                 onClick={() => setFilterUser(u.id)}
-                                className={`shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${filterUser === u.id ? 'bg-primary text-white shadow-md shadow-primary/25' : 'bg-white border border-slate-200 text-slate-500'}`}
+                                className={`shrink-0 px-3 py-1.5 rounded text-[11px] font-black uppercase tracking-wider transition-all border ${filterUser === u.id ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-500 hover:border-gray-900'}`}
                             >
                                 {u.name.split(' ')[0]}
                             </button>
@@ -381,28 +503,23 @@ export default function Reports() {
                     </div>
 
                     {/* ── CALENDARIO ── */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-3">
-                        {/* Nav mes */}
+                    <div className="bg-white border border-gray-300 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
-                            <button onClick={prevMonth} className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center active:scale-90 transition-all">
-                                <ChevronLeft size={14} className="text-slate-500" />
+                            <button onClick={prevMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
+                                <ChevronLeft size={14} className="text-gray-600" />
                             </button>
-                            <p className="text-xs font-black text-slate-800 capitalize">
+                            <p className="text-xs font-black text-gray-900 capitalize tracking-wide">
                                 {MONTHS[calMonth.month]} {calMonth.year}
                             </p>
-                            <button onClick={nextMonth} className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center active:scale-90 transition-all">
-                                <ChevronRight size={14} className="text-slate-500" />
+                            <button onClick={nextMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
+                                <ChevronRight size={14} className="text-gray-600" />
                             </button>
                         </div>
-
-                        {/* Días de semana */}
-                        <div className="grid grid-cols-7 mb-1">
+                        <div className="grid grid-cols-7 mb-1 border-b border-gray-200 pb-1">
                             {DAYS_SHORT.map(d => (
-                                <div key={d} className="text-center text-[9px] font-black text-slate-300 uppercase">{d}</div>
+                                <div key={d} className="text-center text-[9px] font-black text-gray-400 uppercase">{d}</div>
                             ))}
                         </div>
-
-                        {/* Celdas del mes */}
                         <div className="grid grid-cols-7 gap-y-0.5">
                             {Array.from({ length: firstWeekDay }).map((_, i) => (
                                 <div key={`e${i}`} />
@@ -413,19 +530,18 @@ export default function Reports() {
                                 const isSelected = dateStr === selectedDate;
                                 const isToday    = dateStr === todayStr;
                                 const hasSales   = daysWithSales.has(dateStr);
-
                                 return (
                                     <button
                                         key={day}
                                         onClick={() => setSelectedDate(dateStr)}
-                                        className={`flex flex-col items-center justify-center w-full py-1.5 rounded-xl transition-all active:scale-90
-                                            ${isSelected ? 'bg-primary text-white shadow-sm shadow-primary/30'
-                                            : isToday    ? 'ring-2 ring-primary/30 text-primary font-black'
-                                            : 'hover:bg-slate-50 text-slate-700'}`}
+                                        className={`flex flex-col items-center justify-center w-full py-1.5 rounded transition-all active:scale-90
+                                            ${isSelected ? 'bg-gray-900 text-white'
+                                            : isToday    ? 'ring-2 ring-gray-900 text-gray-900 font-black'
+                                            : 'hover:bg-gray-50 text-gray-700'}`}
                                     >
-                                        <span className={`text-[12px] font-black leading-none ${isSelected ? 'text-white' : ''}`}>{day}</span>
+                                        <span className="text-[12px] font-black leading-none">{day}</span>
                                         {hasSales && (
-                                            <span className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/70' : 'bg-emerald-500'}`} />
+                                            <span className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/70' : 'bg-gray-900'}`} />
                                         )}
                                     </button>
                                 );
@@ -435,67 +551,72 @@ export default function Reports() {
 
                     {/* ── STATS DEL DÍA ── */}
                     <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-white rounded-2xl p-3 border-2 border-blue-200 shadow-sm">
-                            <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1">Total del día</p>
-                            <p className="text-xl font-black text-blue-700 leading-none">${dayTotal.toFixed(2)}</p>
-                            <p className="text-[9px] text-slate-400 font-bold mt-0.5 capitalize truncate">{selDateLabel}</p>
+                        <div className="bg-white p-4 border border-gray-900 rounded-lg">
+                            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-2">Total del día</p>
+                            <p className="text-2xl font-black text-gray-900 leading-none">${dayTotal.toFixed(2)}</p>
+                            <p className="text-[9px] text-gray-500 font-medium mt-1 capitalize truncate">{selDateLabel}</p>
+                            <div className="mt-2 h-0.5 bg-gray-900 w-8" />
                         </div>
-                        <div className="bg-white rounded-2xl p-3 border-2 border-blue-100 shadow-sm">
-                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Transacciones</p>
-                            <p className="text-xl font-black text-slate-800 leading-none">{dayCount}</p>
-                            <p className="text-[9px] text-slate-400 font-bold mt-0.5">{dayCount === 1 ? 'venta registrada' : 'ventas registradas'}</p>
+                        <div className="bg-white p-4 border border-gray-300 rounded-lg">
+                            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-2">Transacciones</p>
+                            <p className="text-2xl font-black text-gray-900 leading-none">{dayCount}</p>
+                            <p className="text-[9px] text-gray-500 font-medium mt-1">{dayCount === 1 ? 'venta registrada' : 'ventas registradas'}</p>
+                            <div className="mt-2 h-0.5 bg-gray-300 w-8" />
                         </div>
                     </div>
 
                     {/* ── DESGLOSE POR PRODUCTO ── */}
                     {productTotals.length > 0 && (
-                        <div className="bg-white rounded-2xl border-2 border-blue-100 shadow-sm overflow-hidden">
-                            {/* Encabezado */}
-                            <div className="grid grid-cols-[1fr_52px_52px_84px] px-3 pt-3 pb-2 border-b border-blue-100 bg-blue-50">
-                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Producto</p>
-                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest text-right">Cant.</p>
-                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest text-right">Pzas</p>
-                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest text-right">Importe</p>
+                        <div className="bg-white border border-gray-900 rounded-lg overflow-hidden">
+                            {/* Título sección */}
+                            <div className="px-3 py-2 border-b border-gray-900 flex items-center justify-between">
+                                <p className="text-[9px] font-black text-gray-900 uppercase tracking-[0.2em]">Desglose por Producto</p>
+                                <p className="text-[9px] font-bold text-gray-400">{selDateLabel}</p>
                             </div>
-
+                            {/* Encabezado tabla */}
+                            <div className="grid grid-cols-[1fr_52px_52px_84px] px-3 py-2.5 bg-gray-900">
+                                <p className="text-[9px] font-bold text-white uppercase tracking-widest">Producto</p>
+                                <p className="text-[9px] font-bold text-white uppercase tracking-widest text-right">Cant.</p>
+                                <p className="text-[9px] font-bold text-white uppercase tracking-widest text-right">Pzas</p>
+                                <p className="text-[9px] font-bold text-white uppercase tracking-widest text-right">Importe</p>
+                            </div>
                             {/* Filas */}
-                            <div className="divide-y divide-slate-100">
-                                {productTotals.map(([name, { qty, pieces, money, unit }]) => (
-                                    <div key={name} className="grid grid-cols-[1fr_52px_52px_84px] items-center px-3 py-2.5">
+                            <div className="divide-y divide-gray-100">
+                                {productTotals.map(([name, { qty, pieces, money, unit }], idx) => (
+                                    <div key={name} className={`grid grid-cols-[1fr_52px_52px_84px] items-center px-3 py-2.5 ${idx % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <div className="w-6 h-6 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                                                <span className="text-[9px] font-black text-blue-500 uppercase">{name.charAt(0)}</span>
+                                            <div className="w-5 h-5 rounded border border-gray-300 flex items-center justify-center shrink-0">
+                                                <span className="text-[9px] font-black text-gray-600 uppercase">{name.charAt(0)}</span>
                                             </div>
-                                            <p className="text-xs font-bold text-slate-700 truncate">{name}</p>
+                                            <p className="text-xs font-bold text-gray-800 truncate">{name}</p>
                                         </div>
                                         <div className="text-right pr-1">
-                                            <span className="text-xs font-black text-slate-700">{qty % 1 === 0 ? qty : qty.toFixed(2)}</span>
-                                            <span className="text-[9px] text-slate-400 ml-0.5">{unit === 'Kg' ? 'kg' : 'u'}</span>
+                                            <span className="text-xs font-black text-gray-700">{qty % 1 === 0 ? qty : qty.toFixed(2)}</span>
+                                            <span className="text-[9px] text-gray-400 ml-0.5">{unit === 'Kg' ? 'kg' : 'u'}</span>
                                         </div>
                                         <div className="text-right pr-1">
                                             {pieces > 0
-                                                ? <span className="text-xs font-black text-blue-600">{pieces}</span>
-                                                : <span className="text-slate-300 text-xs">—</span>
+                                                ? <span className="text-xs font-black text-gray-800">{pieces}</span>
+                                                : <span className="text-gray-300 text-xs">—</span>
                                             }
                                         </div>
                                         <div className="text-right">
-                                            <span className="text-sm font-black text-slate-800">${money.toFixed(2)}</span>
+                                            <span className="text-sm font-black text-gray-900">${money.toFixed(2)}</span>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-
-                            {/* Fila de totales */}
-                            <div className="grid grid-cols-[1fr_52px_52px_84px] items-center px-3 py-3 bg-blue-50 border-t-2 border-blue-200 rounded-b-2xl">
-                                <p className="text-[9px] font-black text-blue-700 uppercase tracking-widest">TOTALES</p>
+                            {/* Fila totales */}
+                            <div className="grid grid-cols-[1fr_52px_52px_84px] items-center px-3 py-3 bg-gray-50 border-t-2 border-gray-900">
+                                <p className="text-[9px] font-black text-gray-900 uppercase tracking-widest">TOTALES</p>
                                 <div className="text-right pr-1">
-                                    <span className="text-sm font-black text-slate-700">{grandTotalQty % 1 === 0 ? grandTotalQty : grandTotalQty.toFixed(2)}</span>
+                                    <span className="text-sm font-black text-gray-700">{grandTotalQty % 1 === 0 ? grandTotalQty : grandTotalQty.toFixed(2)}</span>
                                 </div>
                                 <div className="text-right pr-1">
-                                    <span className="text-sm font-black text-blue-600">{grandTotalPieces}</span>
+                                    <span className="text-sm font-black text-gray-900">{grandTotalPieces}</span>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-sm font-black text-blue-700">${grandTotalMoney.toFixed(2)}</span>
+                                    <span className="text-sm font-black text-gray-900">${grandTotalMoney.toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>
@@ -504,25 +625,25 @@ export default function Reports() {
                 </div>
             )}
 
-            {/* ── CALENDARIO FIJO + BOTÓN PDF (OPERADOR) ── */}
+            {/* ── CALENDARIO FIJO + BOTONES (OPERADOR) ── */}
             {!isAdmin && (
-                <div className="px-4 md:px-8 mb-3 space-y-2">
+                <div className="px-4 md:px-8 mb-3 space-y-2 pt-4">
                     {/* Calendario */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-3">
+                    <div className="bg-white border border-gray-300 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
-                            <button onClick={prevMonth} className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center active:scale-90 transition-all">
-                                <ChevronLeft size={14} className="text-slate-500" />
+                            <button onClick={prevMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
+                                <ChevronLeft size={14} className="text-gray-600" />
                             </button>
-                            <p className="text-xs font-black text-slate-800 capitalize">
+                            <p className="text-xs font-black text-gray-900 capitalize tracking-wide">
                                 {MONTHS[calMonth.month]} {calMonth.year}
                             </p>
-                            <button onClick={nextMonth} className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center active:scale-90 transition-all">
-                                <ChevronRight size={14} className="text-slate-500" />
+                            <button onClick={nextMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
+                                <ChevronRight size={14} className="text-gray-600" />
                             </button>
                         </div>
-                        <div className="grid grid-cols-7 mb-1">
+                        <div className="grid grid-cols-7 mb-1 border-b border-gray-200 pb-1">
                             {DAYS_SHORT.map(d => (
-                                <div key={d} className="text-center text-[9px] font-black text-slate-300 uppercase">{d}</div>
+                                <div key={d} className="text-center text-[9px] font-black text-gray-400 uppercase">{d}</div>
                             ))}
                         </div>
                         <div className="grid grid-cols-7 gap-y-0.5">
@@ -537,51 +658,62 @@ export default function Reports() {
                                     <button
                                         key={day}
                                         onClick={() => setRepDateFilter(dateStr)}
-                                        className={`flex flex-col items-center justify-center w-full py-1.5 rounded-xl transition-all active:scale-90
-                                            ${isSelected ? 'bg-primary text-white shadow-sm shadow-primary/30'
-                                            : isToday    ? 'ring-2 ring-primary/30 text-primary font-black'
-                                            : 'hover:bg-slate-50 text-slate-700'}`}
+                                        className={`flex flex-col items-center justify-center w-full py-1.5 rounded transition-all active:scale-90
+                                            ${isSelected ? 'bg-gray-900 text-white'
+                                            : isToday    ? 'ring-2 ring-gray-900 text-gray-900 font-black'
+                                            : 'hover:bg-gray-50 text-gray-700'}`}
                                     >
-                                        <span className={`text-[12px] font-black leading-none ${isSelected ? 'text-white' : ''}`}>{day}</span>
-                                        {hasSales && <span className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/70' : 'bg-emerald-500'}`} />}
+                                        <span className="text-[12px] font-black leading-none">{day}</span>
+                                        {hasSales && <span className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/70' : 'bg-gray-900'}`} />}
                                     </button>
                                 );
                             })}
                         </div>
                     </div>
 
-                    {/* Info + PDF */}
-                    <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-black text-primary uppercase tracking-widest capitalize">
-                            {new Date(repDateFilter + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
-                            {' · '}{sortedSales.length} {sortedSales.length === 1 ? 'venta' : 'ventas'}
-                        </p>
-                        <button
-                            onClick={generatePDF}
-                            className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white font-black text-xs px-4 py-2 rounded-xl shadow-md shadow-red-500/25 active:scale-95 transition-all uppercase tracking-wide"
-                        >
-                            <span className="material-symbols-outlined" style={{fontSize:16}}>picture_as_pdf</span>
-                            PDF
-                        </button>
+                    {/* Info + botones */}
+                    <div className="flex items-center justify-between py-1">
+                        <div>
+                            <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest capitalize">
+                                {new Date(repDateFilter + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            </p>
+                            <p className="text-[9px] text-gray-400 font-bold">{sortedSales.length} {sortedSales.length === 1 ? 'venta registrada' : 'ventas registradas'}</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={generateImage}
+                                className="flex items-center gap-1.5 bg-white border border-gray-900 text-gray-900 font-black text-xs px-3 py-2 rounded active:scale-95 transition-all uppercase tracking-wide hover:bg-gray-900 hover:text-white"
+                            >
+                                <span className="material-symbols-outlined" style={{fontSize:15}}>image</span>
+                                IMG
+                            </button>
+                            <button
+                                onClick={generatePDF}
+                                className="flex items-center gap-1.5 bg-gray-900 text-white font-black text-xs px-3 py-2 rounded active:scale-95 transition-all uppercase tracking-wide hover:bg-gray-700"
+                            >
+                                <span className="material-symbols-outlined" style={{fontSize:15}}>picture_as_pdf</span>
+                                PDF
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* ── LISTA DE VENTAS ── */}
             <div className="px-4 md:px-8 pb-6">
-                {/* Cabecera columnas */}
-                <div className="grid grid-cols-[72px_1fr_90px] gap-2 px-3 mb-1.5">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">
+
+                {/* Cabecera tabla */}
+                <div className="bg-gray-900 grid grid-cols-[72px_1fr_90px] px-3 py-2 rounded-t-lg mt-1">
+                    <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em]">
                         {isAdmin ? 'Hora' : 'Fecha'}
                     </span>
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Cliente / Productos</span>
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Total</span>
+                    <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em]">Cliente / Productos</span>
+                    <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em] text-right">Total</span>
                 </div>
 
-                <div className="space-y-1.5 animate-in fade-in duration-300">
+                <div className="border border-gray-900 border-t-0 rounded-b-lg overflow-hidden animate-in fade-in duration-300">
                     {sortedSales.length === 0 && (
-                        <div className="text-center py-16 text-slate-400">
-                            <div className="text-4xl mb-3">📋</div>
+                        <div className="text-center py-16 text-gray-400 bg-white">
                             <p className="font-bold text-sm">
                                 {isAdmin ? 'Sin ventas en este día' : 'Sin transacciones registradas'}
                             </p>
@@ -601,73 +733,74 @@ export default function Reports() {
                             <button
                                 key={sale.id}
                                 onClick={() => setSelectedSale(sale)}
-                                style={{ animationDelay: `${i * 25}ms` }}
-                                className="w-full grid grid-cols-[72px_1fr_90px] gap-2 items-start bg-white rounded-2xl px-3 py-3 shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-md active:scale-[0.98] transition-all text-left animate-in fade-in"
+                                style={{ animationDelay: `${i * 20}ms` }}
+                                className={`w-full grid grid-cols-[72px_1fr_90px] items-stretch text-left border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 transition-colors animate-in fade-in ${i % 2 === 1 ? 'bg-gray-50/50' : 'bg-white'}`}
                             >
-                                <div className="shrink-0 pt-0.5">
+                                <div className="shrink-0 px-3 py-3 border-r border-gray-100">
                                     {isAdmin ? (
                                         <>
-                                            <p className="text-xs font-black text-slate-800 leading-tight">{hora}</p>
-                                            <p className="text-[10px] font-bold text-blue-500 leading-tight mt-0.5">{seller}</p>
+                                            <p className="text-xs font-black text-gray-900 leading-tight">{hora}</p>
+                                            <p className="text-[10px] font-bold text-gray-500 leading-tight mt-0.5">{seller}</p>
                                         </>
                                     ) : (
                                         <>
-                                            <p className="text-xs font-black text-slate-800 leading-tight">{fecha}</p>
-                                            <p className="text-[10px] font-semibold text-slate-400 leading-tight mt-0.5">{hora}</p>
+                                            <p className="text-xs font-black text-gray-900 leading-tight">{fecha}</p>
+                                            <p className="text-[10px] font-semibold text-gray-400 leading-tight mt-0.5">{hora}</p>
                                         </>
                                     )}
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-sm font-bold text-slate-800 leading-snug">{client?.name || 'General'}</p>
+                                <div className="min-w-0 px-3 py-3">
+                                    <p className="text-sm font-bold text-gray-900 leading-snug">{client?.name || 'General'}</p>
                                     {sale.items?.length > 0 && (
-                                        <p className="text-[10px] text-slate-400 font-medium leading-tight truncate">
+                                        <p className="text-[10px] text-gray-400 font-medium leading-tight truncate mt-0.5">
                                             {sale.items.map(it => it.name).join(', ')}
                                         </p>
                                     )}
-                                    <span className={`inline-flex items-center gap-1 mt-1 text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-md ${
-                                        isTransfer ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    <span className={`inline-flex items-center gap-1 mt-1 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 border rounded ${
+                                        isTransfer ? 'bg-white text-gray-600 border-gray-300' : 'bg-white text-gray-600 border-gray-300'
                                     }`}>
                                         <span className="material-symbols-outlined" style={{fontSize:10}}>{isTransfer ? 'account_balance' : 'payments'}</span>
                                         {isTransfer ? 'Transferencia' : 'Efectivo'}
                                     </span>
                                 </div>
-                                <div className="text-right shrink-0">
-                                    <p className="text-base font-black text-slate-800 whitespace-nowrap">${Number(sale.total).toFixed(2)}</p>
-                                    <p className="text-[9px] text-slate-400 font-bold">{sale.items?.length || 0} art.</p>
+                                <div className="text-right shrink-0 px-3 py-3 border-l border-gray-100">
+                                    <p className="text-base font-black text-gray-900 whitespace-nowrap">${Number(sale.total).toFixed(2)}</p>
+                                    <p className="text-[9px] text-gray-400 font-bold">{sale.items?.length || 0} art.</p>
                                 </div>
                             </button>
                         );
                     })}
                 </div>
 
-                {/* ── RESUMEN TOTAL POR MÉTODO DE PAGO ── */}
+                {/* ── RESUMEN POR MÉTODO DE PAGO ── */}
                 {sortedSales.length > 0 && (
-                    <div className="mt-3 mb-24 bg-white rounded-2xl border-2 border-blue-200 overflow-hidden shadow-sm">
-                        <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
-                            <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">Resumen de Cobro</p>
+                    <div className="mt-3 mb-24 bg-white border border-gray-900 rounded-lg overflow-hidden">
+                        <div className="px-4 py-2.5 bg-gray-900 flex items-center justify-between">
+                            <p className="text-[9px] font-bold text-white uppercase tracking-widest">Resumen de Cobro</p>
+                            <p className="text-[9px] font-bold text-gray-400">{sortedSales.length} {sortedSales.length === 1 ? 'venta' : 'ventas'}</p>
                         </div>
-                        <div className="divide-y divide-slate-100">
+                        <div className="divide-y divide-gray-100">
                             {efectivoTotal > 0 && (
-                                <div className="flex items-center justify-between px-4 py-2.5">
+                                <div className="flex items-center justify-between px-4 py-3">
                                     <div className="flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-emerald-500" style={{fontSize:16}}>payments</span>
-                                        <span className="text-xs font-bold text-slate-600">Efectivo</span>
+                                        <span className="material-symbols-outlined text-gray-500" style={{fontSize:15}}>payments</span>
+                                        <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Efectivo</span>
                                     </div>
-                                    <span className="text-sm font-black text-emerald-700">${efectivoTotal.toFixed(2)}</span>
+                                    <span className="text-sm font-black text-gray-900">${efectivoTotal.toFixed(2)}</span>
                                 </div>
                             )}
                             {transferTotal > 0 && (
-                                <div className="flex items-center justify-between px-4 py-2.5">
+                                <div className="flex items-center justify-between px-4 py-3">
                                     <div className="flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-blue-500" style={{fontSize:16}}>account_balance</span>
-                                        <span className="text-xs font-bold text-slate-600">Transferencia</span>
+                                        <span className="material-symbols-outlined text-gray-500" style={{fontSize:15}}>account_balance</span>
+                                        <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Transferencia</span>
                                     </div>
-                                    <span className="text-sm font-black text-blue-700">${transferTotal.toFixed(2)}</span>
+                                    <span className="text-sm font-black text-gray-900">${transferTotal.toFixed(2)}</span>
                                 </div>
                             )}
-                            <div className="flex items-center justify-between px-4 py-3 bg-blue-50">
-                                <span className="text-xs font-black text-blue-700 uppercase tracking-widest">Total del Día</span>
-                                <span className="text-base font-black text-blue-700">${granTotal.toFixed(2)}</span>
+                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t-2 border-gray-900">
+                                <span className="text-xs font-black text-gray-900 uppercase tracking-widest">Total del Día</span>
+                                <span className="text-lg font-black text-gray-900">${granTotal.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
@@ -677,53 +810,56 @@ export default function Reports() {
             {/* ── GASTOS DEL DÍA (solo operador) ── */}
             {!isAdmin && (
                 <div className="px-4 md:px-8 pb-24">
-                    <div className="flex items-center justify-between mb-2 mt-2">
-                        <p className="text-xs font-black text-slate-600 uppercase tracking-widest">Gastos del Día</p>
-                        <button
-                            onClick={() => setShowExpenseModal(true)}
-                            className="w-8 h-8 bg-primary text-white rounded-xl flex items-center justify-center active:scale-90 transition-all shadow-sm shadow-primary/25"
-                        >
-                            <Plus size={16} />
-                        </button>
-                    </div>
+                    <div className="bg-white border border-gray-900 rounded-lg overflow-hidden">
+                        <div className="px-4 py-2.5 bg-gray-900 flex items-center justify-between">
+                            <p className="text-[9px] font-bold text-white uppercase tracking-widest">Gastos del Día</p>
+                            <button
+                                onClick={() => setShowExpenseModal(true)}
+                                className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white rounded px-2 py-0.5 text-[9px] font-black uppercase tracking-wide transition-all active:scale-95"
+                            >
+                                <Plus size={10} />
+                                Agregar
+                            </button>
+                        </div>
 
-                    {dayExpenses.length === 0 ? (
-                        <p className="text-center text-xs text-slate-300 font-medium py-4">Sin gastos registrados</p>
-                    ) : (
-                        <div className="space-y-1.5">
-                            {dayExpenses.map(exp => (
-                                <div key={exp.id} className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-100 animate-in fade-in">
-                                    <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                                        <span className="material-symbols-outlined text-red-400" style={{fontSize:16}}>receipt_long</span>
+                        {dayExpenses.length === 0 ? (
+                            <p className="text-center text-xs text-gray-400 font-medium py-6">Sin gastos registrados</p>
+                        ) : (
+                            <div className="divide-y divide-gray-100">
+                                {dayExpenses.map(exp => (
+                                    <div key={exp.id} className="flex items-center gap-3 px-4 py-3 bg-white animate-in fade-in">
+                                        <span className="material-symbols-outlined text-gray-400" style={{fontSize:16}}>receipt_long</span>
+                                        <p className="flex-1 text-sm font-bold text-gray-700 truncate">{exp.description}</p>
+                                        <p className="text-sm font-black text-gray-900 shrink-0">-${Number(exp.amount).toFixed(2)}</p>
+                                        <button
+                                            onClick={() => deleteExpense(exp.id)}
+                                            className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-500 active:scale-90 transition-all"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
                                     </div>
-                                    <p className="flex-1 text-sm font-bold text-slate-700 truncate">{exp.description}</p>
-                                    <p className="text-sm font-black text-red-500 shrink-0">-${Number(exp.amount).toFixed(2)}</p>
-                                    <button
-                                        onClick={() => deleteExpense(exp.id)}
-                                        className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-red-500 active:scale-90 transition-all rounded-lg"
-                                    >
-                                        <Trash2 size={15} />
-                                    </button>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                        )}
 
-                            {/* Resumen de totales */}
-                            <div className="mt-3 bg-white border border-slate-200 rounded-2xl px-4 py-3 grid grid-cols-2 gap-2 shadow-sm">
-                                <div>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Ventas</p>
-                                    <p className="text-base font-black text-emerald-600">${dayTotal.toFixed(2)}</p>
+                        {/* Resumen ventas – gastos – neto */}
+                        <div className="border-t-2 border-gray-900 divide-y divide-gray-100">
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50">
+                                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Ventas</span>
+                                <span className="text-sm font-black text-gray-900">${dayTotal.toFixed(2)}</span>
+                            </div>
+                            {totalExpenses > 0 && (
+                                <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50">
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Gastos</span>
+                                    <span className="text-sm font-black text-gray-700">-${totalExpenses.toFixed(2)}</span>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Gastos</p>
-                                    <p className="text-base font-black text-red-500">-${totalExpenses.toFixed(2)}</p>
-                                </div>
-                                <div className="col-span-2 border-t border-slate-100 pt-2 flex items-center justify-between">
-                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Neto del día</p>
-                                    <p className="text-lg font-black text-slate-800">${(dayTotal - totalExpenses).toFixed(2)}</p>
-                                </div>
+                            )}
+                            <div className="flex items-center justify-between px-4 py-3 bg-white">
+                                <span className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Neto del Día</span>
+                                <span className="text-xl font-black text-gray-900">${(dayTotal - totalExpenses).toFixed(2)}</span>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
 
@@ -793,96 +929,97 @@ export default function Reports() {
                 const dateObj = new Date(selectedSale.date);
                 const fecha   = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
                 const hora    = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                const pm      = selectedSale.paymentMethod || selectedSale.paymentmethod || 'efectivo';
+                const isTransfer = pm === 'transferencia';
 
                 return (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 no-print">
-                        <div onClick={() => setSelectedSale(null)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                        <div onClick={() => setSelectedSale(null)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
                         <div
                             onClick={e => e.stopPropagation()}
-                            className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-300"
+                            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-250"
                         >
-                            <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
-                                <button onClick={() => setSelectedSale(null)} className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center active:scale-90 transition-all shrink-0">
-                                    <span className="material-symbols-outlined text-slate-600" style={{fontSize:24}}>arrow_back</span>
+                            {/* ── Header ── */}
+                            <div className="px-4 py-3 border-b-2 border-gray-900 flex items-center gap-3">
+                                <button
+                                    onClick={() => setSelectedSale(null)}
+                                    className="w-9 h-9 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all shrink-0 hover:border-gray-900"
+                                >
+                                    <span className="material-symbols-outlined text-gray-600" style={{fontSize:20}}>arrow_back</span>
                                 </button>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Venta</p>
-                                    <p className="text-sm font-black text-slate-800">#{selectedSale.id.slice(-6).toUpperCase()}</p>
+                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Venta</p>
+                                    <p className="text-sm font-black text-gray-900">#{selectedSale.id.slice(-6).toUpperCase()}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">{fecha}</p>
-                                    <p className="text-xs font-black text-primary leading-tight">{hora}</p>
+                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-tight">{fecha}</p>
+                                    <p className="text-xs font-black text-gray-900 leading-tight">{hora}</p>
+                                    <p className="text-lg font-black text-gray-900 leading-tight mt-0.5">${selectedSale.total.toFixed(2)}</p>
                                 </div>
                             </div>
 
                             <div className="flex-1 overflow-y-auto">
-                                <div className="mx-4 mt-4 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-emerald-500/20">
-                                    <div>
-                                        <p className="text-emerald-100 text-[9px] font-black uppercase tracking-widest mb-1">Total cobrado</p>
-                                        <p className="text-white text-3xl font-black tracking-tighter">${selectedSale.total.toFixed(2)}</p>
+
+                                {/* ── Info grid ── */}
+                                <div className="grid grid-cols-2 gap-2 mx-4 mt-4">
+                                    <div className="bg-white p-3 border border-gray-300 rounded-lg">
+                                        <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Cliente</p>
+                                        <p className="text-sm font-black text-gray-900 truncate">{client?.name || 'General'}</p>
                                     </div>
-                                    <div className="bg-white/20 rounded-xl p-2.5">
-                                        <span className="material-symbols-outlined text-white" style={{fontSize:28}}>check_circle</span>
+                                    <div className="bg-white p-3 border border-gray-300 rounded-lg">
+                                        <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Atendió</p>
+                                        <p className="text-sm font-black text-gray-900 truncate">{seller}</p>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-2 mx-4 mt-2">
-                                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Cliente</p>
-                                        <p className="text-sm font-black text-slate-700 truncate">{client?.name || 'General'}</p>
-                                    </div>
-                                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Atendió</p>
-                                        <p className="text-sm font-black text-slate-700 truncate">{seller}</p>
-                                    </div>
-                                </div>
-
-                                {/* Forma de pago */}
-                                {(() => {
-                                    const pm = selectedSale.paymentMethod || selectedSale.paymentmethod || 'efectivo';
-                                    const isTransfer = pm === 'transferencia';
-                                    return (
-                                        <div className={`mx-4 mt-2 flex items-center gap-3 px-4 py-3 rounded-xl border ${isTransfer ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'}`}>
-                                            <span className="material-symbols-outlined" style={{fontSize:20, color: isTransfer ? '#3b82f6' : '#10b981'}}>
-                                                {isTransfer ? 'account_balance' : 'payments'}
-                                            </span>
-                                            <div>
-                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Forma de Pago</p>
-                                                <p className={`text-sm font-black ${isTransfer ? 'text-blue-700' : 'text-emerald-700'}`}>
-                                                    {isTransfer ? 'Transferencia' : 'Efectivo'}
-                                                </p>
-                                            </div>
+                                {/* ── Forma de pago ── */}
+                                <div className="mx-4 mt-2 flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg">
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-symbols-outlined text-gray-500" style={{fontSize:18}}>
+                                            {isTransfer ? 'account_balance' : 'payments'}
+                                        </span>
+                                        <div>
+                                            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Forma de Pago</p>
+                                            <p className="text-sm font-black text-gray-900">{isTransfer ? 'Transferencia' : 'Efectivo'}</p>
                                         </div>
-                                    );
-                                })()}
-
-                                <div className="mx-4 mt-3 mb-2">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Productos</p>
-                                        <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{selectedSale.items.length} art.</span>
                                     </div>
-                                    <div className="bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden">
+                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-wide border border-gray-200 px-2 py-1 rounded">
+                                        {isTransfer ? 'TRANSF.' : 'EFECTIVO'}
+                                    </span>
+                                </div>
+
+                                {/* ── Productos ── */}
+                                <div className="mx-4 mt-3 mb-4">
+                                    {/* Encabezado tabla */}
+                                    <div className="bg-gray-900 grid grid-cols-[1fr_auto] px-3 py-2 rounded-t-lg">
+                                        <span className="text-[9px] font-bold text-white uppercase tracking-widest">Producto</span>
+                                        <span className="text-[9px] font-bold text-white uppercase tracking-widest text-right">Importe</span>
+                                    </div>
+                                    <div className="border border-gray-900 border-t-0 rounded-b-lg overflow-hidden">
                                         {selectedSale.items.map((item, idx) => (
-                                            <div key={idx} className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 last:border-0">
-                                                <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center shrink-0 shadow-sm">
-                                                    <span className="material-symbols-outlined text-slate-300" style={{fontSize:16}}>inventory_2</span>
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-black text-slate-800 truncate">{item.name}</p>
-                                                    <p className="text-[10px] font-medium text-slate-400">
+                                            <div key={idx} className={`grid grid-cols-[1fr_auto] items-center px-3 py-2.5 border-b border-gray-100 last:border-0 ${idx % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
+                                                <div className="min-w-0 pr-3">
+                                                    <p className="text-sm font-bold text-gray-900 truncate">{item.name}</p>
+                                                    <p className="text-[10px] font-medium text-gray-400 mt-0.5">
                                                         {item.quantity}{item.unit || 'u'} × ${item.price.toFixed(2)}
-                                                        {item.pieces > 0 && <span className="ml-1 text-amber-500 font-bold">· {item.pieces} pzas</span>}
+                                                        {item.pieces > 0 && <span className="ml-1.5 font-black text-gray-600">· {item.pieces} pzas</span>}
                                                     </p>
                                                 </div>
-                                                <p className="text-sm font-black text-slate-800 shrink-0">${(item.quantity * item.price).toFixed(2)}</p>
+                                                <p className="text-sm font-black text-gray-900 whitespace-nowrap">${(item.quantity * item.price).toFixed(2)}</p>
                                             </div>
                                         ))}
+                                        {/* Total artículos */}
+                                        <div className="grid grid-cols-[1fr_auto] items-center px-3 py-2.5 bg-gray-50 border-t-2 border-gray-900">
+                                            <span className="text-[9px] font-black text-gray-900 uppercase tracking-widest">{selectedSale.items.length} {selectedSale.items.length === 1 ? 'artículo' : 'artículos'}</span>
+                                            <span className="text-base font-black text-gray-900">${selectedSale.total.toFixed(2)}</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="h-4" />
+
                             </div>
 
-                            <div className="px-4 py-3 border-t border-slate-100 flex gap-2 bg-white">
+                            {/* ── Acciones ── */}
+                            <div className="px-4 py-3 border-t-2 border-gray-900 flex gap-2 bg-white">
                                 <button
                                     onClick={async () => {
                                         const btPrinter = window.__btPrinter;
@@ -890,9 +1027,9 @@ export default function Reports() {
                                         else window.print();
                                     }}
                                     disabled={btPrinting}
-                                    className="flex-1 flex items-center justify-center gap-2 bg-primary text-white font-black py-3.5 rounded-2xl shadow-lg shadow-primary/25 active:scale-95 transition-all disabled:opacity-50 text-xs uppercase tracking-wide"
+                                    className="flex-1 flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-700 text-white font-black py-3 rounded-lg active:scale-95 transition-all disabled:opacity-50 text-xs uppercase tracking-wide"
                                 >
-                                    <span className="material-symbols-outlined" style={{fontSize:18}}>{btPrinting ? 'refresh' : 'print'}</span>
+                                    <span className="material-symbols-outlined" style={{fontSize:17}}>{btPrinting ? 'refresh' : 'print'}</span>
                                     {btPrinting ? 'Imprimiendo…' : 'Reimprimir'}
                                 </button>
                                 <button
@@ -900,17 +1037,15 @@ export default function Reports() {
                                         message: '¿Eliminar esta venta?',
                                         confirmText: 'Eliminar', danger: true,
                                         onConfirm: async () => {
-                                            const { deleteSale } = useStore.getState();
                                             await deleteSale(selectedSale.id);
                                             setSelectedSale(null);
                                         },
                                     })}
-                                    className="w-12 h-12 bg-red-50 text-red-500 border border-red-100 rounded-2xl flex items-center justify-center active:scale-90 transition-all"
+                                    className="w-12 h-12 bg-white text-gray-400 border border-gray-300 rounded-lg flex items-center justify-center active:scale-90 transition-all hover:border-red-400 hover:text-red-500"
                                 >
-                                    <span className="material-symbols-outlined" style={{fontSize:20}}>delete</span>
+                                    <span className="material-symbols-outlined" style={{fontSize:19}}>delete</span>
                                 </button>
                             </div>
-                            <div className="h-2 bg-white" />
                         </div>
                     </div>
                 );

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings, Users, Menu, Package } from 'lucide-react';
+import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings, Users, Menu, Package, WifiOff } from 'lucide-react';
 import { useStore } from './store';
 import { useBTPrinter } from './lib/useBTPrinter';
 
@@ -24,7 +24,7 @@ const NetworkIndicator = () => {
   useEffect(() => {
     const handleOnline = () => {
       setOnlineStatus(true);
-      syncToSupabase();
+      syncToSupabase(true);
     };
     const handleOffline = () => setOnlineStatus(false);
 
@@ -358,6 +358,56 @@ const InstallBanner = () => {
   );
 };
 
+const OfflineBanner = () => {
+  const { isOnline, products, users, clients, sales, inventory, ticketConfig } = useStore();
+
+  const pendingCount = React.useMemo(() => {
+    const tables = [products, users, clients, sales, inventory];
+    let count = tables.reduce((acc, t) => acc + t.filter(i => !i.synced).length, 0);
+    if (ticketConfig && !ticketConfig.synced) count++;
+    return count;
+  }, [products, users, clients, sales, inventory, ticketConfig]);
+
+  if (isOnline) return null;
+
+  return (
+    <div className="flex-shrink-0 bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-xs font-black no-print select-none">
+      <WifiOff size={13} />
+      <span>
+        Sin conexión
+        {pendingCount > 0 && ` · ${pendingCount} cambio${pendingCount !== 1 ? 's' : ''} pendiente${pendingCount !== 1 ? 's' : ''}`}
+      </span>
+    </div>
+  );
+};
+
+const GlobalConfirmDialog = () => {
+  const { confirmDialog, hideConfirm } = useStore();
+  if (!confirmDialog) return null;
+  const { message, onConfirm, confirmText = 'Confirmar', danger = false } = confirmDialog;
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
+      <div className="w-full max-w-xs bg-white rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-150">
+        <p className="text-base font-black text-slate-800 mb-6 leading-snug">{message}</p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => hideConfirm()}
+            className="flex-1 py-3 rounded-2xl bg-slate-100 text-slate-700 font-black text-sm active:scale-95 transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => { hideConfirm(); onConfirm(); }}
+            className={`flex-1 py-3 rounded-2xl font-black text-sm text-white active:scale-95 transition-all ${danger ? 'bg-red-500' : 'bg-gray-900'}`}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const { currentUser, isSyncing } = useStore();
 
@@ -365,6 +415,7 @@ function App() {
 
   return (
     <>
+      <GlobalConfirmDialog />
       <NetworkIndicator />
       <InstallBanner />
       {!currentUser ? (
@@ -381,13 +432,11 @@ function App() {
             <div 
               className="flex-1 flex flex-col overflow-hidden h-full"
             >
-              <MobileHeaderWrapper 
-                currentUser={currentUser} 
-                isSyncing={isSyncing} 
+              <MobileHeaderWrapper
+                currentUser={currentUser}
+                isSyncing={isSyncing}
               />
-
-
-
+              <OfflineBanner />
 
 
             <main 
