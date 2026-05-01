@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import TicketPreview from '../TicketPreview';
 import { printTicket } from '../../lib/bluetoothPrinter';
 
@@ -15,13 +14,11 @@ export default function SuccessModal({
     const [btPrinting, setBtPrinting] = useState(false);
     const [sharing, setSharing] = useState(false);
     const ticketRef = useRef(null);
-    const navigate = useNavigate();
 
     if (!generatedTicket) return null;
 
     const user = generatedTicket.userId === 'admin' ? { name: 'Administrador' } : users.find(u => u.id === generatedTicket.userId);
     const client = clients.find(c => c.id === generatedTicket.clientId) || { name: 'General' };
-    const printerConnected = !!window.__btPrinter;
 
     const handlePrint = async () => {
         const btPrinter = window.__btPrinter;
@@ -77,11 +74,6 @@ export default function SuccessModal({
         }
     };
 
-    const handleConnectPrinter = () => {
-        setGeneratedTicket(null);
-        navigate('/impresora');
-    };
-
     return (
         <div className="fixed inset-0 z-[100] bg-background-light dark:bg-background-dark no-print flex flex-col items-center">
             <div className="relative flex h-full w-full max-w-md mx-auto flex-col bg-white dark:bg-background-dark overflow-x-hidden shadow-2xl">
@@ -90,10 +82,18 @@ export default function SuccessModal({
                     <button onClick={() => setGeneratedTicket(null)} className="p-2 -ml-1 mr-2 text-slate-400 hover:text-slate-900 transition-colors">
                         <X size={24} />
                     </button>
-                    <h2 className="flex-1 text-center mr-8 text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
+                    <h2 className="flex-1 text-center text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
                          <span className="material-symbols-outlined text-emerald-500">check_circle</span>
                          Venta Exitosa
                     </h2>
+                    <button
+                        onClick={handleShare}
+                        disabled={sharing}
+                        className="p-2 -mr-1 ml-2 text-slate-400 hover:text-primary disabled:opacity-50 transition-colors"
+                        title="Compartir imagen"
+                    >
+                        <span className="material-symbols-outlined text-[22px]">{sharing ? 'hourglass_empty' : 'share'}</span>
+                    </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto w-full flex flex-col items-center py-6 bg-slate-50/50 dark:bg-slate-900/50 relative">
@@ -109,46 +109,25 @@ export default function SuccessModal({
 
                 {/* Acciones principales */}
                 <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-3 shrink-0 relative z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] pb-6 md:pb-4">
-                    <div className={`flex gap-3 ${printerConnected ? 'h-[60px]' : 'min-h-[60px]'}`}>
+                    <div className="flex gap-3 h-[60px]">
                         <button
                             onClick={() => setGeneratedTicket(null)}
-                            className="w-[30%] self-stretch bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 font-bold rounded-[1.25rem] active:scale-95 transition-all text-[11px] uppercase tracking-wider flex flex-col items-center justify-center gap-0.5"
+                            className="w-[30%] h-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 font-bold rounded-[1.25rem] active:scale-95 transition-all text-[11px] uppercase tracking-wider flex flex-col items-center justify-center gap-0.5"
                         >
                             <span className="material-symbols-outlined text-xl leading-none">add_shopping_cart</span>
                             <span className="mt-1">Nueva</span>
                         </button>
-
-                        {printerConnected ? (
-                            <button
-                                onClick={handlePrint}
-                                disabled={btPrinting}
-                                className="w-[70%] h-full bg-primary hover:bg-blue-700 disabled:opacity-60 text-white font-black rounded-[1.25rem] shadow-lg shadow-primary/25 flex items-center justify-center gap-2 text-base active:scale-95 transition-all"
-                            >
-                                {btPrinting
-                                    ? <span className="material-symbols-outlined animate-spin">refresh</span>
-                                    : <span className="material-symbols-outlined">print</span>
-                                }
-                                {btPrinting ? 'Imprimiendo...' : 'Imprimir Ticket'}
-                            </button>
-                        ) : (
-                            <div className="w-[70%] flex flex-col gap-2">
-                                <button
-                                    onClick={handleShare}
-                                    disabled={sharing}
-                                    className="flex-1 bg-primary hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-[1rem] shadow-lg shadow-primary/25 flex items-center justify-center gap-2 text-sm active:scale-95 transition-all"
-                                >
-                                    <span className="material-symbols-outlined text-base">share</span>
-                                    {sharing ? 'Generando...' : 'Compartir imagen'}
-                                </button>
-                                <button
-                                    onClick={handleConnectPrinter}
-                                    className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-[1rem] flex items-center justify-center gap-2 text-sm active:scale-95 transition-all"
-                                >
-                                    <span className="material-symbols-outlined text-base">bluetooth</span>
-                                    Conectar impresora
-                                </button>
-                            </div>
-                        )}
+                        <button
+                            onClick={handlePrint}
+                            disabled={btPrinting}
+                            className="w-[70%] h-full bg-primary hover:bg-blue-700 disabled:opacity-60 text-white font-black rounded-[1.25rem] shadow-lg shadow-primary/25 flex items-center justify-center gap-2 text-base active:scale-95 transition-all"
+                        >
+                            {btPrinting
+                                ? <span className="material-symbols-outlined animate-spin">refresh</span>
+                                : <span className="material-symbols-outlined">print</span>
+                            }
+                            {btPrinting ? 'Imprimiendo...' : 'Imprimir Ticket'}
+                        </button>
                     </div>
                 </div>
 
