@@ -6,7 +6,35 @@
       "Bash(vercel --prod --yes)",
       "Bash(cat C:\\\\\\\\Users\\\\\\\\HP\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\c--Users-HP-Documents-APP-Ventas\\\\\\\\346e0de1-4733-4183-8b4a-bc7ba785a137\\\\\\\\tasks\\\\\\\\bqqm4xq4a.output)",
       "Bash(start chrome *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git -C /c/Users/HP/Documents/APP/Ventas log --oneline --all)",
+      "Bash(git -C /c/Users/HP/Documents/APP/Ventas log --all --full-history -- \".env\")",
+      "Bash(git -C /c/Users/HP/Documents/APP/Ventas show b2fd2fd:\".env\")",
+      "Bash(curl -s https://api.supabase.com/v1/projects -H 'Authorization: Bearer sbp_771d87baaf5fcfb1f159ce9c087e0db3c03a9224')",
+      "Bash(python -m json.tool)",
+      "Bash(curl -s \"https://api.supabase.com/v1/projects\" -H \"Authorization: Bearer sbp_771d87baaf5fcfb1f159ce9c087e0db3c03a9224\")",
+      "Bash(curl -s -X POST https://api.supabase.com/v1/projects/geslbbwqtkudyubpsock/database/query -H 'Authorization: Bearer sbp_771d87baaf5fcfb1f159ce9c087e0db3c03a9224' -H 'Content-Type: application/json' -d '{\"query\": \"ALTER TABLE public.users ADD COLUMN IF NOT EXISTS auth_id UUID REFERENCES auth.users\\(id\\) ON DELETE SET NULL;\"}')",
+      "Bash(curl -s -X POST https://api.supabase.com/v1/projects/geslbbwqtkudyubpsock/database/query -H 'Authorization: Bearer sbp_771d87baaf5fcfb1f159ce9c087e0db3c03a9224' -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s -X POST https://api.supabase.com/v1/projects/geslbbwqtkudyubpsock/database/query -H 'Authorization: Bearer sbp_771d87baaf5fcfb1f159ce9c087e0db3c03a9224' -H 'Content-Type: application/json' -d '{\"query\": \"ALTER TABLE public.__TRACKED_VAR__ ENABLE ROW LEVEL SECURITY;\"}')",
+      "Bash(curl -s -X POST https://api.supabase.com/v1/projects/geslbbwqtkudyubpsock/database/query -H 'Authorization: Bearer sbp_771d87baaf5fcfb1f159ce9c087e0db3c03a9224' -H 'Content-Type: application/json' -d '{\"query\": \"SELECT column_name FROM information_schema.columns WHERE table_name IN \\('\\\\''sales'\\\\'', '\\\\''expenses'\\\\''\\) AND column_name ILIKE '\\\\''%user%'\\\\'' ORDER BY table_name, column_name;\"}')",
+      "Bash(curl -s -X POST https://api.supabase.com/v1/projects/geslbbwqtkudyubpsock/database/query -H 'Authorization: Bearer sbp_771d87baaf5fcfb1f159ce9c087e0db3c03a9224' -H 'Content-Type: application/json' -d '{\"query\": \"SELECT table_name, column_name FROM information_schema.columns WHERE table_name IN \\('\\\\''sales'\\\\'', '\\\\''expenses'\\\\''\\) AND column_name ILIKE '\\\\''%user%'\\\\'' ORDER BY table_name;\"}')",
+      "Bash(curl -s -X POST https://api.supabase.com/v1/projects/geslbbwqtkudyubpsock/database/query -H 'Authorization: Bearer sbp_771d87baaf5fcfb1f159ce9c087e0db3c03a9224' -H 'Content-Type: application/json' -d '{\"query\": \"SELECT tablename, policyname, cmd FROM pg_policies WHERE schemaname = '\\\\''public'\\\\'' ORDER BY tablename, cmd;\"}')",
+      "Bash(python -c ' *)",
+      "Bash(curl -s -X POST https://api.supabase.com/v1/projects/geslbbwqtkudyubpsock/database/query -H 'Authorization: Bearer sbp_771d87baaf5fcfb1f159ce9c087e0db3c03a9224' -H 'Content-Type: application/json' -d '{\"query\": \"SELECT tablename, cmd, policyname FROM pg_policies WHERE schemaname = '\\\\''public'\\\\'' ORDER BY tablename, cmd;\"}')",
+      "Bash(node -e ' *)",
+      "Bash(node fix_rls.mjs)",
+      "Bash(node create_auth_users.mjs)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "PowerShell(claude mcp add @modelcontextprotocol/server-sequential-thinking 2>&1)",
+      "Read(//c/Users/HP/AppData/Local/**)",
+      "PowerShell(node --version)",
+      "PowerShell(npx -y @modelcontextprotocol/server-sequential-thinking --help 2>&1)",
+      "PowerShell(node --version 2>&1)",
+      "Read(//c/Users/HP/.claude/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\HP\\.claude"
     ]
   }
 }

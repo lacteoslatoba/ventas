@@ -9,78 +9,9 @@ import {
 
 import TicketPreview from '../components/TicketPreview';
 
-// ─── Campo de formulario ─────────────────────────────────────────────────────
-function Field({ label, icon: Icon, id, value, onChange, placeholder, maxLength, hint }) {
-    return (
-        <div>
-            <label htmlFor={id} className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                {Icon && <Icon size={12} />}
-                {label}
-                {maxLength && <span className="ml-auto font-normal normal-case tracking-normal text-slate-400">{(value || '').length}/{maxLength}</span>}
-            </label>
-            <input
-                id={id}
-                type="text"
-                value={value || ''}
-                onChange={e => onChange(e.target.value)}
-                placeholder={placeholder}
-                maxLength={maxLength}
-                className="w-full bg-slate-50 border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/15 px-4 py-3 rounded-xl font-medium text-slate-800 outline-none transition-all placeholder:text-slate-300 text-sm"
-            />
-            {hint && <p className="text-xs text-slate-400 mt-1 ml-1">{hint}</p>}
-        </div>
-    );
-}
-
-// ─── Toggle Switch ───────────────────────────────────────────────────────────
-function Toggle({ label, desc, checked, onChange, id }) {
-    return (
-        <div className="flex items-center justify-between gap-4 py-1">
-            <div>
-                <p className="font-bold text-slate-700 text-sm">{label}</p>
-                {desc && <p className="text-xs text-slate-400 mt-0.5">{desc}</p>}
-            </div>
-            <button
-                id={id}
-                type="button"
-                role="switch"
-                aria-checked={checked}
-                onClick={() => onChange(!checked)}
-                className={`relative w-12 h-6 rounded-full transition-colors duration-200 shrink-0 ${checked ? 'bg-primary' : 'bg-slate-200'}`}
-            >
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${checked ? 'translate-x-6' : 'translate-x-0'}`} />
-            </button>
-        </div>
-    );
-}
-
-// ─── Sección con título ───────────────────────────────────────────────────────
-function Section({ title, icon: Icon, children, onSave, saved }) {
-    return (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    {Icon && <Icon size={16} className="text-primary" />}
-                    <h2 className="font-black text-slate-700 text-sm uppercase tracking-wider">{title}</h2>
-                </div>
-                {onSave && (
-                    <button
-                        onClick={onSave}
-                        className={`text-xs font-black px-4 py-2 rounded-xl transition-all flex items-center gap-2 shadow-sm ${saved ? 'bg-emerald-500 text-white' : 'bg-primary text-white hover:bg-blue-700 shadow-blue-500/20'
-                            }`}
-                    >
-                        {saved ? (
-                            <><CheckCheck size={14} /> Guardado</>
-                        ) : (
-                            <><Save size={14} /> Guardar</>
-                        )}
-                    </button>
-                )}
-            </div>
-            <div className="p-5 space-y-4">{children}</div>
-        </div>
-    );
-}
+import Field from '../components/ui/Field';
+import Toggle from '../components/ui/Toggle';
+import Section from '../components/ui/Section';
 
 // ─── Componente Principal ─────────────────────────────────────────────────────
 export default function TicketConfig() {
