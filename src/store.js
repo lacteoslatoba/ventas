@@ -128,29 +128,85 @@ export const useStore = create(
 
             // Autenticación y Roles
             currentUser: null,
-            login: (username, password) => {
-                const state = get();
+            login: async (username, password) => {
                 const cleanUsername = username.trim().toLowerCase();
                 const cleanPassword = password.trim();
+                const state = get();
 
-                // Admin hardcoded con nueva clave
+                // ── ONLINE: intentar Supabase Auth (activa RLS) ──────────────
+                if (state.isOnline && supabase) {
+                    const slug  = cleanUsername === 'admin' ? 'administrador' : cleanUsername;
+                    const email = `${slug}@lacteoslatoba.local`;
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password: cleanPassword });
+
+                    if (!error && data.session) {
+                        if (cleanUsername === 'admin') {
+                            set({ currentUser: { id: 'admin', name: 'Administrador', role: 'admin' } });
+                            return true;
+                        }
+                        const { data: userData } = await supabase
+                            .from('users')
+                            .select('*')
+                            .eq('auth_id', data.user.id)
+                            .single();
+                        if (userData) {
+                            set({ currentUser: {
+                                ...userData,
+                                priceList: userData.priceList || userData.pricelist || 'A',
+                                role: userData.role || 'repartidor'
+                            }});
+                            return true;
+                        }
+                    }
+                }
+
+                // ── OFFLINE o usuario sin cuenta Auth aún: validación local ──
                 if (cleanUsername === 'admin' && cleanPassword === '5151') {
                     set({ currentUser: { id: 'admin', name: 'Administrador', role: 'admin' } });
                     return true;
                 }
-                // Usuarios de la base de datos
-                const user = state.users.find(u => (u.name || '').trim().toLowerCase() === cleanUsername && u.pin === cleanPassword);
+                const user = state.users.find(u =>
+                    (u.name || '').trim().toLowerCase() === cleanUsername && u.pin === cleanPassword
+                );
                 if (user) {
                     set({ currentUser: {
                         ...user,
                         priceList: user.priceList || user.pricelist || 'A',
-                        role: 'repartidor'
+                        role: user.role || 'repartidor'
                     }});
                     return true;
                 }
                 return false;
             },
-            logout: () => set({ currentUser: null, cart: [], selectedCartClient: '' }),
+            logout: async () => {
+                if (supabase) await supabase.auth.signOut().catch(() => {});
+                set({ currentUser: null, cart: [], selectedCartClient: '' });
+            },
+            // Restaura sesión Supabase Auth al recargar (si existe).
+            // El estado local offline ya lo restaura Zustand persist automáticamente.
+            initAuth: async () => {
+                if (!supabase) return;
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+
+                const username = (session.user.email || '').split('@')[0];
+                if (username === 'admin') {
+                    set({ currentUser: { id: 'admin', name: 'Administrador', role: 'admin' } });
+                    return;
+                }
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('auth_id', session.user.id)
+                    .single();
+                if (userData) {
+                    set({ currentUser: {
+                        ...userData,
+                        priceList: userData.priceList || userData.pricelist || 'A',
+                        role: userData.role || 'repartidor'
+                    }});
+                }
+            },
 
             // Estado de Red / Nube
             isOnline: navigator.onLine,
@@ -502,7 +558,7 @@ export const useStore = create(
             // Ventas
             addSale: (sale) => {
                 set((state) => {
-                    const newSale = { ...sale, id: Date.now().toString(), date: new Date().toISOString(), synced: false };
+                    const newSale = { id: Date.now().toString(), date: new Date().toISOString(), ...sale, synced: false };
 
                     const updatedProducts = state.products.map(p => {
                         const saleItem = sale.items.find(i => i.productId === p.id);

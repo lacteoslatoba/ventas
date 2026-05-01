@@ -26,7 +26,7 @@ export default function Login() {
             return;
         }
 
-        const success = login(username, password);
+        const success = await login(username, password);
         if (success) {
             // Intentar reconectar impresora al iniciar sesión
             try {

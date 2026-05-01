@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings, Users, Menu, Package, WifiOff } from 'lucide-react';
 import { useStore } from './store';
 import { useBTPrinter } from './lib/useBTPrinter';
@@ -408,8 +408,17 @@ const GlobalConfirmDialog = () => {
   );
 };
 
+const AdminRoute = ({ children, currentUser }) => {
+  if (currentUser?.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
+
 function App() {
-  const { currentUser, isSyncing } = useStore();
+  const { currentUser, isSyncing, initAuth } = useStore();
+
+  useEffect(() => { initAuth(); }, []);
 
   // Ya no se fuerza Fullscreen porque el usuario prefiere su barra de navegación y para evitar bugs de teclado en Android.
 
@@ -445,16 +454,18 @@ function App() {
               <div className="h-full overflow-y-auto pb-24 md:pb-8 relative custom-scrollbar">
                 <Routes>
                   <Route path="/" element={<Sales />} />
-                  <Route path="/menu" element={<MenuPage />} />
                   <Route path="/ventas" element={<Sales />} />
-                  <Route path="/productos" element={<Products />} />
-                  <Route path="/inventario" element={<Inventory />} />
-                  <Route path="/usuarios" element={<UsersPage />} />
-                  <Route path="/clientes" element={<Clients />} />
-                  <Route path="/stock" element={<Stock />} />
                   <Route path="/reportes" element={<Reports />} />
-                  <Route path="/impresora" element={<PrinterSettings />} />
-                  <Route path="/ticket" element={<TicketConfig />} />
+                  <Route path="/stock" element={<Stock />} />
+                  <Route path="/clientes" element={<Clients />} />
+                  
+                  {/* Rutas Protegidas de Admin */}
+                  <Route path="/menu" element={<AdminRoute currentUser={currentUser}><MenuPage /></AdminRoute>} />
+                  <Route path="/productos" element={<AdminRoute currentUser={currentUser}><Products /></AdminRoute>} />
+                  <Route path="/inventario" element={<AdminRoute currentUser={currentUser}><Inventory /></AdminRoute>} />
+                  <Route path="/usuarios" element={<AdminRoute currentUser={currentUser}><UsersPage /></AdminRoute>} />
+                  <Route path="/impresora" element={<AdminRoute currentUser={currentUser}><PrinterSettings /></AdminRoute>} />
+                  <Route path="/ticket" element={<AdminRoute currentUser={currentUser}><TicketConfig /></AdminRoute>} />
                 </Routes>
               </div>
             </main>
