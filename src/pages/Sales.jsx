@@ -12,7 +12,7 @@ export default function Sales() {
         cart, updateCart, selectedCartClient, updateSelectedCartClient, showToast
     } = useStore();
     const todayStr = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD en local
-    const saleDate = todayStr;
+    const [saleDate, setSaleDate] = useState(todayStr);
     const [generatedTicket, setGeneratedTicket] = useState(null);
     const [btPrinting, setBtPrinting] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('efectivo');
@@ -385,12 +385,18 @@ export default function Sales() {
 
             {/* Products Left Side */}
             <div className="flex-1 flex flex-col pb-8 lg:pb-0">
-                <div className="mb-6 px-1 flex justify-between items-start">
+                <div className="mb-6 px-1 flex justify-between items-start border-b-2 border-gray-900 pb-4">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                            Venta Rápida
-                        </h1>
-                        <p className="text-slate-500 font-medium text-sm mt-1">Selecciona productos para armar el pedido</p>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{ticketConfig?.businessName || 'Lacteos La Toba'}</p>
+                        <div className="flex items-center gap-3 mt-0.5">
+                            <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none">Venta Rápida</h1>
+                            <input 
+                                type="date" 
+                                value={saleDate} 
+                                onChange={(e) => setSaleDate(e.target.value)} 
+                                className="text-sm font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border-none outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                            />
+                        </div>
                     </div>
                     {currentUser?.role === 'admin' && (
                         <Link to="/menu" className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-all active:scale-90 lg:hidden">

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start http://localhost:5175)",
+      "Bash(node -e ' *)",
+      "Bash(npx vite *)",
+      "Bash(start \"c:\\\\Users\\\\HP\\\\Documents\\\\APP\\\\Ventas\\\\phone-simulator.html\")",
+      "Bash(npx vercel *)",
+      "PowerShell(Invoke-WebRequest -Uri \"https://i.ibb.co/wNZWz3pK/image-9a5c419c.png\" -OutFile \"c:\\\\Users\\\\HP\\\\Documents\\\\APP\\\\Ventas\\\\public\\\\pwa-logo.png\" -UseBasicParsing)",
+      "PowerShell(Invoke-WebRequest -Uri \"https://i.ibb.co/wNZWz3pK/image-9a5c419c.png\" -OutFile \"c:\\\\Users\\\\HP\\\\Documents\\\\APP\\\\Ventas\\\\public\\\\apple-touch-icon.png\" -UseBasicParsing)",
+      "PowerShell(Invoke-WebRequest -Uri \"https://i.ibb.co/wNZWz3pK/image-9a5c419c.png\" -OutFile \"c:\\\\Users\\\\HP\\\\Documents\\\\APP\\\\Ventas\\\\public\\\\logo.png\" -UseBasicParsing)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(git checkout *)",
+      "Bash(git rebase *)"
+    ]
+  }
+}

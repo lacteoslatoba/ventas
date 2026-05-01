@@ -12,7 +12,7 @@ const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto
 const DAYS_SHORT = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
 
 export default function Stock() {
-    const { sales, currentUser } = useStore();
+    const { sales, currentUser, ticketConfig } = useStore();
     const [selectedDate, setSelectedDate] = useState(todayStr);
     const now = new Date();
     const [calMonth, setCalMonth] = useState({ year: now.getFullYear(), month: now.getMonth() });
@@ -68,13 +68,10 @@ export default function Stock() {
         <div className="p-4 md:p-8 max-w-3xl mx-auto animate-in fade-in duration-300">
 
             {/* ── HEADER ── */}
-            <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400">
-                    <Package size={22} strokeWidth={2.5} />
-                </div>
+            <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4 mb-5">
                 <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Resumen</p>
-                    <h1 className="text-xl font-black text-slate-800 dark:text-slate-100 leading-tight">Stock del Día</h1>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{ticketConfig?.businessName || 'Lacteos La Toba'}</p>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mt-0.5">Stock del Día</h1>
                 </div>
             </div>
 

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(vercel login *)",
+      "Bash(vercel --prod --yes)",
+      "Bash(cat C:\\\\\\\\Users\\\\\\\\HP\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\c--Users-HP-Documents-APP-Ventas\\\\\\\\346e0de1-4733-4183-8b4a-bc7ba785a137\\\\\\\\tasks\\\\\\\\bqqm4xq4a.output)",
+      "Bash(start chrome *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
