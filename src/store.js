@@ -350,29 +350,19 @@ export const useStore = create(
                     const cloudColumns = {};
 
                     // Mapea columnas que PostgreSQL devuelve en minúsculas a camelCase
-                    const normalizeRow = (tableName, item) => {
+                    // Mapa global lowercase→camelCase para todas las tablas.
+                    // Agregar aquí cualquier columna nueva — nunca más editar por tabla.
+                    const COLUMN_MAP = {
+                        userid: 'userId', clientid: 'clientId', paymentmethod: 'paymentMethod',
+                        pricelist: 'priceList', pricea: 'priceA', priceb: 'priceB', pricec: 'priceC',
+                        lugar1activo: 'lugar1Activo', lugar2activo: 'lugar2Activo',
+                    };
+                    const normalizeRow = (_tableName, item) => {
                         const n = { ...item };
-                        if (tableName === 'products') {
-                            if (n.pricea !== undefined && n.priceA === undefined) n.priceA = n.pricea;
-                            if (n.priceb !== undefined && n.priceB === undefined) n.priceB = n.priceb;
-                            if (n.pricec !== undefined && n.priceC === undefined) n.priceC = n.pricec;
-                        }
-                        if (tableName === 'users') {
-                            if (n.pricelist !== undefined && n.priceList === undefined) n.priceList = n.pricelist;
-                            if (n.lugar1activo !== undefined && n.lugar1Activo === undefined) n.lugar1activo = n.lugar1activo;
-                            if (n.lugar2activo !== undefined && n.lugar2Activo === undefined) n.lugar2activo = n.lugar2activo;
-                        }
-                        if (tableName === 'sales') {
-                            if (n.paymentmethod !== undefined && n.paymentMethod === undefined) n.paymentMethod = n.paymentmethod;
-                            if (n.userid !== undefined && n.userId === undefined) n.userId = n.userid;
-                            if (n.clientid !== undefined && n.clientId === undefined) n.clientId = n.clientid;
-                        }
-                        if (tableName === 'clients') {
-                            if (n.userid !== undefined && n.userId === undefined) n.userId = n.userid;
-                        }
-                        if (tableName === 'expenses') {
-                            if (n.userid !== undefined && n.userId === undefined) n.userId = n.userid;
-                        }
+                        Object.keys(n).forEach(col => {
+                            const camel = COLUMN_MAP[col];
+                            if (camel && n[camel] === undefined) n[camel] = n[col];
+                        });
                         return n;
                     };
 
