@@ -237,6 +237,13 @@ export const useStore = create(
                         if (pendingData.length > 0) {
                             const payload = pendingData.map(({ synced: _synced, ...rest }) => rest);
 
+                            // Inverso de COLUMN_MAP — camelCase local → columna lowercase en Supabase
+                            const REVERSE_COLUMN_MAP = {
+                                userId: 'userid', clientId: 'clientid', paymentMethod: 'paymentmethod',
+                                priceList: 'pricelist', priceA: 'pricea', priceB: 'priceb', priceC: 'pricec',
+                                lugar1Activo: 'lugar1activo', lugar2Activo: 'lugar2activo',
+                            };
+
                             const safePayload = payload.map(item => {
                                 const knownCols = state.cloudColumns?.[tableName];
                                 if (!knownCols) return item;
@@ -247,16 +254,11 @@ export const useStore = create(
                                 });
 
                                 // Mapear campos camelCase locales a columnas lowercase de Supabase
-                                if (tableName === 'sales') {
-                                    if (knownCols.includes('paymentmethod') && item.paymentMethod !== undefined) {
-                                        filtered['paymentmethod'] = item.paymentMethod;
+                                Object.entries(REVERSE_COLUMN_MAP).forEach(([camel, lower]) => {
+                                    if (knownCols.includes(lower) && item[camel] !== undefined && filtered[lower] === undefined) {
+                                        filtered[lower] = item[camel];
                                     }
-                                }
-                                if (tableName === 'expenses') {
-                                    if (knownCols.includes('userid') && item.userId !== undefined) {
-                                        filtered['userid'] = item.userId;
-                                    }
-                                }
+                                });
 
                                 return filtered;
                             });
