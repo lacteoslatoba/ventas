@@ -364,6 +364,8 @@ export const useStore = create(
                         }
                         if (tableName === 'sales') {
                             if (n.paymentmethod !== undefined && n.paymentMethod === undefined) n.paymentMethod = n.paymentmethod;
+                            if (n.userid !== undefined && n.userId === undefined) n.userId = n.userid;
+                            if (n.clientid !== undefined && n.clientId === undefined) n.clientId = n.clientid;
                         }
                         if (tableName === 'clients') {
                             if (n.userid !== undefined && n.userId === undefined) n.userId = n.userid;
