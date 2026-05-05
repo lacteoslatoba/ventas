@@ -1,4 +1,4 @@
-name: Build Android APK
+﻿name: Build Android APK
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout código
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -31,24 +31,25 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Build web (Vite)
+      - name: Build web
         run: npm run build
 
-      - name: Configurar Android SDK path
-        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+      - name: Preparar assets Android
+        run: |
+          mkdir -p android/app/src/main/assets/public
+          cp -r dist/. android/app/src/main/assets/public/
+          node -e "const cfg=require('./capacitor.config.json');require('fs').writeFileSync('android/app/src/main/assets/capacitor.config.json',JSON.stringify({appId:cfg.appId,appName:cfg.appName,bundledWebRuntime:false},null,2));"
+          echo '{"ios":[],"android":[]}' > android/app/src/main/assets/capacitor.plugins.json
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
 
-      - name: Copiar assets web → Android
-        run: ./node_modules/.bin/cap copy android
-
-      - name: Build APK debug
+      - name: Build APK
         run: |
           chmod +x android/gradlew
           cd android && ./gradlew assembleDebug --no-daemon
 
       - name: Renombrar APK
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk \
-             VentasRepartidor-v${{ github.run_number }}.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk VentasRepartidor-v${{ github.run_number }}.apk
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
@@ -57,18 +58,16 @@ jobs:
           path: VentasRepartidor-v${{ github.run_number }}.apk
           retention-days: 90
 
-      - name: Publicar Release con APK
+      - name: Crear Release descargable
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-v${{ github.run_number }}
           name: "Ventas Repartidor v${{ github.run_number }}"
           files: VentasRepartidor-v${{ github.run_number }}.apk
           body: |
-            ## Instalación en Android
-
-            1. Descarga el archivo `.apk`
-            2. En el cel: **Ajustes → Seguridad → Fuentes desconocidas → Activar**
-            3. Abre el `.apk` e instala
-            4. ¡Listo! La app aparece en tu pantalla de inicio
+            Instalacion en Android:
+            1. Descarga el .apk
+            2. Ajustes - Seguridad - Fuentes desconocidas - Activar
+            3. Abre el .apk e instala
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
