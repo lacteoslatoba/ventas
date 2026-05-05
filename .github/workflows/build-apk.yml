@@ -39,8 +39,15 @@ jobs:
       - name: Build web
         run: npm run build
 
-      - name: Sincronizar Capacitor
-        run: npx cap sync android
+      - name: Preparar assets Android
+        run: |
+          mkdir -p android/app/src/main/assets/public
+          mkdir -p android/app/src/main/res/xml
+          cp -r dist/. android/app/src/main/assets/public/
+          node -e "const cfg=require('./capacitor.config.json');require('fs').writeFileSync('android/app/src/main/assets/capacitor.config.json',JSON.stringify({appId:cfg.appId,appName:cfg.appName,bundledWebRuntime:false},null,2));"
+          echo '{"ios":[],"android":[]}' > android/app/src/main/assets/capacitor.plugins.json
+          printf '<?xml version='"'"'1.0'"'"' encoding='"'"'utf-8'"'"'?>\n<widget version="1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">\n</widget>' > android/app/src/main/res/xml/config.xml
+          echo "sdk.dir=${ANDROID_SDK_ROOT}" > android/local.properties
 
       - name: Build APK Debug
         run: |
@@ -67,9 +74,9 @@ jobs:
           files: VentasRepartidor.apk
           generate_release_notes: true
           body: |
-            ### 📲 Instalación en Android
+            ### Instalacion en Android
             1. Descarga el archivo `VentasRepartidor.apk` adjunto.
-            2. Si tu celular lo bloquea: ve a **Ajustes → Seguridad** y activa **Fuentes desconocidas**.
+            2. Si tu celular lo bloquea: ve a **Ajustes > Seguridad** y activa **Fuentes desconocidas**.
             3. Abre el archivo e instala.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
