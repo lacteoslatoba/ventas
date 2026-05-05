@@ -22,11 +22,11 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Setup Java 17
+      - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Setup Android SDK (API 35)
         uses: android-actions/setup-android@v3
@@ -39,15 +39,8 @@ jobs:
       - name: Build web
         run: npm run build
 
-      - name: Preparar assets Android
-        run: |
-          mkdir -p android/app/src/main/assets/public
-          mkdir -p android/app/src/main/res/xml
-          cp -r dist/. android/app/src/main/assets/public/
-          node -e "const cfg=require('./capacitor.config.json');require('fs').writeFileSync('android/app/src/main/assets/capacitor.config.json',JSON.stringify({appId:cfg.appId,appName:cfg.appName,bundledWebRuntime:false},null,2));"
-          echo '{"ios":[],"android":[]}' > android/app/src/main/assets/capacitor.plugins.json
-          printf '<?xml version='"'"'1.0'"'"' encoding='"'"'utf-8'"'"'?>\n<widget version="1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">\n</widget>' > android/app/src/main/res/xml/config.xml
-          echo "sdk.dir=${ANDROID_SDK_ROOT}" > android/local.properties
+      - name: Sincronizar Capacitor
+        run: npx cap sync android
 
       - name: Build APK Debug
         run: |

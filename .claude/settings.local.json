@@ -31,7 +31,12 @@
       "PowerShell(node --version)",
       "PowerShell(npx -y @modelcontextprotocol/server-sequential-thinking --help 2>&1)",
       "PowerShell(node --version 2>&1)",
-      "Read(//c/Users/HP/.claude/**)"
+      "Read(//c/Users/HP/.claude/**)",
+      "PowerShell(gh --version 2>$null)",
+      "PowerShell(if \\(-not $?\\) { \"gh not found in PATH\" } else { \"found\" })",
+      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue)",
+      "PowerShell($env:GITHUB_TOKEN)",
+      "PowerShell($env:GH_TOKEN)"
     ],
     "additionalDirectories": [
       "C:\\Users\\HP\\.claude"
