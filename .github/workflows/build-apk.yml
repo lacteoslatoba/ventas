@@ -1,4 +1,4 @@
-﻿name: Build Android APK
+name: Build Android APK
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build_android:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +28,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
+      - name: Setup Android SDK (API 35)
         uses: android-actions/setup-android@v3
         with:
           packages: 'platforms;android-35 build-tools;35.0.0 platform-tools'
@@ -39,42 +39,37 @@ jobs:
       - name: Build web
         run: npm run build
 
-      - name: Preparar assets Android
-        run: |
-          mkdir -p android/app/src/main/assets/public
-          mkdir -p android/app/src/main/res/xml
-          cp -r dist/. android/app/src/main/assets/public/
-          node -e "const cfg=require('./capacitor.config.json');require('fs').writeFileSync('android/app/src/main/assets/capacitor.config.json',JSON.stringify({appId:cfg.appId,appName:cfg.appName,bundledWebRuntime:false},null,2));"
-          echo '{"ios":[],"android":[]}' > android/app/src/main/assets/capacitor.plugins.json
-          printf '<?xml version='"'"'1.0'"'"' encoding='"'"'utf-8'"'"'?>\n<widget version="1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">\n</widget>' > android/app/src/main/res/xml/config.xml
-          echo "sdk.dir=${ANDROID_SDK_ROOT}" > android/local.properties
+      - name: Sincronizar Capacitor
+        run: npx cap sync android
 
-      - name: Build APK
+      - name: Build APK Debug
         run: |
           chmod +x android/gradlew
-          cd android && ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tail -50
+          cd android && ./gradlew clean assembleDebug --no-daemon
 
-      - name: Renombrar APK
+      - name: Capturar APK
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk VentasRepartidor-v${{ github.run_number }}.apk
+          find android/app/build/outputs/apk/debug/ -name "*.apk" -exec cp {} VentasRepartidor.apk \;
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
           name: VentasRepartidor-v${{ github.run_number }}
-          path: VentasRepartidor-v${{ github.run_number }}.apk
+          path: VentasRepartidor.apk
           retention-days: 90
 
-      - name: Crear Release descargable
+      - name: Crear Release
         uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
         with:
-          tag_name: apk-v${{ github.run_number }}
+          tag_name: v${{ github.run_number }}
           name: "Ventas Repartidor v${{ github.run_number }}"
-          files: VentasRepartidor-v${{ github.run_number }}.apk
+          files: VentasRepartidor.apk
+          generate_release_notes: true
           body: |
-            Instalacion en Android:
-            1. Descarga el .apk
-            2. Ajustes - Seguridad - Fuentes desconocidas - Activar
-            3. Abre el .apk e instala
+            ### 📲 Instalación en Android
+            1. Descarga el archivo `VentasRepartidor.apk` adjunto.
+            2. Si tu celular lo bloquea: ve a **Ajustes → Seguridad** y activa **Fuentes desconocidas**.
+            3. Abre el archivo e instala.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
