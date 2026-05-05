@@ -21,13 +21,11 @@ export default function PrinterSettings() {
     const [showHelp, setShowHelp] = useState(false);
 
     useEffect(() => {
-        if (!navigator.bluetooth) {
-            setBtSupported(false);
-        }
+        setBtSupported(true); // Forzamos soporte siempre para la App
     }, []);
 
-    const isSamsungBrowser = /SamsungBrowser/i.test(navigator.userAgent);
-    const isUnsupportedBrowser = !navigator.bluetooth;
+    const isSamsungBrowser = false;
+    const isUnsupportedBrowser = false;
     const targetUrl = window.location.href;
 
     // Sincronizar estado local con el hook global
@@ -139,32 +137,7 @@ export default function PrinterSettings() {
                 </p>
             </div>
 
-            {/* Soporte BT — solo para casos edge (no Samsung pero igual sin BT) */}
-            {!btSupported && (
-                <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 flex flex-col gap-3">
-                    <div className="flex gap-4">
-                        <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={22} />
-                        <div>
-                            <p className="font-bold text-amber-800">
-                                {isSamsungBrowser ? 'Abre la app en Google Chrome' : 'Navegador no compatible'}
-                            </p>
-                            <p className="text-sm text-amber-700 mt-1">
-                                {isSamsungBrowser
-                                    ? 'Samsung Internet no soporta Bluetooth. Necesitas abrir esta página en Google Chrome.'
-                                    : 'Web Bluetooth requiere Google Chrome o Microsoft Edge en Android. No funciona en Safari ni Firefox.'}
-                            </p>
-                        </div>
-                    </div>
-                    {isSamsungBrowser && (
-                        <a
-                            href={`intent://${currentUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`}
-                            className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-xl text-center text-sm active:scale-95 transition-all"
-                        >
-                            Abrir en Google Chrome
-                        </a>
-                    )}
-                </div>
-            )}
+            {/* Acceso directo habilitado */}
 
             {/* Estado actual */}
             <div className={`rounded-3xl p-6 mb-6 border transition-all ${isConnected
