@@ -121,39 +121,8 @@ export default function PrinterSettings() {
 
     const isConnected = status === 'connected' && printer;
 
-    // Pantalla de bloqueo completa para navegadores sin Web Bluetooth
-    if (isUnsupportedBrowser) {
-        const chromeUrl = `intent://${targetUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 text-center">
-                <div className="w-20 h-20 rounded-3xl bg-amber-100 flex items-center justify-center mb-6">
-                    <Bluetooth size={36} className="text-amber-500" />
-                </div>
-                <h2 className="text-2xl font-black text-slate-800 mb-2">
-                    {isSamsungBrowser ? 'Usa Google Chrome' : 'Navegador no compatible'}
-                </h2>
-                <p className="text-slate-500 text-base mb-2 max-w-xs">
-                    {isSamsungBrowser
-                        ? 'Samsung Internet no soporta Bluetooth. La impresora solo funciona en Google Chrome.'
-                        : 'La impresora Bluetooth requiere Google Chrome o Microsoft Edge.'}
-                </p>
-                <p className="text-slate-400 text-sm mb-8 max-w-xs">
-                    Toca el botón para abrir esta página directamente en Chrome.
-                </p>
-                <a
-                    href={chromeUrl}
-                    className="w-full max-w-xs bg-amber-500 text-white font-black py-4 px-6 rounded-2xl text-lg shadow-lg shadow-amber-200 active:scale-95 transition-all flex items-center justify-center gap-3 mb-4"
-                >
-                    <span className="material-symbols-outlined text-2xl">open_in_new</span>
-                    Abrir en Google Chrome
-                </a>
-                <p className="text-xs text-slate-400 max-w-xs">
-                    O abre Chrome manualmente y ve a:<br />
-                    <span className="font-bold text-slate-600">ventas-delta.vercel.app</span>
-                </p>
-            </div>
-        );
-    }
+    // Ya no bloqueamos por navegador, permitimos intentar la conexión siempre
+
 
     return (
         <div className="p-4 md:p-8 max-w-2xl mx-auto">
