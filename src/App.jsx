@@ -87,6 +87,7 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
   const [showDriverMenu, setShowDriverMenu] = React.useState(false);
   const [modal, setModal] = React.useState(null); // { title, message, onConfirm }
   const { showToast } = useStore();
+  const { printer, isReconnecting } = useBTPrinter();
 
   const openModal = (title, message, onConfirm) =>
     setModal({ title, message, onConfirm });
@@ -184,6 +185,22 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
 
       {/* Derecha: Ajustes y Salir */}
       <div className="flex items-center gap-1 relative justify-end">
+
+        {/* Indicador impresora BT */}
+        <button
+          onClick={() => navigate('/impresora')}
+          title={printer ? 'Impresora conectada' : isReconnecting ? 'Reconectando...' : 'Sin impresora'}
+          className="w-10 h-10 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+        >
+          <span className={`material-symbols-outlined text-xl ${
+            printer ? 'text-emerald-500' :
+            isReconnecting ? 'text-amber-400 animate-pulse' :
+            'text-slate-300'
+          }`}>
+            {printer ? 'print' : isReconnecting ? 'bluetooth_searching' : 'print_disabled'}
+          </span>
+        </button>
+
         <button
           onClick={() => openModal('Cerrar sesión', '¿Seguro que deseas salir?', () => useStore.getState().logout())}
           className="w-10 h-10 rounded-xl flex items-center justify-center text-red-500 active:scale-95 transition-all"
