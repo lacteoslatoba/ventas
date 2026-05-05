@@ -17,6 +17,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-logo.png', 'logo.png'],
+      workbox: {
+        globIgnores: ['instalar.html'],
+        navigateFallbackDenylist: [/^\/instalar\.html/],
+      },
       manifest: {
         name: 'Ventas Repartidor',
         short_name: 'Ventas',

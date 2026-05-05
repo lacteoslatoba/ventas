@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Instalar App — Ventas Repartidor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      background: #0f172a;
+      color: #f1f5f9;
+      text-align: center;
+    }
+    .logo {
+      width: 80px; height: 80px;
+      background: #ffb91a;
+      border-radius: 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px;
+      margin: 0 auto 24px;
+      box-shadow: 0 0 40px #ffb91a44;
+    }
+    h1 { font-size: 26px; font-weight: 900; margin-bottom: 8px; }
+    .subtitle { color: #94a3b8; font-size: 15px; margin-bottom: 32px; line-height: 1.5; }
+
+    .card {
+      background: #1e293b;
+      border-radius: 24px;
+      padding: 28px 24px;
+      width: 100%; max-width: 360px;
+      margin-bottom: 16px;
+      border: 1px solid #334155;
+    }
+    .card h2 { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+    .card p { color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
+
+    .step {
+      display: flex; align-items: flex-start; gap: 12px;
+      text-align: left; margin-bottom: 14px;
+    }
+    .step-num {
+      min-width: 28px; height: 28px;
+      background: #ffb91a; color: #0f172a;
+      border-radius: 50%; font-weight: 900; font-size: 13px;
+      display: flex; align-items: center; justify-center;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-text { color: #cbd5e1; font-size: 14px; line-height: 1.5; padding-top: 3px; }
+
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap-10px;
+      gap: 10px;
+      width: 100%; padding: 18px 24px;
+      border-radius: 18px;
+      font-size: 17px; font-weight: 900;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+      margin-top: 8px;
+    }
+    .btn:active { opacity: 0.85; transform: scale(0.97); }
+    .btn-chrome { background: #4285f4; color: white; }
+    .btn-install { background: #22c55e; color: white; }
+    .btn-disabled { background: #334155; color: #64748b; cursor: default; }
+
+    .warning {
+      background: #451a03;
+      border: 1px solid #92400e;
+      border-radius: 16px;
+      padding: 16px 20px;
+      color: #fcd34d;
+      font-size: 14px;
+      margin-bottom: 16px;
+      width: 100%; max-width: 360px;
+      line-height: 1.5;
+    }
+    .success {
+      background: #052e16;
+      border: 1px solid #166534;
+      border-radius: 16px;
+      padding: 16px 20px;
+      color: #86efac;
+      font-size: 14px;
+      margin-bottom: 16px;
+      width: 100%; max-width: 360px;
+      line-height: 1.5;
+    }
+    .url-box {
+      background: #0f172a; border: 1px solid #475569;
+      border-radius: 10px; padding: 12px 16px;
+      font-family: monospace; font-size: 15px;
+      color: #ffb91a; margin: 12px 0;
+      word-break: break-all;
+    }
+    #status { font-size: 13px; color: #64748b; margin-top: 24px; }
+  </style>
+</head>
+<body>
+
+<div class="logo">🧀</div>
+<h1>Ventas Repartidor</h1>
+<p class="subtitle">Sigue los pasos para instalar<br>la app correctamente</p>
+
+<div id="content">Detectando navegador...</div>
+
+<p id="status"></p>
+
+<script>
+  var APP_URL = 'https://ventas-delta.vercel.app/';
+  var CHROME_INTENT = 'intent://ventas-delta.vercel.app/instalar.html#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.android.chrome;end';
+
+  var ua = navigator.userAgent;
+  var isSamsung = /SamsungBrowser/i.test(ua);
+  var isChrome = /Chrome/i.test(ua) && !/Edg|OPR|SamsungBrowser/i.test(ua);
+  var isFirefox = /Firefox/i.test(ua);
+  var isSafari = /Safari/i.test(ua) && !/Chrome/i.test(ua);
+  var isBT = 'bluetooth' in navigator;
+
+  var content = document.getElementById('content');
+  var status = document.getElementById('status');
+
+  // ----- SAMSUNG INTERNET -----
+  if (isSamsung) {
+    content.innerHTML =
+      '<div class="warning">⚠️ Estás usando <strong>Samsung Internet</strong>.<br>Este navegador no soporta Bluetooth.<br>Necesitas Google Chrome para usar la impresora.</div>' +
+      '<div class="card">' +
+        '<h2>📱 Abre en Google Chrome</h2>' +
+        '<p>Chrome viene instalado en tu teléfono Samsung. Toca el botón para abrirlo:</p>' +
+        '<a class="btn btn-chrome" href="' + CHROME_INTENT + '">🔵 Abrir en Google Chrome</a>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h2>¿No abrió Chrome?</h2>' +
+        '<p>Busca el ícono de Chrome (círculo de colores) en tu teléfono y entra a esta dirección:</p>' +
+        '<div class="url-box">ventas-delta.vercel.app/instalar.html</div>' +
+      '</div>';
+
+  // ----- CHROME (soporta BT) -----
+  } else if (isBT) {
+    content.innerHTML =
+      '<div class="success">✅ Estás en Google Chrome.<br>¡Perfecto para instalar la app!</div>' +
+      '<div class="card">' +
+        '<h2>Instala la app</h2>' +
+        '<p>Sigue estos pasos para instalarla en tu pantalla de inicio:</p>' +
+        '<div class="step"><div class="step-num">1</div><div class="step-text">Toca los <strong>3 puntos ⋮</strong> arriba a la derecha</div></div>' +
+        '<div class="step"><div class="step-num">2</div><div class="step-text">Elige <strong>"Añadir a pantalla de inicio"</strong> o <strong>"Instalar app"</strong></div></div>' +
+        '<div class="step"><div class="step-num">3</div><div class="step-text">Confirma tocando <strong>"Añadir"</strong></div></div>' +
+        '<div class="step"><div class="step-num">4</div><div class="step-text">Abre la app desde el ícono nuevo en tu pantalla y <strong>conéctate con tu usuario</strong></div></div>' +
+        '<a id="btnInstall" class="btn btn-disabled" href="' + APP_URL + '" style="margin-top:16px">Ir a la App →</a>' +
+      '</div>';
+
+    // Espera el prompt de instalación
+    var deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      var btn = document.getElementById('btnInstall');
+      if (btn) {
+        btn.className = 'btn btn-install';
+        btn.textContent = '⬇️ Instalar App Ahora';
+        btn.removeAttribute('href');
+        btn.onclick = function() {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(function(r) {
+            if (r.outcome === 'accepted') {
+              btn.textContent = '✅ ¡Instalada! Ábrela desde tu pantalla';
+              btn.className = 'btn btn-disabled';
+            }
+            deferredPrompt = null;
+          });
+        };
+      }
+    });
+
+  // ----- SAFARI / IPHONE -----
+  } else if (isSafari) {
+    content.innerHTML =
+      '<div class="warning">⚠️ En iPhone no es posible usar Bluetooth desde apps web.<br>Es una limitación de Apple.</div>';
+
+  // ----- OTRO NAVEGADOR SIN BT -----
+  } else {
+    content.innerHTML =
+      '<div class="warning">⚠️ Tu navegador no soporta Bluetooth.<br>Usa Google Chrome para instalar la app.</div>' +
+      '<div class="card">' +
+        '<h2>Instala Google Chrome</h2>' +
+        '<p>Descárgalo desde la Play Store:</p>' +
+        '<a class="btn btn-chrome" href="https://play.google.com/store/apps/details?id=com.android.chrome">📥 Instalar Chrome</a>' +
+      '</div>';
+  }
+
+  status.textContent = 'Navegador: ' + (isSamsung ? 'Samsung Internet' : isChrome ? 'Google Chrome' : isSafari ? 'Safari' : 'Otro') + ' · BT: ' + (isBT ? 'Sí' : 'No');
+</script>
+</body>
+</html>
