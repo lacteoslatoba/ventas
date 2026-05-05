@@ -36,7 +36,8 @@
       "PowerShell(if \\(-not $?\\) { \"gh not found in PATH\" } else { \"found\" })",
       "PowerShell(Get-Command gh -ErrorAction SilentlyContinue)",
       "PowerShell($env:GITHUB_TOKEN)",
-      "PowerShell($env:GH_TOKEN)"
+      "PowerShell($env:GH_TOKEN)",
+      "PowerShell(gh api \"repos/lacteoslatoba/ventas/releases?per_page=5\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\HP\\.claude"
