@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,6 +28,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Instalar dependencias
         run: npm ci
 
@@ -32,10 +38,14 @@ jobs:
         run: npm run build
 
       - name: Agregar plataforma Android
-        run: npx cap add android
+        run: ./node_modules/.bin/cap add android
+        env:
+          CI: true
 
       - name: Sincronizar assets web → Android
-        run: npx cap sync android
+        run: ./node_modules/.bin/cap sync android
+        env:
+          CI: true
 
       - name: Agregar permisos Bluetooth al Manifest
         run: |
@@ -45,9 +55,11 @@ jobs:
       - name: Build APK debug
         run: |
           chmod +x android/gradlew
-          cd android && ./gradlew assembleDebug --no-daemon --stacktrace
+          cd android && ./gradlew assembleDebug --no-daemon
+        env:
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
 
-      - name: Renombrar APK con número de versión
+      - name: Renombrar APK
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk \
              VentasRepartidor-v${{ github.run_number }}.apk
@@ -59,7 +71,7 @@ jobs:
           path: VentasRepartidor-v${{ github.run_number }}.apk
           retention-days: 90
 
-      - name: Crear Release descargable
+      - name: Publicar Release con APK
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-v${{ github.run_number }}
@@ -68,11 +80,9 @@ jobs:
           body: |
             ## Instalación en Android
 
-            1. Descarga el archivo `.apk` aquí abajo
-            2. En el teléfono: **Ajustes → Seguridad → Instalar apps de fuentes desconocidas → Activar**
-            3. Abre el archivo descargado y toca **Instalar**
+            1. Descarga el archivo `.apk`
+            2. En el cel: **Ajustes → Seguridad → Fuentes desconocidas → Activar**
+            3. Abre el `.apk` e instala
             4. ¡Listo! La app aparece en tu pantalla de inicio
-
-            > Funciona en Android 8 o superior. No requiere Google Play.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
