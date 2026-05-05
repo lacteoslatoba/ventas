@@ -28,10 +28,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK con API 36
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-36 build-tools;36.0.0 platform-tools'
+          packages: 'platforms;android-35 build-tools;35.0.0 platform-tools'
 
       - name: Instalar dependencias
         run: npm ci
@@ -42,15 +42,17 @@ jobs:
       - name: Preparar assets Android
         run: |
           mkdir -p android/app/src/main/assets/public
+          mkdir -p android/app/src/main/res/xml
           cp -r dist/. android/app/src/main/assets/public/
           node -e "const cfg=require('./capacitor.config.json');require('fs').writeFileSync('android/app/src/main/assets/capacitor.config.json',JSON.stringify({appId:cfg.appId,appName:cfg.appName,bundledWebRuntime:false},null,2));"
           echo '{"ios":[],"android":[]}' > android/app/src/main/assets/capacitor.plugins.json
+          printf '<?xml version='"'"'1.0'"'"' encoding='"'"'utf-8'"'"'?>\n<widget version="1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">\n</widget>' > android/app/src/main/res/xml/config.xml
           echo "sdk.dir=${ANDROID_SDK_ROOT}" > android/local.properties
 
       - name: Build APK
         run: |
           chmod +x android/gradlew
-          cd android && ./gradlew assembleDebug --no-daemon
+          cd android && ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tail -50
 
       - name: Renombrar APK
         run: |
