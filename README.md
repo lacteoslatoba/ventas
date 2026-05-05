@@ -1,16 +1,52 @@
-# React + Vite
+# Ventas Repartidor 🚚
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación móvil para la gestión de ventas y repartos, construida con React, Vite y Capacitor.
 
-Currently, two official plugins are available:
+[![Build Android APK](https://github.com/lacteoslatoba/ventas/actions/workflows/build-apk.yml/badge.svg)](https://github.com/lacteoslatoba/ventas/actions/workflows/build-apk.yml)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 📱 Descripción
 
-## React Compiler
+Esta aplicación permite a los repartidores gestionar su catálogo de productos, realizar ventas en tiempo real y sincronizar datos con Supabase. Está diseñada para funcionar como una aplicación nativa en Android mediante Capacitor.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Tecnologías
 
-## Expanding the ESLint configuration
+- **Frontend**: React + Vite
+- **Nativo**: Capacitor 8.3.1
+- **Estilos**: Tailwind CSS
+- **Base de Datos**: Supabase
+- **CI/CD**: GitHub Actions (Generación automática de APK)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Desarrollo Local
+
+### Requisitos
+- Node.js >= 22
+- Android Studio (para desarrollo nativo)
+- Java 21
+
+### Pasos
+1. Clonar el repositorio.
+2. Instalar dependencias:
+   ```bash
+   npm install
+   ```
+3. Correr en modo desarrollo:
+   ```bash
+   npm run dev
+   ```
+4. Para probar en Android:
+   ```bash
+   npm run build
+   npx cap sync android
+   npx cap open android
+   ```
+
+## 🏗️ CI/CD (GitHub Actions)
+
+El proyecto cuenta con un workflow automatizado que:
+1. Compila el frontend.
+2. Sincroniza con el proyecto Android.
+3. Genera un APK de depuración (Debug).
+4. Sube el APK como artefacto y crea una **Release** automática en GitHub con cada push a `main`.
+
+---
+*Desarrollado por el equipo de Lácteos La Toba.*

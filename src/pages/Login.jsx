@@ -186,7 +186,16 @@ export default function Login() {
                         </div>
                     </form>
                 </div>
+            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 text-center animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
+                <a 
+                    href="/instalar.html" 
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-full text-slate-500 dark:text-slate-400 text-sm font-black hover:bg-white dark:hover:bg-slate-800 hover:text-primary dark:hover:text-primary transition-all shadow-sm"
+                >
+                    <span className="material-symbols-outlined text-[20px]">help_outline</span>
+                    ¿Problemas al instalar? Ayuda aquí
+                </a>
             </div>
         </div>
+    </div>
     );
 }

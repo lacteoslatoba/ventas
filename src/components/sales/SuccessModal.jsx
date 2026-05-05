@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X } from 'lucide-react';
 import TicketPreview from '../TicketPreview';
 import { printTicket } from '../../lib/bluetoothPrinter';
+import { saveAndOpenFile } from '../../lib/nativeFiles';
 
 export default function SuccessModal({
     generatedTicket,
@@ -53,21 +54,23 @@ export default function SuccessModal({
                 backgroundColor: '#ffffff',
                 useCORS: true,
             });
-            canvas.toBlob(async (blob) => {
-                const fileName = `ticket-${generatedTicket.id.slice(-6).toUpperCase()}.png`;
-                const file = new File([blob], fileName, { type: 'image/png' });
-                if (navigator.share && navigator.canShare?.({ files: [file] })) {
-                    await navigator.share({ files: [file], title: `Ticket ${client.name}` });
-                } else {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = fileName;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                }
-            }, 'image/png');
+            
+            // Wrap toBlob in a promise to await the saveAndOpenFile call
+            await new Promise((resolve, reject) => {
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const fileName = `ticket-${generatedTicket.id.slice(-6).toUpperCase()}.png`;
+                        await saveAndOpenFile(blob, fileName, 'image/png');
+                        resolve();
+                    } catch (err) {
+                        reject(err);
+                    }
+                }, 'image/png');
+            });
+            
+            showToast('Imagen generada correctamente', 'success');
         } catch (err) {
+            console.error('Share error:', err);
             showToast('Error al compartir: ' + err.message, 'error');
         } finally {
             setSharing(false);

@@ -1,3 +1,5 @@
+import { saveAndOpenFile } from './nativeFiles';
+
 const toLocalDate = (dateStr) => {
     const d = new Date(dateStr);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -107,13 +109,13 @@ export const generateReportImage = async ({
         const canvas = await html2canvas(wrapper.firstElementChild, {
             scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 794,
         });
-        canvas.toBlob(blob => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Reporte_${(currentUser?.name || 'Repartidor').replace(/\s+/g, '_')}_${repDateFilter || todayStr}.png`;
-            document.body.appendChild(a); a.click();
-            document.body.removeChild(a); URL.revokeObjectURL(url);
+        canvas.toBlob(async blob => {
+            const fileName = `Reporte_${(currentUser?.name || 'Repartidor').replace(/\s+/g, '_')}_${repDateFilter || todayStr}.png`;
+            try {
+                await saveAndOpenFile(blob, fileName, 'image/png');
+            } catch (err) {
+                console.error('Error exporting image:', err);
+            }
         }, 'image/png');
     } finally {
         document.body.removeChild(wrapper);
@@ -318,5 +320,8 @@ export const generateReportPDF = async ({
     doc.text(ticketConfig?.footerLine1 || '¡Gracias por su trabajo!', pageWidth / 2, netY + 20, { align: 'center' });
 
     const fileName = `Reporte_${(currentUser?.name || 'Repartidor').replace(/\s+/g, '_')}_${repDateFilter || todayStr}.pdf`;
-    doc.save(fileName);
+    
+    // For native, we get the blob instead of calling save()
+    const blob = doc.output('blob');
+    await saveAndOpenFile(blob, fileName, 'application/pdf');
 };

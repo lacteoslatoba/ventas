@@ -41,11 +41,8 @@ const NetworkIndicator = () => {
     // Sistema de altura estable para móviles (evita brincos del menú)
     let lastWidth = window.innerWidth;
     const updateHeight = () => {
-      if (window.innerWidth !== lastWidth || !document.documentElement.style.getPropertyValue('--vh')) {
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-        lastWidth = window.innerWidth;
-      }
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
 
     window.addEventListener('online', handleOnline);
@@ -360,7 +357,7 @@ const InstallBanner = () => {
   };
 
   return (
-    <div className="fixed bottom-[68px] left-3 right-3 z-[90] animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-[185px] left-3 right-3 z-[90] animate-in slide-in-from-bottom-4 duration-300">
       <div className="bg-slate-900 text-white rounded-2xl shadow-2xl p-4 flex items-center gap-3">
         <img src="/pwa-logo.png" alt="icono" className="w-11 h-11 rounded-xl shrink-0 object-cover" />
         <div className="flex-1 min-w-0">
@@ -477,7 +474,7 @@ function App() {
             <main 
               className="flex-1 overflow-hidden w-full relative scroll-smooth"
             >
-              <div className="h-full overflow-y-auto pb-24 md:pb-8 relative custom-scrollbar">
+              <div className="h-full overflow-y-auto pb-44 md:pb-8 relative custom-scrollbar">
                 <Routes>
                   <Route path="/" element={<Sales />} />
                   <Route path="/ventas" element={<Sales />} />
