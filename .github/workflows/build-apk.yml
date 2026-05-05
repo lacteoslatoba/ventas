@@ -34,6 +34,9 @@ jobs:
       - name: Build web (Vite)
         run: npm run build
 
+      - name: Configurar Android SDK path
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+
       - name: Sincronizar assets web → Android
         run: ./node_modules/.bin/cap sync android
 
