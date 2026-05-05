@@ -28,36 +28,19 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Instalar dependencias
         run: npm ci
 
       - name: Build web (Vite)
         run: npm run build
 
-      - name: Agregar plataforma Android
-        run: ./node_modules/.bin/cap add android
-        env:
-          CI: true
-
       - name: Sincronizar assets web → Android
         run: ./node_modules/.bin/cap sync android
-        env:
-          CI: true
-
-      - name: Agregar permisos Bluetooth al Manifest
-        run: |
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />\n    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />\n    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />\n    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n</manifest>|' "$MANIFEST"
 
       - name: Build APK debug
         run: |
           chmod +x android/gradlew
           cd android && ./gradlew assembleDebug --no-daemon
-        env:
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
 
       - name: Renombrar APK
         run: |
