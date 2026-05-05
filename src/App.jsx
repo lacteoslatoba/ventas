@@ -311,7 +311,7 @@ const BottomNavigation = ({ currentUser }) => {
   const isAdmin = currentUser?.role === 'admin';
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[60px] z-50 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[calc(60px+env(safe-area-inset-bottom,20px))] pb-[env(safe-area-inset-bottom,20px)] z-50 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
       <NavItem to="/" icon={ShoppingCart} label="Vender" active={isActive('/') || isActive('/ventas')} />
       
       <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
@@ -456,7 +456,7 @@ function App() {
         <Router>
           <PrinterAutoConnect />
           <div 
-            className="flex flex-col md:flex-row bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900 pt-safe"
+            className="flex flex-col md:flex-row bg-[#f6f6f8] dark:bg-[#101622] overflow-hidden font-sans text-slate-900 pt-safe pb-safe"
             style={{ height: 'calc(var(--vh, 1vh) * 100)' }}
           >
             <Sidebar />
