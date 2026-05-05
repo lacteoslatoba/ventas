@@ -1,11 +1,7 @@
 /**
  * useBTPrinter.js
  * Hook compartido para acceder a la instancia global de impresora Bluetooth.
- * Intenta reconectar automáticamente al:
- *   - montar la app
- *   - primer toque del usuario (requerido por Chrome)
- *   - regresar a la app desde segundo plano (visibilitychange / focus)
- *   - perder la conexión (gattserverdisconnected)
+ * Auto-reconecta al iniciar sesión con reintentos cada 5s por ~1 minuto.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { autoConnectPrinter, getSavedPrinterName } from './bluetoothPrinter';
@@ -13,84 +9,130 @@ import { autoConnectPrinter, getSavedPrinterName } from './bluetoothPrinter';
 function getGlobalPrinter() { return window.__btPrinter || null; }
 function setGlobalPrinter(p) { window.__btPrinter = p; }
 
+const MAX_RETRIES = 12;   // 12 intentos × 5s = ~1 minuto
+const RETRY_DELAY = 5000;
+
 export function useBTPrinter() {
     const [printer, setPrinterState] = useState(getGlobalPrinter);
-    const [reconnecting, setReconnecting] = useState(!!window.__isBTReconnecting);
-    const retryTimeoutRef = useRef(null);
+    const [reconnecting, setReconnecting] = useState(false);
+    const retryTimerRef = useRef(null);
+    const retryCountRef = useRef(0);
+    const mountedRef = useRef(true);
 
     const setPrinter = useCallback((p) => {
         setGlobalPrinter(p);
         setPrinterState(p);
     }, []);
 
-    const tryReconnect = useCallback(async ({ silent = false } = {}) => {
-        const current = getGlobalPrinter();
-        if (current?.device?.gatt?.connected || window.__isBTReconnecting) return;
+    const stopRetry = useCallback(() => {
+        clearTimeout(retryTimerRef.current);
+        window.__isBTReconnecting = false;
+        if (mountedRef.current) setReconnecting(false);
+    }, []);
 
-        const lastPrinter = getSavedPrinterName();
-        if (!lastPrinter) return;
-
+    const scheduleRetry = useCallback((connectFn) => {
+        clearTimeout(retryTimerRef.current);
+        if (retryCountRef.current >= MAX_RETRIES) {
+            stopRetry();
+            return;
+        }
         window.__isBTReconnecting = true;
-        if (!silent) setReconnecting(true);
+        if (mountedRef.current) setReconnecting(true);
 
-        try {
-            const result = await autoConnectPrinter(lastPrinter);
+        retryTimerRef.current = setTimeout(async () => {
+            if (!mountedRef.current) return;
+            retryCountRef.current += 1;
+            try {
+                const result = await connectFn();
+                if (result && mountedRef.current) {
+                    setGlobalPrinter(result);
+                    setPrinterState(result);
+                    stopRetry();
+                    result.device.addEventListener('gattserverdisconnected', () => {
+                        setGlobalPrinter(null);
+                        if (mountedRef.current) setPrinterState(null);
+                        // Reiniciar loop al desconectarse inesperadamente
+                        retryCountRef.current = 0;
+                        scheduleRetry(connectFn);
+                    });
+                } else {
+                    scheduleRetry(connectFn);
+                }
+            } catch {
+                scheduleRetry(connectFn);
+            }
+        }, RETRY_DELAY);
+    }, [stopRetry]);
+
+    const startAutoConnect = useCallback(() => {
+        const savedName = getSavedPrinterName();
+        if (!savedName) return;
+        if (getGlobalPrinter()?.device?.gatt?.connected) return;
+        if (window.__isBTReconnecting) return;
+
+        retryCountRef.current = 0;
+        window.__isBTReconnecting = true;
+        if (mountedRef.current) setReconnecting(true);
+
+        // Primer intento inmediato
+        const connectFn = () => autoConnectPrinter(savedName);
+        connectFn().then(result => {
+            if (!mountedRef.current) return;
             if (result) {
                 setGlobalPrinter(result);
                 setPrinterState(result);
-
-                // Al desconectarse, reintenta automáticamente una vez tras 2s
+                stopRetry();
                 result.device.addEventListener('gattserverdisconnected', () => {
                     setGlobalPrinter(null);
-                    setPrinterState(null);
-                    clearTimeout(retryTimeoutRef.current);
-                    retryTimeoutRef.current = setTimeout(() => {
-                        tryReconnect({ silent: true });
-                    }, 2000);
+                    if (mountedRef.current) setPrinterState(null);
+                    retryCountRef.current = 0;
+                    scheduleRetry(connectFn);
                 });
+            } else {
+                scheduleRetry(connectFn);
             }
-        } catch (e) {
-            console.warn('Fallo reconexión BT:', e.message);
-        } finally {
-            window.__isBTReconnecting = false;
-            setReconnecting(false);
-        }
-    }, []);
+        }).catch(() => {
+            if (mountedRef.current) scheduleRetry(connectFn);
+        });
+    }, [scheduleRetry, stopRetry]);
 
     useEffect(() => {
-        // Intento inicial al montar
-        tryReconnect();
+        mountedRef.current = true;
 
-        // Reconectar cuando el usuario vuelve a la app (pantalla encendida / cambio de pestaña)
+        // Auto-conectar al montar (inicio de sesión)
+        startAutoConnect();
+
+        // Reconectar cuando el usuario vuelve a la app
         const handleVisible = () => {
-            if (document.visibilityState === 'visible') tryReconnect({ silent: true });
+            if (document.visibilityState === 'visible') {
+                if (!getGlobalPrinter()?.device?.gatt?.connected) {
+                    retryCountRef.current = 0;
+                    startAutoConnect();
+                }
+            }
         };
-        const handleFocus = () => tryReconnect({ silent: true });
-
-        // También al primer gesto del usuario (requisito de Chrome para BT)
-        const handleGesture = () => {
-            tryReconnect({ silent: true });
-            window.removeEventListener('click', handleGesture);
-            window.removeEventListener('touchstart', handleGesture);
+        const handleFocus = () => {
+            if (!getGlobalPrinter()?.device?.gatt?.connected) {
+                retryCountRef.current = 0;
+                startAutoConnect();
+            }
         };
 
         document.addEventListener('visibilitychange', handleVisible);
         window.addEventListener('focus', handleFocus);
-        window.addEventListener('click', handleGesture);
-        window.addEventListener('touchstart', handleGesture);
 
         return () => {
+            mountedRef.current = false;
             document.removeEventListener('visibilitychange', handleVisible);
             window.removeEventListener('focus', handleFocus);
-            window.removeEventListener('click', handleGesture);
-            window.removeEventListener('touchstart', handleGesture);
-            clearTimeout(retryTimeoutRef.current);
+            clearTimeout(retryTimerRef.current);
         };
-    }, [tryReconnect]);
+    }, [startAutoConnect]);
 
-    // Polling ligero para sincronizar estado global con el estado de React
+    // Polling para sincronizar estado global → React state
     useEffect(() => {
         const interval = setInterval(() => {
+            if (!mountedRef.current) return;
             const current = getGlobalPrinter();
             if (printer !== current) setPrinterState(current);
             const isRec = !!window.__isBTReconnecting;
@@ -99,5 +141,5 @@ export function useBTPrinter() {
         return () => clearInterval(interval);
     }, [printer, reconnecting]);
 
-    return { printer, setPrinter, isReconnecting: reconnecting };
+    return { printer, setPrinter, isReconnecting: reconnecting, startAutoConnect };
 }
