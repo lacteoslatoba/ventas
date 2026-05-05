@@ -144,39 +144,70 @@
   // ----- CHROME (soporta BT) -----
   } else if (isBT) {
     content.innerHTML =
-      '<div class="success">✅ Estás en Google Chrome.<br>¡Perfecto para instalar la app!</div>' +
-      '<div class="card">' +
+      '<div class="success">✅ Estás en Google Chrome.<br>¡Listo para instalar!</div>' +
+      '<div class="card" id="installCard">' +
         '<h2>Instala la app</h2>' +
-        '<p>Sigue estos pasos para instalarla en tu pantalla de inicio:</p>' +
-        '<div class="step"><div class="step-num">1</div><div class="step-text">Toca los <strong>3 puntos ⋮</strong> arriba a la derecha</div></div>' +
-        '<div class="step"><div class="step-num">2</div><div class="step-text">Elige <strong>"Añadir a pantalla de inicio"</strong> o <strong>"Instalar app"</strong></div></div>' +
-        '<div class="step"><div class="step-num">3</div><div class="step-text">Confirma tocando <strong>"Añadir"</strong></div></div>' +
-        '<div class="step"><div class="step-num">4</div><div class="step-text">Abre la app desde el ícono nuevo en tu pantalla y <strong>conéctate con tu usuario</strong></div></div>' +
-        '<a id="btnInstall" class="btn btn-disabled" href="' + APP_URL + '" style="margin-top:16px">Ir a la App →</a>' +
+        '<p id="installDesc">Toca el botón para instalarla en tu pantalla de inicio:</p>' +
+        '<button id="btnInstall" class="btn btn-disabled" style="margin-top:8px">Preparando instalación...</button>' +
+        '<div id="manualSteps" style="display:none;margin-top:16px">' +
+          '<p style="margin-bottom:12px;color:#94a3b8">O hazlo manualmente:</p>' +
+          '<div class="step"><div class="step-num">1</div><div class="step-text">Toca los <strong>3 puntos ⋮</strong> arriba a la derecha</div></div>' +
+          '<div class="step"><div class="step-num">2</div><div class="step-text">Elige <strong>"Añadir a pantalla de inicio"</strong> o <strong>"Instalar app"</strong></div></div>' +
+          '<div class="step"><div class="step-num">3</div><div class="step-text">Confirma tocando <strong>"Añadir"</strong> — la app se abrirá sola</div></div>' +
+        '</div>' +
       '</div>';
 
-    // Espera el prompt de instalación
+    function launchApp() {
+      content.innerHTML =
+        '<div class="success" style="font-size:18px;padding:28px 24px">' +
+          '<div style="font-size:48px;margin-bottom:16px">🚀</div>' +
+          '<strong>¡App instalada!</strong><br><br>' +
+          'Abriendo la aplicación...' +
+        '</div>';
+      setTimeout(function() { window.location.href = APP_URL; }, 1800);
+    }
+
+    // Si el usuario instala manualmente (desde el menú ⋮)
+    window.addEventListener('appinstalled', launchApp);
+
     var deferredPrompt = null;
     window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       deferredPrompt = e;
       var btn = document.getElementById('btnInstall');
+      var manual = document.getElementById('manualSteps');
       if (btn) {
         btn.className = 'btn btn-install';
         btn.textContent = '⬇️ Instalar App Ahora';
-        btn.removeAttribute('href');
         btn.onclick = function() {
+          btn.disabled = true;
+          btn.textContent = 'Instalando...';
           deferredPrompt.prompt();
           deferredPrompt.userChoice.then(function(r) {
-            if (r.outcome === 'accepted') {
-              btn.textContent = '✅ ¡Instalada! Ábrela desde tu pantalla';
-              btn.className = 'btn btn-disabled';
-            }
             deferredPrompt = null;
+            if (r.outcome === 'accepted') {
+              launchApp();
+            } else {
+              btn.disabled = false;
+              btn.textContent = '⬇️ Instalar App Ahora';
+            }
           });
         };
       }
+      if (manual) manual.style.display = 'block';
     });
+
+    // Si Chrome no lanza el prompt (ya instalada o no elegible), mostrar pasos manuales
+    setTimeout(function() {
+      if (!deferredPrompt) {
+        var btn = document.getElementById('btnInstall');
+        var manual = document.getElementById('manualSteps');
+        var desc = document.getElementById('installDesc');
+        if (btn) { btn.className = 'btn btn-install'; btn.textContent = '▶️ Abrir App'; btn.onclick = function() { window.location.href = APP_URL; }; }
+        if (manual) manual.style.display = 'block';
+        if (desc) desc.textContent = 'La app ya puede estar instalada. Si ves su ícono en tu pantalla, ábrela desde ahí. Si no:';
+      }
+    }, 3000);
 
   // ----- SAFARI / IPHONE -----
   } else if (isSafari) {
