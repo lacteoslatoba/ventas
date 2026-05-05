@@ -170,17 +170,20 @@ export default function Login() {
                                         <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
                                         {isSyncing ? "Actualizando Base de Datos..." : "Actualizar Datos Online"}
                                     </button>
-                                    {lastSync && (
-                                        <p className="text-[10px] text-slate-400 font-medium">
-                                            Última actualización:{' '}
-                                            <span className="font-black text-slate-500">
-                                                {new Date(lastSync).toLocaleString('es-MX', {
-                                                    day: '2-digit', month: 'short', year: 'numeric',
-                                                    hour: '2-digit', minute: '2-digit',
-                                                })}
-                                            </span>
-                                        </p>
-                                    )}
+                                        <div className="flex flex-col items-center">
+                                            <p className="text-[10px] text-slate-400 font-medium">
+                                                Última actualización:{' '}
+                                                <span className="font-black text-slate-500">
+                                                    {new Date(lastSync).toLocaleString('es-MX', {
+                                                        day: '2-digit', month: 'short', year: 'numeric',
+                                                        hour: '2-digit', minute: '2-digit',
+                                                    })}
+                                                </span>
+                                            </p>
+                                            <p className="text-[9px] text-slate-300 font-black mt-0.5 uppercase tracking-tighter">
+                                                Versión 1.2.3
+                                            </p>
+                                        </div>
                                 </div>
                             )}
                         </div>
