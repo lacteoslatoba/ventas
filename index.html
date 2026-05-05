@@ -21,6 +21,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
     rel="stylesheet" />
   <title>QuesoApp</title>
+  <script>
+    // Redirect Samsung Internet to Chrome (Web Bluetooth not supported)
+    if (/SamsungBrowser/i.test(navigator.userAgent) && !navigator.bluetooth) {
+      var u = location.href.replace(/^https?:\/\//, '');
+      location.href = 'intent://' + u + '#Intent;scheme=https;package=com.android.chrome;end';
+    }
+  </script>
 </head>
 
 <body>
