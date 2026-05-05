@@ -534,6 +534,27 @@ export async function connectPrinter() {
     return { device, server, characteristic: char };
 }
 
+// Reconecta usando requestDevice con filtro por nombre guardado.
+// Requiere gesto del usuario pero pre-selecciona la impresora correcta.
+export async function reconnectByName(name) {
+    const device = await navigator.bluetooth.requestDevice({
+        filters: [{ name }],
+        optionalServices: [PRINTER_SERVICE_UUID, NORDIC_SERVICE_UUID, '0000ff00-0000-1000-8000-00805f9b34fb']
+    });
+    const server = await device.gatt.connect();
+    let char = null;
+    try {
+        const svc = await server.getPrimaryService(PRINTER_SERVICE_UUID);
+        char = await svc.getCharacteristic(PRINTER_CHAR_UUID);
+    } catch {
+        try {
+            const svc = await server.getPrimaryService(NORDIC_SERVICE_UUID);
+            char = await svc.getCharacteristic(NORDIC_TX_CHAR_UUID);
+        } catch { return null; }
+    }
+    return { device, server, characteristic: char };
+}
+
 export async function autoConnectPrinter(lastDeviceName) {
     if (!navigator.bluetooth?.getDevices) return null;
     const devices = await navigator.bluetooth.getDevices();

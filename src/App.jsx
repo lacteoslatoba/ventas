@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate,
 import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings, Users, Menu, Package, WifiOff } from 'lucide-react';
 import { useStore } from './store';
 import { useBTPrinter } from './lib/useBTPrinter';
+import { reconnectByName, getSavedPrinterName, savePrinterName } from './lib/bluetoothPrinter';
 
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
@@ -87,7 +88,7 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
   const [showDriverMenu, setShowDriverMenu] = React.useState(false);
   const [modal, setModal] = React.useState(null); // { title, message, onConfirm }
   const { showToast } = useStore();
-  const { printer, isReconnecting } = useBTPrinter();
+  const { printer, setPrinter, isReconnecting } = useBTPrinter();
 
   const openModal = (title, message, onConfirm) =>
     setModal({ title, message, onConfirm });
@@ -188,8 +189,24 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
 
         {/* Indicador impresora BT */}
         <button
-          onClick={() => navigate('/impresora')}
-          title={printer ? 'Impresora conectada' : isReconnecting ? 'Reconectando...' : 'Sin impresora'}
+          onClick={async () => {
+            if (printer) { navigate('/impresora'); return; }
+            if (isReconnecting) return;
+            const savedName = getSavedPrinterName();
+            if (savedName) {
+              try {
+                const result = await reconnectByName(savedName);
+                if (result) {
+                  setPrinter(result);
+                  savePrinterName(result.device.name || savedName);
+                  result.device.addEventListener('gattserverdisconnected', () => setPrinter(null));
+                }
+              } catch { navigate('/impresora'); }
+            } else {
+              navigate('/impresora');
+            }
+          }}
+          title={printer ? 'Impresora conectada' : isReconnecting ? 'Reconectando...' : 'Toca para reconectar'}
           className="w-10 h-10 rounded-xl flex items-center justify-center active:scale-95 transition-all"
         >
           <span className={`material-symbols-outlined text-xl ${
