@@ -28,8 +28,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
+      - name: Setup Android SDK con API 36
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-36 build-tools;36.0.0 platform-tools'
 
       - name: Instalar dependencias
         run: npm ci
@@ -44,7 +46,6 @@ jobs:
           node -e "const cfg=require('./capacitor.config.json');require('fs').writeFileSync('android/app/src/main/assets/capacitor.config.json',JSON.stringify({appId:cfg.appId,appName:cfg.appName,bundledWebRuntime:false},null,2));"
           echo '{"ios":[],"android":[]}' > android/app/src/main/assets/capacitor.plugins.json
           echo "sdk.dir=${ANDROID_SDK_ROOT}" > android/local.properties
-          cat android/local.properties
 
       - name: Build APK
         run: |
