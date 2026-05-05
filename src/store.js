@@ -308,8 +308,10 @@ export const useStore = create(
                         Object.keys(payload).forEach(key => {
                             if (alwaysTrueFields.has(key)) return; // omitir — se restauran como true al cargar
                             const dbCol = legacyMap[key] || key;
-                            if (availableCols.includes(dbCol)) {
-                                finalPayload[dbCol] = payload[key];
+                            // Busca la columna ignorando mayúsculas (PostgreSQL puede devolver todo en minúsculas)
+                            const actualCol = availableCols.find(c => c.toLowerCase() === dbCol.toLowerCase()) || dbCol;
+                            if (availableCols.some(c => c.toLowerCase() === dbCol.toLowerCase())) {
+                                finalPayload[actualCol] = payload[key];
                             } else {
                                 extraData[key] = payload[key];
                             }
@@ -426,7 +428,9 @@ export const useStore = create(
                                     ...finalConfig,
                                     businessName: finalConfig.header !== undefined ? finalConfig.header : finalConfig.businessName,
                                     footerLine1: finalConfig.footer !== undefined ? finalConfig.footer : finalConfig.footerLine1,
-                                    printCopy: finalConfig.doubleCopy !== undefined ? finalConfig.doubleCopy : finalConfig.printCopy
+                                    printCopy: finalConfig.doubleCopy !== undefined ? finalConfig.doubleCopy :
+                                               finalConfig.doublecopy !== undefined ? finalConfig.doublecopy :
+                                               finalConfig.printCopy
                                 };
 
                                 const cleanData = {};
