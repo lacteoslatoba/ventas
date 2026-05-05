@@ -180,9 +180,9 @@ export default function Login() {
                                                     })}
                                                 </span>
                                             </p>
-                                            <p className="text-[9px] text-slate-300 font-black mt-0.5 uppercase tracking-tighter">
-                                                Versión 1.2.3
-                                            </p>
+                                            <div className="mt-2 bg-blue-600 text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm animate-pulse">
+                                                Versión 1.2.4 (Nueva)
+                                            </div>
                                         </div>
                                 </div>
                             )}
