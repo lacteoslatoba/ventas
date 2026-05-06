@@ -4,8 +4,8 @@ import {
     Printer, CheckCircle2, AlertCircle, Trash2, Zap, Info, ChevronRight, ArrowLeft, FileText
 } from 'lucide-react';
 import {
-    connectPrinter, reconnectByName, printTestPage, printTicket,
-    savePrinterName, getSavedPrinterName, clearSavedPrinter
+    connectPrinter, reconnectSaved, printTestPage, printTicket,
+    getSavedPrinterName, getPrinterDisplayName, clearSavedPrinter
 } from '../lib/bluetoothPrinter';
 import { useStore } from '../store';
 
@@ -47,17 +47,9 @@ export default function PrinterSettings() {
         setStatusMsg('Buscando impresoras Bluetooth...');
         try {
             const result = await connectPrinter();
-
             setPrinter(result);
-            savePrinterName(result.device.name || 'Impresora BT');
-
-            // Escuchar desconexión
-            result.device.addEventListener('gattserverdisconnected', () => {
-                setPrinter(null);
-            });
-
         } catch (err) {
-            if (err.name === 'NotFoundError') {
+            if (err.name === 'NotFoundError' || err.name === 'UserCancelledError') {
                 setStatus('idle');
                 setStatusMsg('');
             } else {
@@ -68,26 +60,20 @@ export default function PrinterSettings() {
     };
 
     const handleReconnect = async () => {
-        const savedName = getSavedPrinterName();
-        if (!savedName) { handleConnect(); return; }
+        if (!getSavedPrinterName()) { handleConnect(); return; }
         setStatus('connecting');
-        setStatusMsg(`Conectando con ${savedName}...`);
+        setStatusMsg(`Conectando con ${getPrinterDisplayName()}...`);
         try {
-            const result = await reconnectByName(savedName);
+            const result = await reconnectSaved();
             if (!result) throw new Error('No se pudo conectar');
             setPrinter(result);
-            savePrinterName(result.device.name || savedName);
-            result.device.addEventListener('gattserverdisconnected', () => setPrinter(null));
         } catch (err) {
-            if (err.name === 'NotFoundError') { setStatus('idle'); setStatusMsg(''); }
+            if (err.name === 'NotFoundError' || err.name === 'UserCancelledError') { setStatus('idle'); setStatusMsg(''); }
             else { setStatus('error'); setStatusMsg(err.message || 'Error al conectar'); }
         }
     };
 
     const handleDisconnect = () => {
-        if (printer?.device?.gatt?.connected) {
-            printer.device.gatt.disconnect();
-        }
         setPrinter(null);
         clearSavedPrinter();
     };
@@ -208,7 +194,7 @@ export default function PrinterSettings() {
                             status === 'error' ? 'text-red-800' :
                                 'text-slate-700'
                             }`}>
-                            {isConnected ? (printer.device.name || 'Impresora Bluetooth') :
+                            {isConnected ? (printer.name || 'Impresora Bluetooth') :
                                 status === 'connecting' ? 'Buscando dispositivo...' :
                                     status === 'error' ? 'Error de conexión' :
                                         status === 'disconnected' ? 'Desconectada' :
@@ -281,14 +267,14 @@ export default function PrinterSettings() {
             </div>
 
             {/* Última impresora */}
-            {getSavedPrinterName() && !isConnected && (
+            {getPrinterDisplayName() && !isConnected && (
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6 flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
                         <Bluetooth size={18} className="text-slate-400" />
                     </div>
                     <div className="flex-1">
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-0.5">Último dispositivo</p>
-                        <p className="font-bold text-slate-700">{getSavedPrinterName()}</p>
+                        <p className="font-bold text-slate-700">{getPrinterDisplayName()}</p>
                     </div>
                     <button
                         onClick={handleReconnect}

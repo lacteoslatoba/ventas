@@ -510,81 +510,81 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
     return finalBuffer;
 }
 
-export async function sendInChunks(connection, data) {
-    const chunkSize = 20; 
+let bleInitialized = false;
+async function ensureBle() {
+    if (bleInitialized) return;
+    await BleClient.initialize({ androidNeverForLocation: true });
+    bleInitialized = true;
+}
+
+async function detectService(deviceId) {
+    try {
+        const services = await BleClient.getServices(deviceId);
+        for (const svc of services) {
+            if (svc.uuid.toLowerCase() === NORDIC_SERVICE_UUID.toLowerCase()) {
+                return { serviceUUID: NORDIC_SERVICE_UUID, charUUID: NORDIC_TX_CHAR_UUID };
+            }
+        }
+    } catch {}
+    return { serviceUUID: PRINTER_SERVICE_UUID, charUUID: PRINTER_CHAR_UUID };
+}
+
+function makePrinterObj(deviceId, name, serviceUUID, charUUID) {
+    return { deviceId, name: name || 'Impresora BT', serviceUUID, charUUID, isConnected: true };
+}
+
+async function sendInChunks(connection, data) {
+    const chunkSize = 20;
     for (let i = 0; i < data.length; i += chunkSize) {
         const chunk = data.slice(i, i + chunkSize);
         const dataView = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
         await BleClient.writeWithoutResponse(connection.deviceId, connection.serviceUUID, connection.charUUID, dataView);
-        await new Promise(r => setTimeout(r, 40)); 
+        await new Promise(r => setTimeout(r, 40));
     }
 }
 
-export async function connectPrinter(onDisconnectCallback) {
-    await BleClient.initialize({ androidNeverForLocation: true });
-    
+export async function connectPrinter() {
+    await ensureBle();
     const device = await BleClient.requestDevice({
         optionalServices: [PRINTER_SERVICE_UUID, NORDIC_SERVICE_UUID, '0000ff00-0000-1000-8000-00805f9b34fb']
     });
-
-    await BleClient.connect(device.deviceId, onDisconnectCallback);
-    
-    // Por simplicidad en ESC/POS asumimos el servicio principal.
-    // BleClient también tiene getServices() si se ocupa más validación.
-    let serviceUUID = PRINTER_SERVICE_UUID;
-    let charUUID = PRINTER_CHAR_UUID;
-
-    return { 
-        deviceId: device.deviceId, 
-        name: device.name || 'Impresora', 
-        serviceUUID, 
-        charUUID,
-        isConnected: true
-    };
+    await BleClient.connect(device.deviceId);
+    const { serviceUUID, charUUID } = await detectService(device.deviceId);
+    const name = device.name || 'Impresora BT';
+    savePrinterName(device.deviceId);
+    savePrinterDisplayName(name);
+    return makePrinterObj(device.deviceId, name, serviceUUID, charUUID);
 }
 
-export async function reconnectByName(name, onDisconnectCallback) {
-    await BleClient.initialize({ androidNeverForLocation: true });
-    // requestDevice con name filter
-    const device = await BleClient.requestDevice({
-        namePrefix: name,
-        optionalServices: [PRINTER_SERVICE_UUID, NORDIC_SERVICE_UUID, '0000ff00-0000-1000-8000-00805f9b34fb']
-    });
-    
-    await BleClient.connect(device.deviceId, onDisconnectCallback);
-    
-    return { 
-        deviceId: device.deviceId, 
-        name: device.name || 'Impresora', 
-        serviceUUID: PRINTER_SERVICE_UUID, 
-        charUUID: PRINTER_CHAR_UUID,
-        isConnected: true
-    };
+export async function reconnectSaved() {
+    const deviceId = getSavedPrinterName();
+    if (!deviceId) return null;
+    await ensureBle();
+    await BleClient.connect(deviceId);
+    const { serviceUUID, charUUID } = await detectService(deviceId);
+    return makePrinterObj(deviceId, getPrinterDisplayName(), serviceUUID, charUUID);
+}
+
+// Kept for backward compat — now reconnects by saved ID directly
+export async function reconnectByName() {
+    return reconnectSaved();
 }
 
 export async function autoConnectPrinter(lastDeviceId, onDisconnectCallback) {
     if (!lastDeviceId) return null;
     try {
-        await BleClient.initialize({ androidNeverForLocation: true });
+        await ensureBle();
         await BleClient.connect(lastDeviceId, onDisconnectCallback);
-        
-        return { 
-            deviceId: lastDeviceId, 
-            name: 'Impresora', 
-            serviceUUID: PRINTER_SERVICE_UUID, 
-            charUUID: PRINTER_CHAR_UUID,
-            isConnected: true
-        };
+        const { serviceUUID, charUUID } = await detectService(lastDeviceId);
+        return makePrinterObj(lastDeviceId, getPrinterDisplayName(), serviceUUID, charUUID);
     } catch {
         return null;
     }
 }
 
 export async function printTicket({ ticket, user, client, characteristic, config }) {
-    // "characteristic" es la conexión ({ deviceId, serviceUUID, charUUID })
     const buffer = await buildTicketBuffer({ ticket, user, client, config });
     await sendInChunks(characteristic, buffer);
-
     if (config?.printCopy) {
         await new Promise(r => setTimeout(r, 1500));
         await sendInChunks(characteristic, buffer);
@@ -596,7 +596,8 @@ export async function printTestPage(characteristic) {
     await sendInChunks(characteristic, test);
 }
 
-// Guardamos deviceId en lugar de nombre para poder auto-conectar en Android
 export function savePrinterName(deviceId) { localStorage.setItem('bt_printer_id_v2', deviceId); }
 export function getSavedPrinterName() { return localStorage.getItem('bt_printer_id_v2'); }
-export function clearSavedPrinter() { localStorage.removeItem('bt_printer_id_v2'); }
+export function savePrinterDisplayName(name) { localStorage.setItem('bt_printer_name', name); }
+export function getPrinterDisplayName() { return localStorage.getItem('bt_printer_name') || getSavedPrinterName() || ''; }
+export function clearSavedPrinter() { localStorage.removeItem('bt_printer_id_v2'); localStorage.removeItem('bt_printer_name'); }
