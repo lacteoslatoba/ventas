@@ -21,11 +21,11 @@ export default function PrinterSettings() {
     const [showHelp, setShowHelp] = useState(false);
 
     useEffect(() => {
-        setBtSupported(!!navigator.bluetooth);
+        setBtSupported(!!window.Capacitor?.isNative || !!navigator.bluetooth);
     }, []);
 
     const isSamsungBrowser = /SamsungBrowser/i.test(navigator.userAgent);
-    const isUnsupportedBrowser = !navigator.bluetooth;
+    const isUnsupportedBrowser = !window.Capacitor?.isNative && !navigator.bluetooth;
     const targetUrl = window.location.href;
 
     // Sincronizar estado local con el hook global
