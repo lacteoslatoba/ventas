@@ -43,18 +43,22 @@ export function useBTPrinter() {
             if (!mountedRef.current) return;
             retryCountRef.current += 1;
             try {
-                const result = await connectFn();
+                const handleDisconnect = () => {
+                    const curr = getGlobalPrinter();
+                    if (curr) curr.isConnected = false;
+                    setGlobalPrinter(null);
+                    if (mountedRef.current) setPrinterState(null);
+                    // Reiniciar loop al desconectarse inesperadamente
+                    retryCountRef.current = 0;
+                    scheduleRetry(connectFn);
+                };
+
+                // Pasamos la callback de desconexión directamente
+                const result = await connectFn(handleDisconnect);
                 if (result && mountedRef.current) {
                     setGlobalPrinter(result);
                     setPrinterState(result);
                     stopRetry();
-                    result.device.addEventListener('gattserverdisconnected', () => {
-                        setGlobalPrinter(null);
-                        if (mountedRef.current) setPrinterState(null);
-                        // Reiniciar loop al desconectarse inesperadamente
-                        retryCountRef.current = 0;
-                        scheduleRetry(connectFn);
-                    });
                 } else {
                     scheduleRetry(connectFn);
                 }
@@ -65,30 +69,32 @@ export function useBTPrinter() {
     }, [stopRetry]);
 
     const startAutoConnect = useCallback(() => {
-        if (!navigator.bluetooth) return;
-        const savedName = getSavedPrinterName();
-        if (!savedName) return;
-        if (getGlobalPrinter()?.device?.gatt?.connected) return;
+        const savedDeviceId = getSavedPrinterName();
+        if (!savedDeviceId) return;
+        if (getGlobalPrinter()?.isConnected) return;
         if (window.__isBTReconnecting) return;
 
         retryCountRef.current = 0;
         window.__isBTReconnecting = true;
         if (mountedRef.current) setReconnecting(true);
 
-        // Primer intento inmediato
-        const connectFn = () => autoConnectPrinter(savedName);
+        const handleDisconnect = () => {
+            const curr = getGlobalPrinter();
+            if (curr) curr.isConnected = false;
+            setGlobalPrinter(null);
+            if (mountedRef.current) setPrinterState(null);
+            retryCountRef.current = 0;
+            scheduleRetry(connectFn);
+        };
+
+        const connectFn = (onDisc) => autoConnectPrinter(savedDeviceId, onDisc || handleDisconnect);
+        
         connectFn().then(result => {
             if (!mountedRef.current) return;
             if (result) {
                 setGlobalPrinter(result);
                 setPrinterState(result);
                 stopRetry();
-                result.device.addEventListener('gattserverdisconnected', () => {
-                    setGlobalPrinter(null);
-                    if (mountedRef.current) setPrinterState(null);
-                    retryCountRef.current = 0;
-                    scheduleRetry(connectFn);
-                });
             } else {
                 scheduleRetry(connectFn);
             }
@@ -106,14 +112,14 @@ export function useBTPrinter() {
         // Reconectar cuando el usuario vuelve a la app
         const handleVisible = () => {
             if (document.visibilityState === 'visible') {
-                if (!getGlobalPrinter()?.device?.gatt?.connected) {
+                if (!getGlobalPrinter()?.isConnected) {
                     retryCountRef.current = 0;
                     startAutoConnect();
                 }
             }
         };
         const handleFocus = () => {
-            if (!getGlobalPrinter()?.device?.gatt?.connected) {
+            if (!getGlobalPrinter()?.isConnected) {
                 retryCountRef.current = 0;
                 startAutoConnect();
             }

@@ -2,6 +2,7 @@
  * bluetoothPrinter.js
  * Librería para impresoras térmicas Bluetooth (ESC/POS) via Web Bluetooth API.
  */
+import { BleClient } from '@capacitor-community/bluetooth-le';
 
 // UUID genéricos para servicios de impresora
 const PRINTER_SERVICE_UUID = '000018f0-0000-1000-8000-00805f9b34fb';
@@ -509,78 +510,83 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
     return finalBuffer;
 }
 
-async function sendInChunks(characteristic, data) {
+export async function sendInChunks(connection, data) {
     const chunkSize = 20; 
     for (let i = 0; i < data.length; i += chunkSize) {
-        await characteristic.writeValue(data.slice(i, i + chunkSize));
-        await new Promise(r => setTimeout(r, 40)); // Aumentado a 40ms para estabilidad BLE
+        const chunk = data.slice(i, i + chunkSize);
+        const dataView = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+        await BleClient.writeWithoutResponse(connection.deviceId, connection.serviceUUID, connection.charUUID, dataView);
+        await new Promise(r => setTimeout(r, 40)); 
     }
 }
 
-export async function connectPrinter() {
-    if (!navigator.bluetooth) throw new Error('Bluetooth no disponible. Usa Google Chrome en Android.');
-    const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
+export async function connectPrinter(onDisconnectCallback) {
+    await BleClient.initialize({ androidNeverForLocation: true });
+    
+    const device = await BleClient.requestDevice({
         optionalServices: [PRINTER_SERVICE_UUID, NORDIC_SERVICE_UUID, '0000ff00-0000-1000-8000-00805f9b34fb']
     });
-    const server = await device.gatt.connect();
-    let char = null;
-    try {
-        const svc = await server.getPrimaryService(PRINTER_SERVICE_UUID);
-        char = await svc.getCharacteristic(PRINTER_CHAR_UUID);
-    } catch {
-        const svc = await server.getPrimaryService(NORDIC_SERVICE_UUID);
-        char = await svc.getCharacteristic(NORDIC_TX_CHAR_UUID);
-    }
-    return { device, server, characteristic: char };
+
+    await BleClient.connect(device.deviceId, onDisconnectCallback);
+    
+    // Por simplicidad en ESC/POS asumimos el servicio principal.
+    // BleClient también tiene getServices() si se ocupa más validación.
+    let serviceUUID = PRINTER_SERVICE_UUID;
+    let charUUID = PRINTER_CHAR_UUID;
+
+    return { 
+        deviceId: device.deviceId, 
+        name: device.name || 'Impresora', 
+        serviceUUID, 
+        charUUID,
+        isConnected: true
+    };
 }
 
-// Reconecta usando requestDevice con filtro por nombre guardado.
-// Requiere gesto del usuario pero pre-selecciona la impresora correcta.
-export async function reconnectByName(name) {
-    const device = await navigator.bluetooth.requestDevice({
-        filters: [{ name }],
+export async function reconnectByName(name, onDisconnectCallback) {
+    await BleClient.initialize({ androidNeverForLocation: true });
+    // requestDevice con name filter
+    const device = await BleClient.requestDevice({
+        namePrefix: name,
         optionalServices: [PRINTER_SERVICE_UUID, NORDIC_SERVICE_UUID, '0000ff00-0000-1000-8000-00805f9b34fb']
     });
-    const server = await device.gatt.connect();
-    let char = null;
-    try {
-        const svc = await server.getPrimaryService(PRINTER_SERVICE_UUID);
-        char = await svc.getCharacteristic(PRINTER_CHAR_UUID);
-    } catch {
-        try {
-            const svc = await server.getPrimaryService(NORDIC_SERVICE_UUID);
-            char = await svc.getCharacteristic(NORDIC_TX_CHAR_UUID);
-        } catch { return null; }
-    }
-    return { device, server, characteristic: char };
+    
+    await BleClient.connect(device.deviceId, onDisconnectCallback);
+    
+    return { 
+        deviceId: device.deviceId, 
+        name: device.name || 'Impresora', 
+        serviceUUID: PRINTER_SERVICE_UUID, 
+        charUUID: PRINTER_CHAR_UUID,
+        isConnected: true
+    };
 }
 
-export async function autoConnectPrinter(lastDeviceName) {
-    if (!navigator.bluetooth?.getDevices) return null;
-    const devices = await navigator.bluetooth.getDevices();
-    const device = devices.find(d => d.name === lastDeviceName) || devices[0];
-    if (!device) return null;
-    const server = await device.gatt.connect();
-    let char = null;
+export async function autoConnectPrinter(lastDeviceId, onDisconnectCallback) {
+    if (!lastDeviceId) return null;
     try {
-        const svc = await server.getPrimaryService(PRINTER_SERVICE_UUID);
-        char = await svc.getCharacteristic(PRINTER_CHAR_UUID);
+        await BleClient.initialize({ androidNeverForLocation: true });
+        await BleClient.connect(lastDeviceId, onDisconnectCallback);
+        
+        return { 
+            deviceId: lastDeviceId, 
+            name: 'Impresora', 
+            serviceUUID: PRINTER_SERVICE_UUID, 
+            charUUID: PRINTER_CHAR_UUID,
+            isConnected: true
+        };
     } catch {
-        try {
-            const svc = await server.getPrimaryService(NORDIC_SERVICE_UUID);
-            char = await svc.getCharacteristic(NORDIC_TX_CHAR_UUID);
-        } catch { return null; }
+        return null;
     }
-    return { device, server, characteristic: char };
 }
 
 export async function printTicket({ ticket, user, client, characteristic, config }) {
+    // "characteristic" es la conexión ({ deviceId, serviceUUID, charUUID })
     const buffer = await buildTicketBuffer({ ticket, user, client, config });
     await sendInChunks(characteristic, buffer);
 
     if (config?.printCopy) {
-        await new Promise(r => setTimeout(r, 1500)); // Pausa de 1.5s entre tickets
+        await new Promise(r => setTimeout(r, 1500));
         await sendInChunks(characteristic, buffer);
     }
 }
@@ -590,6 +596,7 @@ export async function printTestPage(characteristic) {
     await sendInChunks(characteristic, test);
 }
 
-export function savePrinterName(name) { localStorage.setItem('bt_printer_name', name); }
-export function getSavedPrinterName() { return localStorage.getItem('bt_printer_name'); }
-export function clearSavedPrinter() { localStorage.removeItem('bt_printer_name'); }
+// Guardamos deviceId en lugar de nombre para poder auto-conectar en Android
+export function savePrinterName(deviceId) { localStorage.setItem('bt_printer_id_v2', deviceId); }
+export function getSavedPrinterName() { return localStorage.getItem('bt_printer_id_v2'); }
+export function clearSavedPrinter() { localStorage.removeItem('bt_printer_id_v2'); }
