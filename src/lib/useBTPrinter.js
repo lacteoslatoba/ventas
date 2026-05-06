@@ -65,6 +65,7 @@ export function useBTPrinter() {
     }, [stopRetry]);
 
     const startAutoConnect = useCallback(() => {
+        if (!navigator.bluetooth) return;
         const savedName = getSavedPrinterName();
         if (!savedName) return;
         if (getGlobalPrinter()?.device?.gatt?.connected) return;
