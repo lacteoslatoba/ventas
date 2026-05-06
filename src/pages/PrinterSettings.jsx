@@ -4,7 +4,7 @@ import {
     Printer, CheckCircle2, AlertCircle, Trash2, Zap, Info, ChevronRight, ArrowLeft, FileText
 } from 'lucide-react';
 import {
-    connectPrinter, printTestPage, printTicket,
+    connectPrinter, reconnectByName, printTestPage, printTicket,
     savePrinterName, getSavedPrinterName, clearSavedPrinter
 } from '../lib/bluetoothPrinter';
 import { useStore } from '../store';
@@ -64,6 +64,23 @@ export default function PrinterSettings() {
                 setStatus('error');
                 setStatusMsg(err.message || 'Error al conectar');
             }
+        }
+    };
+
+    const handleReconnect = async () => {
+        const savedName = getSavedPrinterName();
+        if (!savedName) { handleConnect(); return; }
+        setStatus('connecting');
+        setStatusMsg(`Conectando con ${savedName}...`);
+        try {
+            const result = await reconnectByName(savedName);
+            if (!result) throw new Error('No se pudo conectar');
+            setPrinter(result);
+            savePrinterName(result.device.name || savedName);
+            result.device.addEventListener('gattserverdisconnected', () => setPrinter(null));
+        } catch (err) {
+            if (err.name === 'NotFoundError') { setStatus('idle'); setStatusMsg(''); }
+            else { setStatus('error'); setStatusMsg(err.message || 'Error al conectar'); }
         }
     };
 
@@ -274,7 +291,7 @@ export default function PrinterSettings() {
                         <p className="font-bold text-slate-700">{getSavedPrinterName()}</p>
                     </div>
                     <button
-                        onClick={handleConnect}
+                        onClick={handleReconnect}
                         className="text-xs bg-white border border-slate-200 hover:border-primary hover:text-primary text-slate-500 font-bold px-3 py-2 rounded-xl transition-all"
                     >
                         Reconectar
