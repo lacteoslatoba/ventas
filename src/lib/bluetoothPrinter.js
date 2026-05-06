@@ -518,6 +518,7 @@ async function sendInChunks(characteristic, data) {
 }
 
 export async function connectPrinter() {
+    if (!navigator.bluetooth) throw new Error('Bluetooth no disponible. Usa Google Chrome en Android.');
     const device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
         optionalServices: [PRINTER_SERVICE_UUID, NORDIC_SERVICE_UUID, '0000ff00-0000-1000-8000-00805f9b34fb']

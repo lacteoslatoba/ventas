@@ -21,11 +21,11 @@ export default function PrinterSettings() {
     const [showHelp, setShowHelp] = useState(false);
 
     useEffect(() => {
-        setBtSupported(true); // Forzamos soporte siempre para la App
+        setBtSupported(!!navigator.bluetooth);
     }, []);
 
-    const isSamsungBrowser = false;
-    const isUnsupportedBrowser = false;
+    const isSamsungBrowser = /SamsungBrowser/i.test(navigator.userAgent);
+    const isUnsupportedBrowser = !navigator.bluetooth;
     const targetUrl = window.location.href;
 
     // Sincronizar estado local con el hook global
@@ -119,8 +119,35 @@ export default function PrinterSettings() {
 
     const isConnected = status === 'connected' && printer;
 
-    // Ya no bloqueamos por navegador, permitimos intentar la conexión siempre
-
+    if (isUnsupportedBrowser) {
+        const chromeUrl = isSamsungBrowser
+            ? `intent://${targetUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`
+            : null;
+        return (
+            <div className="p-6 max-w-md mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center gap-6">
+                <div className="w-20 h-20 rounded-3xl bg-red-50 flex items-center justify-center">
+                    <BluetoothOff size={36} className="text-red-400" />
+                </div>
+                <div>
+                    <h2 className="text-xl font-bold text-slate-800 mb-2">Bluetooth no disponible</h2>
+                    <p className="text-slate-500 text-sm leading-relaxed">
+                        La impresión Bluetooth requiere <strong>Google Chrome</strong> en Android.
+                        Este navegador no soporta Web Bluetooth.
+                    </p>
+                </div>
+                {chromeUrl ? (
+                    <a href={chromeUrl}
+                        className="w-full bg-primary text-white font-bold py-4 px-6 rounded-2xl text-center">
+                        Abrir en Google Chrome
+                    </a>
+                ) : (
+                    <p className="text-xs text-slate-400 bg-slate-50 rounded-2xl p-4">
+                        Abre esta app desde <strong>Google Chrome</strong> para usar la impresora Bluetooth.
+                    </p>
+                )}
+            </div>
+        );
+    }
 
     return (
         <div className="p-4 md:p-8 max-w-2xl mx-auto">
