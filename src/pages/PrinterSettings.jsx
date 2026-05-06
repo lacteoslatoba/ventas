@@ -8,6 +8,7 @@ import {
     getSavedPrinterName, getPrinterDisplayName, clearSavedPrinter
 } from '../lib/bluetoothPrinter';
 import { useStore } from '../store';
+import { Capacitor } from '@capacitor/core';
 
 import { useBTPrinter } from '../lib/useBTPrinter';
 
@@ -21,11 +22,11 @@ export default function PrinterSettings() {
     const [showHelp, setShowHelp] = useState(false);
 
     useEffect(() => {
-        setBtSupported(!!window.Capacitor?.isNative || !!navigator.bluetooth);
+        setBtSupported(Capacitor.isNativePlatform() || !!navigator.bluetooth);
     }, []);
 
     const isSamsungBrowser = /SamsungBrowser/i.test(navigator.userAgent);
-    const isUnsupportedBrowser = !window.Capacitor?.isNative && !navigator.bluetooth;
+    const isUnsupportedBrowser = !Capacitor.isNativePlatform() && !navigator.bluetooth;
     const targetUrl = window.location.href;
 
     // Sincronizar estado local con el hook global
