@@ -42,14 +42,25 @@ jobs:
       - name: Sincronizar Capacitor
         run: npx cap sync android
 
-      - name: Build APK Debug
+      - name: Generar Keystore persistente
+        run: |
+          if [ ! -f "android/app/ventas.keystore" ]; then
+            keytool -genkey -v -keystore android/app/ventas.keystore -alias ventas -keyalg RSA -keysize 2048 -validity 10000 -storepass "ventas123" -keypass "ventas123" -dname "CN=Ventas, OU=IT, O=LaToba, L=City, ST=State, C=MX"
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            git add android/app/ventas.keystore
+            git commit -m "Add persistent keystore for consistent APK signing [skip ci]"
+            git push
+          fi
+
+      - name: Build APK Release
         run: |
           chmod +x android/gradlew
-          cd android && ./gradlew clean assembleDebug --no-daemon
+          cd android && ./gradlew clean assembleRelease --no-daemon
 
       - name: Capturar APK
         run: |
-          find android/app/build/outputs/apk/debug/ -name "*.apk" -exec cp {} VentasRepartidor.apk \;
+          find android/app/build/outputs/apk/release/ -name "*.apk" -exec cp {} VentasRepartidor.apk \;
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
