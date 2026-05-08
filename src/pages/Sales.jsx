@@ -274,7 +274,7 @@ export default function Sales() {
             <div className="lg:hidden">
                 {/* Fixed Bottom Bar (Covers Bottom Nav) */}
                 {!mobileCartOpen && cart.length > 0 && (
-                    <div className="fixed bottom-[60px] left-0 right-0 z-40 animate-in slide-in-from-bottom-2 duration-300">
+                    <div className="fixed bottom-[calc(76px+env(safe-area-inset-bottom,20px))] left-0 right-0 z-40 animate-in slide-in-from-bottom-2 duration-300">
                         <button
                             onClick={() => setMobileCartOpen(true)}
                             className="w-full h-[64px] bg-slate-900 border-t border-slate-800 text-white shadow-[0_-8px_30px_rgba(0,0,0,0.15)] px-6 flex items-center justify-between transition-colors active:bg-slate-800"

@@ -1,0 +1,29 @@
+{
+  "name": "Ventas Repartidor",
+  "short_name": "Ventas",
+  "description": "App de ventas en ruta y control de inventario",
+  "background_color": "#ffffff",
+  "theme_color": "#ffb91a",
+  "display": "standalone",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "pwa-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "pwa-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "pwa-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

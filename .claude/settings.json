@@ -1,6 +1,10 @@
 {
   "permissions": {
     "allow": [
+      "PowerShell(Get-ChildItem *)",
+      "Bash(where.exe *)",
+      "Bash(adb devices)",
+      "Bash(adb logcat -d *)",
       "Bash(start http://localhost:5175)",
       "Bash(node -e ' *)",
       "Bash(npx vite *)",
@@ -14,7 +18,12 @@
       "Bash(git push *)",
       "Bash(git pull *)",
       "Bash(git checkout *)",
-      "Bash(git rebase *)"
+      "Bash(git rebase *)",
+      "PowerShell(& \"C:\\Program Files (x86)\\ClockworkMod\\Universal Adb Driver\\adb.exe\" *)",
+      "Bash(npm run build *)",
+      "Bash(npm run dev *)",
+      "Bash(npx cap sync *)",
+      "PowerShell(cd *; git *)"
     ]
   }
 }
