@@ -563,17 +563,33 @@ export async function startPrinterScan(onDeviceFound) {
     _scanActive = true;
     const seen = new Set();
 
-    await BleClient.requestLEScan({}, (result) => {
-        if (!_scanActive) return;
-        const id = result.device?.deviceId;
-        if (!id || seen.has(id)) return;
-        seen.add(id);
+    const report = (device) => {
+        if (!device?.deviceId || seen.has(device.deviceId)) return;
+        seen.add(device.deviceId);
         onDeviceFound({
-            deviceId: id,
-            name: result.device.name || result.localName || id,
-            rssi: result.rssi ?? -99,
+            deviceId: device.deviceId,
+            name: device.name || device.deviceId,
+            rssi: device.rssi ?? -99,
         });
-    });
+    };
+
+    // 1. Mostrar dispositivos ya emparejados inmediatamente
+    try {
+        const bonded = await BleClient.getBondedDevices();
+        bonded.forEach(d => report({ deviceId: d.deviceId, name: d.name, rssi: -60 }));
+    } catch {}
+
+    // 2. Escanear BLE activamente para encontrar más
+    try {
+        await BleClient.requestLEScan({}, (result) => {
+            if (!_scanActive) return;
+            report({
+                deviceId: result.device?.deviceId,
+                name: result.device?.name || result.localName,
+                rssi: result.rssi,
+            });
+        });
+    } catch {}
 }
 
 export async function stopPrinterScan() {
