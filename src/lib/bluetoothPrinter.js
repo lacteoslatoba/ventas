@@ -517,6 +517,19 @@ async function ensureBle() {
     bleInitialized = true;
 }
 
+async function ensureBluetoothEnabled() {
+    await ensureBle();
+    try {
+        const { value: isEnabled } = await BleClient.isEnabled();
+        if (!isEnabled) {
+            // En Android nativo, muestra el diálogo del sistema para activar BT
+            await BleClient.requestEnable();
+        }
+    } catch {
+        // En web/PC no está disponible requestEnable(), ignorar
+    }
+}
+
 async function detectService(deviceId) {
     try {
         const services = await BleClient.getServices(deviceId);
@@ -544,7 +557,7 @@ async function sendInChunks(connection, data) {
 }
 
 export async function connectPrinter() {
-    await ensureBle();
+    await ensureBluetoothEnabled();
     const device = await BleClient.requestDevice({
         optionalServices: [PRINTER_SERVICE_UUID, NORDIC_SERVICE_UUID, '0000ff00-0000-1000-8000-00805f9b34fb']
     });
@@ -559,7 +572,7 @@ export async function connectPrinter() {
 export async function reconnectSaved() {
     const deviceId = getSavedPrinterName();
     if (!deviceId) return null;
-    await ensureBle();
+    await ensureBluetoothEnabled();
     await BleClient.connect(deviceId);
     const { serviceUUID, charUUID } = await detectService(deviceId);
     return makePrinterObj(deviceId, getPrinterDisplayName(), serviceUUID, charUUID);
