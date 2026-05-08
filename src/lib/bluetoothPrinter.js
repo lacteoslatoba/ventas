@@ -543,7 +543,8 @@ async function detectService(deviceId) {
 }
 
 function makePrinterObj(deviceId, name, serviceUUID, charUUID) {
-    return { deviceId, name: name || 'Impresora BT', serviceUUID, charUUID, isConnected: true };
+    const characteristic = { deviceId, serviceUUID, charUUID };
+    return { deviceId, name: name || 'Impresora BT', serviceUUID, charUUID, characteristic, isConnected: true };
 }
 
 async function sendInChunks(connection, data) {
