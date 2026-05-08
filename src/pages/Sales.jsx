@@ -219,7 +219,7 @@ export default function Sales() {
         <div className="p-4 md:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 h-full min-h-0 relative">
 
             {/* Products Left Side */}
-            <div className="flex-1 flex flex-col pb-8 lg:pb-0">
+            <div className="flex-1 flex flex-col pb-[140px] lg:pb-0">
                 <div className="mb-6 px-1 flex justify-between items-start border-b-2 border-gray-900 pb-4">
                     <div>
                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{ticketConfig?.businessName || 'Lacteos La Toba'}</p>
