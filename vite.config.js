@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig({
+  base: './',
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toLocaleString('es-MX', {
       timeZone: 'America/Mazatlan',
