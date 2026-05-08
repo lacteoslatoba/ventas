@@ -50,12 +50,20 @@ export default function PrinterSettings() {
             const result = await connectPrinter();
             setPrinter(result);
         } catch (err) {
-            if (err.name === 'NotFoundError' || err.name === 'UserCancelledError') {
+            // El plugin BLE puede lanzar distintos tipos de error según Android/versión
+            // Si el usuario canceló (cualquier variante), regresamos a idle
+            const msg = (err?.message || '').toLowerCase();
+            const cancelled = [
+                'notfounderror', 'usercancellederror', 'cancell', 'cancel',
+                'user cancelled', 'user canceled', 'dismissed', 'no device'
+            ].some(k => msg.includes(k) || (err?.name || '').toLowerCase().includes(k));
+
+            if (cancelled) {
                 setStatus('idle');
                 setStatusMsg('');
             } else {
                 setStatus('error');
-                setStatusMsg(err.message || 'Error al conectar');
+                setStatusMsg(err?.message || 'Error al conectar. Intenta de nuevo.');
             }
         }
     };
@@ -69,8 +77,12 @@ export default function PrinterSettings() {
             if (!result) throw new Error('No se pudo conectar');
             setPrinter(result);
         } catch (err) {
-            if (err.name === 'NotFoundError' || err.name === 'UserCancelledError') { setStatus('idle'); setStatusMsg(''); }
-            else { setStatus('error'); setStatusMsg(err.message || 'Error al conectar'); }
+            const msg = (err?.message || '').toLowerCase();
+            const cancelled = ['cancel', 'dismissed', 'notfound', 'no device'].some(
+                k => msg.includes(k) || (err?.name || '').toLowerCase().includes(k)
+            );
+            if (cancelled) { setStatus('idle'); setStatusMsg(''); }
+            else { setStatus('error'); setStatusMsg(err?.message || 'Error al conectar'); }
         }
     };
 

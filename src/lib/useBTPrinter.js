@@ -78,6 +78,9 @@ export function useBTPrinter() {
         window.__isBTReconnecting = true;
         if (mountedRef.current) setReconnecting(true);
 
+        // connectFn debe definirse ANTES de handleDisconnect para evitar referencia antes de declaración
+        const connectFn = (onDisc) => autoConnectPrinter(savedDeviceId, onDisc || handleDisconnect);
+
         const handleDisconnect = () => {
             const curr = getGlobalPrinter();
             if (curr) curr.isConnected = false;
@@ -86,8 +89,6 @@ export function useBTPrinter() {
             retryCountRef.current = 0;
             scheduleRetry(connectFn);
         };
-
-        const connectFn = (onDisc) => autoConnectPrinter(savedDeviceId, onDisc || handleDisconnect);
         
         connectFn().then(result => {
             if (!mountedRef.current) return;
