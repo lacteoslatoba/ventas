@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Bluetooth, BluetoothConnected, BluetoothOff, BluetoothSearching,
     Printer, CheckCircle2, AlertCircle, Trash2, Zap, Info, ChevronRight, ArrowLeft, FileText
@@ -20,6 +20,7 @@ export default function PrinterSettings() {
     const [isTesting, setIsTesting] = useState(false);
     const [btSupported, setBtSupported] = useState(true);
     const [showHelp, setShowHelp] = useState(false);
+    const cancelScanRef = useRef(null);  // ref para limpiar el auto-cancel timer
 
     useEffect(() => {
         setBtSupported(true);
@@ -46,10 +47,20 @@ export default function PrinterSettings() {
     const handleConnect = async () => {
         setStatus('connecting');
         setStatusMsg('Buscando impresoras Bluetooth...');
+
+        // Auto-cancelar en 46s (1s después del timeout del plugin)
+        // para que la UI no quede atrapada si algo falla silenciosamente
+        cancelScanRef.current = setTimeout(() => {
+            setStatus('idle');
+            setStatusMsg('');
+        }, 46_000);
+
         try {
             const result = await connectPrinter();
+            clearTimeout(cancelScanRef.current);
             setPrinter(result);
         } catch (err) {
+            clearTimeout(cancelScanRef.current);
             // El plugin BLE puede lanzar distintos tipos de error según Android/versión
             // Si el usuario canceló (cualquier variante), regresamos a idle
             const msg = (err?.message || '').toLowerCase();
@@ -66,6 +77,13 @@ export default function PrinterSettings() {
                 setStatusMsg(err?.message || 'Error al conectar. Intenta de nuevo.');
             }
         }
+    };
+
+    // Cancelar el scan manualmente desde la UI
+    const handleCancelScan = () => {
+        clearTimeout(cancelScanRef.current);
+        setStatus('idle');
+        setStatusMsg('');
     };
 
     const handleReconnect = async () => {
@@ -229,17 +247,29 @@ export default function PrinterSettings() {
             {/* Botones de acción */}
             <div className="space-y-3 mb-8">
                 {!isConnected ? (
-                    <button
-                        onClick={handleConnect}
-                        disabled={!btSupported || status === 'connecting'}
-                        className="w-full flex items-center justify-between bg-primary hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all"
-                    >
-                        <div className="flex items-center gap-3">
-                            <BluetoothSearching size={22} />
-                            <span>{status === 'connecting' ? 'Conectando...' : 'Conectar Impresora'}</span>
-                        </div>
-                        <ChevronRight size={20} className="opacity-70" />
-                    </button>
+                    <>
+                        <button
+                            onClick={handleConnect}
+                            disabled={!btSupported || status === 'connecting'}
+                            className="w-full flex items-center justify-between bg-primary hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all"
+                        >
+                            <div className="flex items-center gap-3">
+                                <BluetoothSearching size={22} />
+                                <span>{status === 'connecting' ? 'Buscando...' : 'Conectar Impresora'}</span>
+                            </div>
+                            <ChevronRight size={20} className="opacity-70" />
+                        </button>
+
+                        {/* Botón cancelar visible mientras escanea */}
+                        {status === 'connecting' && (
+                            <button
+                                onClick={handleCancelScan}
+                                className="w-full flex items-center justify-center gap-2 bg-white border-2 border-red-200 hover:border-red-400 text-red-500 hover:text-red-600 font-bold py-3 px-6 rounded-2xl active:scale-[0.98] transition-all"
+                            >
+                                <span>✕ Cancelar búsqueda</span>
+                            </button>
+                        )}
+                    </>
                 ) : (
                     <>
                         <button

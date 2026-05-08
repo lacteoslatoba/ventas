@@ -558,9 +558,19 @@ async function sendInChunks(connection, data) {
 
 export async function connectPrinter() {
     await ensureBluetoothEnabled();
-    const device = await BleClient.requestDevice({
-        optionalServices: [PRINTER_SERVICE_UUID, NORDIC_SERVICE_UUID, '0000ff00-0000-1000-8000-00805f9b34fb']
-    });
+
+    // En algunos Android, requestDevice() nunca rechaza si el usuario cancela.
+    // Usamos un timeout de 45s para forzar el rechazo y liberar la UI.
+    const SCAN_TIMEOUT_MS = 45_000;
+    const timeoutErr = new Error('cancelled');
+
+    const device = await Promise.race([
+        BleClient.requestDevice({
+            optionalServices: [PRINTER_SERVICE_UUID, NORDIC_SERVICE_UUID, '0000ff00-0000-1000-8000-00805f9b34fb']
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(timeoutErr), SCAN_TIMEOUT_MS)),
+    ]);
+
     await BleClient.connect(device.deviceId);
     const { serviceUUID, charUUID } = await detectService(device.deviceId);
     const name = device.name || 'Impresora BT';
