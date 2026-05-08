@@ -5,7 +5,8 @@ import {
 } from 'lucide-react';
 import {
     connectPrinter, reconnectSaved, printTestPage, printTicket,
-    getSavedPrinterName, getPrinterDisplayName, clearSavedPrinter
+    getSavedPrinterName, getPrinterDisplayName, clearSavedPrinter,
+    startPrinterScan, stopPrinterScan, connectToDevice,
 } from '../lib/bluetoothPrinter';
 import { useStore } from '../store';
 import { Capacitor } from '@capacitor/core';
@@ -20,7 +21,8 @@ export default function PrinterSettings() {
     const [isTesting, setIsTesting] = useState(false);
     const [btSupported, setBtSupported] = useState(true);
     const [showHelp, setShowHelp] = useState(false);
-    const cancelScanRef = useRef(null);  // ref para limpiar el auto-cancel timer
+    const [foundDevices, setFoundDevices] = useState([]);
+    const cancelScanRef = useRef(null);
 
     useEffect(() => {
         setBtSupported(true);
@@ -45,43 +47,49 @@ export default function PrinterSettings() {
     }, [printer, isReconnecting, status]);
 
     const handleConnect = async () => {
+        setFoundDevices([]);
         setStatus('connecting');
         setStatusMsg('Buscando impresoras Bluetooth...');
 
-        // Auto-cancelar en 46s (1s después del timeout del plugin)
-        // para que la UI no quede atrapada si algo falla silenciosamente
-        cancelScanRef.current = setTimeout(() => {
+        cancelScanRef.current = setTimeout(async () => {
+            await stopPrinterScan();
             setStatus('idle');
             setStatusMsg('');
-        }, 46_000);
+            setFoundDevices([]);
+        }, 30_000);
 
         try {
-            const result = await connectPrinter();
-            clearTimeout(cancelScanRef.current);
-            setPrinter(result);
+            await startPrinterScan((device) => {
+                setFoundDevices(prev =>
+                    prev.some(d => d.deviceId === device.deviceId) ? prev : [...prev, device]
+                );
+            });
         } catch (err) {
             clearTimeout(cancelScanRef.current);
-            // El plugin BLE puede lanzar distintos tipos de error según Android/versión
-            // Si el usuario canceló (cualquier variante), regresamos a idle
-            const msg = (err?.message || '').toLowerCase();
-            const cancelled = [
-                'notfounderror', 'usercancellederror', 'cancell', 'cancel',
-                'user cancelled', 'user canceled', 'dismissed', 'no device'
-            ].some(k => msg.includes(k) || (err?.name || '').toLowerCase().includes(k));
-
-            if (cancelled) {
-                setStatus('idle');
-                setStatusMsg('');
-            } else {
-                setStatus('error');
-                setStatusMsg(err?.message || 'Error al conectar. Intenta de nuevo.');
-            }
+            setStatus('error');
+            setStatusMsg(err?.message || 'Error al escanear. Intenta de nuevo.');
         }
     };
 
-    // Cancelar el scan manualmente desde la UI
-    const handleCancelScan = () => {
+    const handleSelectDevice = async (device) => {
         clearTimeout(cancelScanRef.current);
+        await stopPrinterScan();
+        setFoundDevices([]);
+        setStatus('connecting');
+        setStatusMsg(`Conectando con ${device.name}...`);
+        try {
+            const result = await connectToDevice(device.deviceId, device.name);
+            setPrinter(result);
+        } catch (err) {
+            setStatus('error');
+            setStatusMsg(err?.message || 'Error al conectar. Intenta de nuevo.');
+        }
+    };
+
+    const handleCancelScan = async () => {
+        clearTimeout(cancelScanRef.current);
+        await stopPrinterScan();
+        setFoundDevices([]);
         setStatus('idle');
         setStatusMsg('');
     };
@@ -259,6 +267,31 @@ export default function PrinterSettings() {
                             </div>
                             <ChevronRight size={20} className="opacity-70" />
                         </button>
+
+                        {/* Lista de dispositivos encontrados */}
+                        {status === 'connecting' && foundDevices.length > 0 && (
+                            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest px-4 py-3 border-b border-slate-100">
+                                    Toca para conectar
+                                </p>
+                                {foundDevices.map(device => (
+                                    <button
+                                        key={device.deviceId}
+                                        onClick={() => handleSelectDevice(device)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 active:bg-blue-100 border-b border-slate-100 last:border-0 transition-colors"
+                                    >
+                                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                                            <Bluetooth size={18} className="text-primary" />
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <p className="font-bold text-slate-800">{device.name}</p>
+                                            <p className="text-xs text-slate-400">{device.rssi} dBm</p>
+                                        </div>
+                                        <ChevronRight size={16} className="text-slate-400" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Botón cancelar visible mientras escanea */}
                         {status === 'connecting' && (

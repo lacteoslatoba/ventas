@@ -513,7 +513,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
 let bleInitialized = false;
 async function ensureBle() {
     if (bleInitialized) return;
-    await BleClient.initialize({ androidNeverForLocation: true });
+    await BleClient.initialize({ androidNeverForLocation: false });
     bleInitialized = true;
 }
 
@@ -554,6 +554,39 @@ async function sendInChunks(connection, data) {
         await BleClient.writeWithoutResponse(connection.deviceId, connection.serviceUUID, connection.charUUID, dataView);
         await new Promise(r => setTimeout(r, 40));
     }
+}
+
+let _scanActive = false;
+
+export async function startPrinterScan(onDeviceFound) {
+    await ensureBluetoothEnabled();
+    _scanActive = true;
+    const seen = new Set();
+    await BleClient.startScan({}, (result) => {
+        if (!_scanActive) return;
+        const id = result.device?.deviceId;
+        if (!id || seen.has(id)) return;
+        seen.add(id);
+        onDeviceFound({
+            deviceId: id,
+            name: result.device.name || result.localName || id,
+            rssi: result.rssi ?? -99,
+        });
+    });
+}
+
+export async function stopPrinterScan() {
+    _scanActive = false;
+    try { await BleClient.stopScan(); } catch {}
+}
+
+export async function connectToDevice(deviceId, displayName) {
+    await BleClient.connect(deviceId);
+    const { serviceUUID, charUUID } = await detectService(deviceId);
+    const name = displayName || 'Impresora BT';
+    savePrinterName(deviceId);
+    savePrinterDisplayName(name);
+    return makePrinterObj(deviceId, name, serviceUUID, charUUID);
 }
 
 export async function connectPrinter() {
