@@ -557,19 +557,13 @@ async function sendInChunks(connection, data) {
 }
 
 let _scanActive = false;
-let _scanListener = null;
 
 export async function startPrinterScan(onDeviceFound) {
     await ensureBluetoothEnabled();
     _scanActive = true;
     const seen = new Set();
 
-    if (_scanListener) {
-        await _scanListener.remove().catch(() => {});
-        _scanListener = null;
-    }
-
-    _scanListener = await BleClient.addListener('onScanResult', (result) => {
+    await BleClient.requestLEScan({}, (result) => {
         if (!_scanActive) return;
         const id = result.device?.deviceId;
         if (!id || seen.has(id)) return;
@@ -580,16 +574,10 @@ export async function startPrinterScan(onDeviceFound) {
             rssi: result.rssi ?? -99,
         });
     });
-
-    await BleClient.requestLEScan({});
 }
 
 export async function stopPrinterScan() {
     _scanActive = false;
-    if (_scanListener) {
-        await _scanListener.remove().catch(() => {});
-        _scanListener = null;
-    }
     try { await BleClient.stopLEScan(); } catch {}
 }
 
