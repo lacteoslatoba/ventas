@@ -36,7 +36,7 @@ export default function PrinterSettings() {
     useEffect(() => {
         if (printer) {
             setStatus('connected');
-            setStatusMsg(`Conectado a: ${printer.device.name || 'Impresora BT'}`);
+            setStatusMsg(`Conectado a: ${printer.name || 'Impresora BT'}`);
         } else if (isReconnecting) {
             setStatus('connecting');
             setStatusMsg('Intentando reconexión automática...');
