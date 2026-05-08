@@ -188,7 +188,20 @@ export const useStore = create(
             // El estado local offline ya lo restaura Zustand persist automáticamente.
             initAuth: async () => {
                 if (!supabase) return;
-                const { data: { session } } = await supabase.auth.getSession();
+
+                // Si ya hay usuario en estado persistido y estamos offline, usarlo directamente
+                const persisted = get().currentUser;
+                if (persisted && !navigator.onLine) return;
+
+                let session = null;
+                try {
+                    const { data } = await supabase.auth.getSession();
+                    session = data?.session;
+                } catch {
+                    // Sin internet: si hay usuario persistido, mantenerlo
+                    if (persisted) return;
+                    return;
+                }
                 if (!session) return;
 
                 const username = (session.user.email || '').split('@')[0];
@@ -197,18 +210,25 @@ export const useStore = create(
                     get().fetchFromSupabase();
                     return;
                 }
-                const { data: userData } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('auth_id', session.user.id)
-                    .single();
-                if (userData) {
-                    set({ currentUser: {
-                        ...userData,
-                        priceList: userData.priceList || userData.pricelist || 'A',
-                        role: userData.role || 'repartidor'
-                    }});
-                    get().fetchFromSupabase();
+
+                try {
+                    const { data: userData } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('auth_id', session.user.id)
+                        .single();
+                    if (userData) {
+                        set({ currentUser: {
+                            ...userData,
+                            priceList: userData.priceList || userData.pricelist || 'A',
+                            role: userData.role || 'repartidor'
+                        }});
+                        get().fetchFromSupabase();
+                    } else if (persisted) {
+                        // Query falló pero hay usuario guardado, mantenerlo
+                    }
+                } catch {
+                    // Sin internet durante query de usuario: mantener persistido
                 }
             },
 
