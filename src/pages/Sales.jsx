@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { ShoppingCart, Printer, Delete, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth, Banknote, LogOut, Users, LayoutGrid, Package } from 'lucide-react';
+import { ShoppingCart, Printer, Delete, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth, Banknote, LogOut, Users, LayoutGrid, Package, Droplets, GlassWater, Snowflake } from 'lucide-react';
 
 import { printTicket } from '../lib/bluetoothPrinter';
 import { Link } from 'react-router-dom';
@@ -9,7 +9,7 @@ import ProductDialog from '../components/sales/ProductDialog';
 import SuccessModal from '../components/sales/SuccessModal';
 export default function Sales() {
     const {
-        products, clients, users, addSale, currentUser, ticketConfig,
+        products, clients, users, addSale, addDelivery, currentUser, ticketConfig,
         cart, updateCart, selectedCartClient, updateSelectedCartClient, showToast
     } = useStore();
     const todayStr = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD en local
@@ -18,8 +18,14 @@ export default function Sales() {
     const [btPrinting, setBtPrinting] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('efectivo');
 
+    // Producción del día
+    const [litrosPurificados, setLitrosPurificados] = useState('');
+    const [ventaGalones, setVentaGalones] = useState('');
+    const [bolsasHielo, setBolsasHielo] = useState('');
+
     // Mobile Cart State
     const [mobileCartOpen, setMobileCartOpen] = useState(false);
+    const [clientError, setClientError] = useState(false);
 
     // Product Selection Modal State
     const [selectedProductDialog, setSelectedProductDialog] = useState(null);
@@ -76,8 +82,9 @@ export default function Sales() {
         const effectiveUserId = currentUser?.id;
 
         if (!effectiveUserId) { showToast('No hay usuario activo', 'error'); return; }
-        if (!selectedCartClient) { showToast('Selecciona un cliente destino', 'warning'); return; }
+        if (!selectedCartClient) { setClientError(true); showToast('Selecciona un cliente destino', 'warning'); return; }
         if (cart.length === 0) { showToast('El carrito está vacío', 'warning'); return; }
+        setClientError(false);
 
         const now = new Date();
         const [y, m, d] = saleDate.split('-').map(Number);
@@ -92,10 +99,25 @@ export default function Sales() {
         };
 
         addSale(sale);
+
+        // Guardar producción del día si se capturó algún valor
+        if (litrosPurificados || ventaGalones || bolsasHielo) {
+            addDelivery({
+                userId: effectiveUserId,
+                date: saleDate,
+                litrosPurificados: litrosPurificados || '0',
+                ventaGalones: ventaGalones || '0',
+                bolsasHielo: bolsasHielo || '0',
+            });
+        }
+
         setGeneratedTicket({ ...sale, id: Date.now().toString() });
         updateCart([]);
         updateSelectedCartClient('');
         setPaymentMethod('efectivo');
+        setLitrosPurificados('');
+        setVentaGalones('');
+        setBolsasHielo('');
         setMobileCartOpen(false);
     };
 
@@ -134,7 +156,11 @@ export default function Sales() {
             <div className="px-5 py-4 bg-white border-b border-slate-100 shrink-0 space-y-3">
                 <div>
                     <label className="block text-slate-400 font-black mb-1.5 uppercase text-[10px] tracking-widest">Información de Entrega</label>
-                    <select value={selectedCartClient} onChange={e => updateSelectedCartClient(e.target.value)} className="w-full bg-slate-50 border-none shadow-inner focus:ring-2 focus:ring-primary/20 p-4 rounded-2xl font-black outline-none text-slate-800 transition-all">
+                    <select
+                        value={selectedCartClient}
+                        onChange={e => { updateSelectedCartClient(e.target.value); setClientError(false); }}
+                        className={`w-full shadow-inner p-4 rounded-2xl font-black outline-none transition-all ${clientError && !selectedCartClient ? 'bg-red-50 border-2 border-red-400 focus:ring-2 focus:ring-red-300 text-red-700' : 'bg-slate-50 border-none focus:ring-2 focus:ring-primary/20 text-slate-800'}`}
+                    >
                         <option value="">Selecciona Cliente / Tienda...</option>
                         {clients
                             .filter(c => currentUser?.role === 'admin' ? true : c.userId === currentUser?.id)
@@ -146,8 +172,8 @@ export default function Sales() {
                     <label className="block text-slate-400 font-black mb-2 uppercase text-[10px] tracking-widest">Forma de Pago</label>
                     <div className="flex gap-2">
                         {[
-                            { value: 'efectivo',       label: 'Efectivo',       icon: 'payments',         activeClass: 'border-emerald-500 bg-emerald-50', dotClass: 'border-emerald-500 bg-emerald-500', textClass: 'text-emerald-700' },
-                            { value: 'transferencia',  label: 'Transferencia',  icon: 'account_balance',  activeClass: 'border-blue-500 bg-blue-50',        dotClass: 'border-blue-500 bg-blue-500',        textClass: 'text-blue-700'    },
+                            { value: 'efectivo',       label: 'Efectivo',       activeClass: 'border-emerald-500 bg-emerald-50', dotClass: 'border-emerald-500 bg-emerald-500', textClass: 'text-emerald-700' },
+                            { value: 'transferencia',  label: 'Transferencia',  activeClass: 'border-blue-500 bg-blue-50',        dotClass: 'border-blue-500 bg-blue-500',        textClass: 'text-blue-700'    },
                         ].map(opt => (
                             <label
                                 key={opt.value}
@@ -160,6 +186,55 @@ export default function Sales() {
                                 <span className={`text-xs font-black uppercase tracking-wide leading-none ${paymentMethod === opt.value ? opt.textClass : 'text-slate-500'}`}>{opt.label}</span>
                             </label>
                         ))}
+                    </div>
+                </div>
+
+                {/* Producción del día */}
+                <div>
+                    <label className="block text-slate-400 font-black mb-2 uppercase text-[10px] tracking-widest">Producción del Día</label>
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1 mb-0.5">
+                                <Droplets size={11} className="text-blue-400" />
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Litros</span>
+                            </div>
+                            <input
+                                type="number"
+                                min="0"
+                                value={litrosPurificados}
+                                onChange={e => setLitrosPurificados(e.target.value)}
+                                placeholder="0"
+                                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-400 focus:bg-white rounded-xl py-2.5 px-3 text-base font-black text-slate-800 outline-none transition-all text-center"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1 mb-0.5">
+                                <GlassWater size={11} className="text-cyan-400" />
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Galones</span>
+                            </div>
+                            <input
+                                type="number"
+                                min="0"
+                                value={ventaGalones}
+                                onChange={e => setVentaGalones(e.target.value)}
+                                placeholder="0"
+                                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-cyan-400 focus:bg-white rounded-xl py-2.5 px-3 text-base font-black text-slate-800 outline-none transition-all text-center"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1 mb-0.5">
+                                <Snowflake size={11} className="text-sky-400" />
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Hielo</span>
+                            </div>
+                            <input
+                                type="number"
+                                min="0"
+                                value={bolsasHielo}
+                                onChange={e => setBolsasHielo(e.target.value)}
+                                placeholder="0"
+                                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-sky-400 focus:bg-white rounded-xl py-2.5 px-3 text-base font-black text-slate-800 outline-none transition-all text-center"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -206,10 +281,10 @@ export default function Sales() {
                 </div>
                 <button
                     onClick={processSale}
-                    disabled={cart.length === 0}
-                    className={`w-full py-5 rounded-2xl font-black flex justify-center items-center gap-2 text-lg transition-all active:scale-95 border-2 ${cart.length === 0 ? 'border-slate-100 bg-slate-50 text-slate-400 cursor-not-allowed shadow-none' : 'border-primary bg-white text-primary shadow-xl shadow-blue-500/5 hover:bg-blue-50'}`}
+                    disabled={cart.length === 0 || !selectedCartClient}
+                    className={`w-full py-5 rounded-2xl font-black flex justify-center items-center gap-2 text-lg transition-all active:scale-95 border-2 ${cart.length === 0 || !selectedCartClient ? 'border-slate-100 bg-slate-50 text-slate-400 cursor-not-allowed shadow-none' : 'border-primary bg-white text-primary shadow-xl shadow-blue-500/5 hover:bg-blue-50'}`}
                 >
-                    Generar Recibo
+                    {!selectedCartClient && cart.length > 0 ? '— Elige un cliente —' : 'Generar Recibo'}
                 </button>
             </div>
         </div>
@@ -222,9 +297,9 @@ export default function Sales() {
             <div className="flex-1 flex flex-col pb-[140px] lg:pb-0">
                 <div className="mb-6 px-1 flex justify-between items-start border-b-2 border-gray-900 pb-4">
                     <div>
-                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{ticketConfig?.businessName || 'Lacteos La Toba'}</p>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{ticketConfig?.businessName || 'Purificadora Mar de Hielo'}</p>
                         <div className="flex items-center gap-3 mt-0.5">
-                            <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none">Venta Rápida</h1>
+                            <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none">Registro</h1>
                             <input 
                                 type="date" 
                                 value={saleDate} 
@@ -318,7 +393,7 @@ export default function Sales() {
                     <div className="bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[60px]">
                         <button onClick={() => setMobileCartOpen(false)} className="flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 text-primary">
                             <ShoppingCart size={22} fill="currentColor" strokeWidth={2} />
-                            <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">Vender</span>
+                            <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">Registro</span>
                         </button>
                         <button 
                             onClick={() => {

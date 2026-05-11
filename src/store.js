@@ -30,13 +30,14 @@ export const useStore = create(
             clients: [],
             sales: [],
             expenses: [],
+            deliveries: [],
             cart: [],
             selectedCartClient: '', // Cambiado de selectedClient para evitar confusión
             cloudColumns: {}, // Historial de columnas conocidas en Supabase
 
             // Configuración del Ticket
             ticketConfig: {
-                businessName: 'LACTEOS LA TOBA',
+                businessName: 'PURIFICADORA MAR DE HIELO',
                 subtitle: '',
                 address: '',
                 phone: '',
@@ -136,8 +137,10 @@ export const useStore = create(
                 // ── ONLINE: intentar Supabase Auth (activa RLS) ──────────────
                 if (state.isOnline && supabase) {
                     const slug  = cleanUsername === 'admin' ? 'administrador' : cleanUsername;
-                    const email = `${slug}@lacteoslatoba.local`;
-                    const { data, error } = await supabase.auth.signInWithPassword({ email, password: cleanPassword });
+                    const email = `${slug}@mardehielo.local`;
+                    // Supabase requiere mínimo 6 caracteres; rellenamos con ceros si el PIN es corto
+                    const authPassword = cleanPassword.length < 6 ? cleanPassword.padEnd(6, '0') : cleanPassword;
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password: authPassword });
 
                     if (!error && data.session) {
                         if (cleanUsername === 'admin') {
@@ -205,7 +208,7 @@ export const useStore = create(
                 if (!session) return;
 
                 const username = (session.user.email || '').split('@')[0];
-                if (username === 'administrador') {
+                if (username === 'administrador' || username === 'admin') {
                     set({ currentUser: { id: 'admin', name: 'Administrador', role: 'admin' } });
                     get().fetchFromSupabase();
                     return;
@@ -247,7 +250,7 @@ export const useStore = create(
                 set({ isSyncing: true });
 
                 try {
-                    const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses'];
+                    const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses', 'deliveries'];
                     const totalPending = tablesToSync.reduce((acc, t) => acc + (state[t]?.filter(i => !i.synced).length || 0), 0)
                         + (state.ticketConfig && !state.ticketConfig.synced ? 1 : 0);
                     const successTables = [];
@@ -259,25 +262,31 @@ export const useStore = create(
 
                             // Inverso de COLUMN_MAP — camelCase local → columna lowercase en Supabase
                             const REVERSE_COLUMN_MAP = {
-                                userId: 'userid', clientId: 'clientid', paymentMethod: 'paymentmethod',
+                                userId: 'userid', clientId: 'clientid', clientName: 'clientname',
+                                paymentMethod: 'paymentmethod',
                                 priceList: 'pricelist', priceA: 'pricea', priceB: 'priceb', priceC: 'pricec',
                                 lugar1Activo: 'lugar1activo', lugar2Activo: 'lugar2activo',
+                                userName: 'username', litrosPurificados: 'litrospurificados',
+                                ventaGalones: 'ventagalones', bolsasHielo: 'bolsashielo',
                             };
 
                             const safePayload = payload.map(item => {
+                                // Normalizar camelCase → lowercase ANTES del filtro,
+                                // para que funcione incluso cuando cloudColumns está vacío
+                                const normalized = { ...item };
+                                Object.entries(REVERSE_COLUMN_MAP).forEach(([camel, lower]) => {
+                                    if (normalized[camel] !== undefined) {
+                                        normalized[lower] = normalized[camel];
+                                        delete normalized[camel];
+                                    }
+                                });
+
                                 const knownCols = state.cloudColumns?.[tableName];
-                                if (!knownCols) return item;
+                                if (!knownCols) return normalized;
 
                                 const filtered = {};
                                 knownCols.forEach(col => {
-                                    if (item[col] !== undefined) filtered[col] = item[col];
-                                });
-
-                                // Mapear campos camelCase locales a columnas lowercase de Supabase
-                                Object.entries(REVERSE_COLUMN_MAP).forEach(([camel, lower]) => {
-                                    if (knownCols.includes(lower) && item[camel] !== undefined && filtered[lower] === undefined) {
-                                        filtered[lower] = item[camel];
-                                    }
+                                    if (normalized[col] !== undefined) filtered[col] = normalized[col];
                                 });
 
                                 return filtered;
@@ -369,7 +378,7 @@ export const useStore = create(
                 if (!session) return;
                 set({ isSyncing: true });
                 try {
-                    const tablesToPull = ['products', 'users', 'clients', 'sales', 'inventory', 'expenses'];
+                    const tablesToPull = ['products', 'users', 'clients', 'sales', 'inventory', 'expenses', 'deliveries'];
                     const freshData = {};
                     const cloudColumns = {};
 
@@ -380,6 +389,8 @@ export const useStore = create(
                         userid: 'userId', clientid: 'clientId', paymentmethod: 'paymentMethod',
                         pricelist: 'priceList', pricea: 'priceA', priceb: 'priceB', pricec: 'priceC',
                         lugar1activo: 'lugar1Activo', lugar2activo: 'lugar2Activo',
+                        username: 'userName', litrospurificados: 'litrosPurificados',
+                        ventagalones: 'ventaGalones', bolsashielo: 'bolsasHielo',
                     };
                     const normalizeRow = (_tableName, item) => {
                         const n = { ...item };
@@ -390,11 +401,24 @@ export const useStore = create(
                         return n;
                     };
 
+                    // Columnas conocidas por tabla (para cuando la tabla esté vacía)
+                    const KNOWN_COLUMNS = {
+                        clients:   ['id', 'name', 'phone', 'address', 'ownername', 'note', 'userid'],
+                        products:  ['id', 'name', 'stock', 'unit', 'pricea', 'priceb', 'pricec'],
+                        users:     ['id', 'name', 'pin', 'role', 'pricelist', 'auth_id'],
+                        sales:     ['id', 'date', 'items', 'total', 'userid', 'clientid', 'paymentmethod', 'cash', 'change'],
+                        inventory: ['id', 'productid', 'quantity', 'date', 'type', 'note'],
+                        expenses:  ['id', 'date', 'amount', 'description', 'userid'],
+                        deliveries:['id', 'date', 'userid', 'clientid', 'clientname', 'litrospurificados', 'ventagalones', 'bolsashielo', 'note'],
+                    };
+
                     for (const tableName of tablesToPull) {
                         const { data, error } = await supabase.from(tableName).select('*');
                         if (!error && data) {
                             freshData[tableName] = data.map(item => ({ ...normalizeRow(tableName, item), synced: true }));
-                            if (data.length > 0) cloudColumns[tableName] = Object.keys(data[0]);
+                            cloudColumns[tableName] = data.length > 0
+                                ? Object.keys(data[0])
+                                : (KNOWN_COLUMNS[tableName] || []);
                         }
                     }
 
@@ -422,6 +446,7 @@ export const useStore = create(
                             sales:     mergeStateHelper(state.sales,     freshData['sales']),
                             inventory: mergeStateHelper(state.inventory, freshData['inventory']),
                             expenses:  mergeStateHelper(state.expenses,  freshData['expenses']),
+                            deliveries: mergeStateHelper(state.deliveries, freshData['deliveries']),
                             cloudColumns: { ...state.cloudColumns, ...cloudColumns },
                             currentUser: refreshedUser,
                         };
@@ -643,6 +668,33 @@ export const useStore = create(
                 }
             },
 
+            // Entregas de Día
+            addDelivery: (delivery) => {
+                const newDelivery = { ...delivery, id: crypto.randomUUID(), synced: false };
+                set(state => {
+                    // Ahora una entrega se identifica por fecha, usuario y cliente.
+                    const existingIndex = state.deliveries.findIndex(d => 
+                        d.date === delivery.date && 
+                        d.userId === delivery.userId &&
+                        (d.clientId || '') === (delivery.clientId || '')
+                    );
+                    if (existingIndex >= 0) {
+                        const newDeliveries = [...state.deliveries];
+                        newDeliveries[existingIndex] = { ...newDeliveries[existingIndex], ...delivery, synced: false };
+                        return { deliveries: newDeliveries };
+                    }
+                    return { deliveries: [...state.deliveries, newDelivery] };
+                });
+                get().syncToSupabase();
+            },
+            deleteDelivery: async (id) => {
+                set(state => ({ deliveries: state.deliveries.filter(d => d.id !== id) }));
+                const state = get();
+                if (state.isOnline && supabase) {
+                    await supabase.from('deliveries').delete().eq('id', id);
+                }
+            },
+
             clearAllSales: async () => {
                 set({ sales: [] });
                 const state = get();
@@ -656,7 +708,7 @@ export const useStore = create(
             },
         }),
         {
-            name: 'ventas-quesos-storage',
+            name: 'mardehielo-storage',
             version: 3,
             migrate: (persistedState, version) => {
                 if (version <= 2) {
