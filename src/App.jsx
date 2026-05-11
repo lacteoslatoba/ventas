@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
-import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings, Users, Menu, Package, WifiOff } from 'lucide-react';
+import { RefreshCw, ArrowLeft, LayoutGrid, ShoppingCart, Banknote, LogOut, Settings, Users, Menu, Package, Truck, WifiOff } from 'lucide-react';
 import { useStore } from './store';
 import { useBTPrinter } from './lib/useBTPrinter';
 import { getSavedPrinterName } from './lib/bluetoothPrinter';
@@ -11,7 +11,7 @@ import Inventory from './pages/Inventory';
 import UsersPage from './pages/Users';
 import Clients from './pages/Clients';
 import Sales from './pages/Sales';
-import Stock from './pages/Stock';
+import Entregas from './pages/Stock'; // Reused file for Entregas
 import Reports from './pages/Reports';
 import Login from './pages/Login';
 import PrinterSettings from './pages/PrinterSettings';
@@ -80,7 +80,8 @@ const PrinterAutoConnect = () => {
 
 const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
   const isAdmin = currentUser?.role === 'admin';
-  const isHome = location.pathname === '/' || (!isAdmin && location.pathname === '/ventas');
+  const isChofer = currentUser?.role === 'chofer';
+  const isHome = location.pathname === '/' || (!isAdmin && location.pathname === '/ventas') || (isChofer && location.pathname === '/entregas');
   const [showSettings, setShowSettings] = React.useState(false);
   const [showDriverMenu, setShowDriverMenu] = React.useState(false);
   const [modal, setModal] = React.useState(null); // { title, message, onConfirm }
@@ -309,17 +310,27 @@ const BottomNavigation = ({ currentUser }) => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
   const isAdmin = currentUser?.role === 'admin';
+  const isChofer = currentUser?.role === 'chofer';
+
+  const navClass = "md:hidden fixed bottom-0 left-0 right-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 z-50 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]";
+  const navStyle = { height: 'calc(60px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' };
+
+  if (isChofer) {
+    return (
+      <div className={navClass} style={navStyle}>
+        <NavItem to="/entregas" icon={Truck} label="Entregas" active={isActive('/entregas')} />
+      </div>
+    );
+  }
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 h-[calc(60px+env(safe-area-inset-bottom,20px))] pb-[env(safe-area-inset-bottom,20px)] z-50 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-      <NavItem to="/" icon={ShoppingCart} label="Vender" active={isActive('/') || isActive('/ventas')} />
-      
+    <div className={navClass} style={navStyle}>
+      <NavItem to="/" icon={ShoppingCart} label="Registro" active={isActive('/') || isActive('/ventas')} />
       <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
- 
       {isAdmin ? (
-         <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
+        <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
       ) : (
-         <NavItem to="/stock" icon={Package} label="Stock" active={isActive('/stock')} />
+        <NavItem to="/entregas" icon={Truck} label="Entregas" active={isActive('/entregas')} />
       )}
     </div>
   );
@@ -438,6 +449,13 @@ const AdminRoute = ({ children, currentUser }) => {
   return children;
 };
 
+const ChoferRoute = ({ children, currentUser }) => {
+  if (currentUser?.role === 'chofer') {
+    return <Navigate to="/entregas" replace />;
+  }
+  return children;
+};
+
 function App() {
   const { currentUser, isSyncing, initAuth } = useStore();
 
@@ -476,10 +494,10 @@ function App() {
             >
               <div className="h-full overflow-y-auto pb-44 md:pb-8 relative custom-scrollbar">
                 <Routes>
-                  <Route path="/" element={<Sales />} />
-                  <Route path="/ventas" element={<Sales />} />
-                  <Route path="/reportes" element={<Reports />} />
-                  <Route path="/stock" element={<Stock />} />
+                  <Route path="/" element={<ChoferRoute currentUser={currentUser}><Sales /></ChoferRoute>} />
+                  <Route path="/ventas" element={<ChoferRoute currentUser={currentUser}><Sales /></ChoferRoute>} />
+                  <Route path="/reportes" element={<ChoferRoute currentUser={currentUser}><Reports /></ChoferRoute>} />
+                  <Route path="/entregas" element={<Entregas />} />
                   <Route path="/clientes" element={<Clients />} />
                   
                   {/* Rutas Protegidas de Admin */}
