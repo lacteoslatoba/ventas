@@ -65,27 +65,8 @@ export default function DeliveryReport() {
                 </div>
             </div>
 
-            {/* ── FILTRO DE FECHAS COMPACTO ── */}
-            <div className="mb-5 space-y-3">
-                {/* Pills de acceso rápido */}
-                <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
-                    {[
-                        { label: 'Hoy', fn: () => { setFromDate(todayStr); setToDate(todayStr); } },
-                        { label: '7 días', fn: () => { const d = new Date(); d.setDate(d.getDate()-6); setFromDate(toLocalDate(d)); setToDate(todayStr); } },
-                        { label: 'Este mes', fn: () => { const n = new Date(); setFromDate(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`); setToDate(todayStr); } },
-                        { label: 'Mes pasado', fn: () => { const n = new Date(); const y = n.getMonth()===0 ? n.getFullYear()-1 : n.getFullYear(); const m = n.getMonth()===0 ? 12 : n.getMonth(); const last = new Date(y, m, 0).getDate(); setFromDate(`${y}-${String(m).padStart(2,'0')}-01`); setToDate(`${y}-${String(m).padStart(2,'0')}-${last}`); } },
-                    ].map(({ label, fn }) => (
-                        <button
-                            key={label}
-                            onClick={fn}
-                            className="shrink-0 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-black text-[11px] uppercase tracking-widest hover:bg-primary hover:text-white active:scale-95 transition-all"
-                        >
-                            {label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Chips de fechas (tocan el input nativo) */}
+            {/* ── FILTRO DE FECHAS ── */}
+            <div className="mb-5">
                 <div className="flex items-center gap-2">
                     <label className="relative flex-1">
                         <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Desde</span>
