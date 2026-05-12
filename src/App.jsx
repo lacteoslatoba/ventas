@@ -90,7 +90,10 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
   const [showSettings, setShowSettings] = React.useState(false);
   const [showDriverMenu, setShowDriverMenu] = React.useState(false);
   const [modal, setModal] = React.useState(null); // { title, message, onConfirm }
-  const { showToast } = useStore();
+  const [showChangePwd, setShowChangePwd] = React.useState(false);
+  const [pwdForm, setPwdForm] = React.useState({ current: '', next: '', confirm: '' });
+  const [pwdLoading, setPwdLoading] = React.useState(false);
+  const { showToast, changePassword } = useStore();
   const { printer, setPrinter, isReconnecting, startAutoConnect } = useBTPrinter();
 
   const openModal = (title, message, onConfirm) =>
@@ -165,7 +168,17 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
                   <div className="w-5 flex justify-center"><span className="material-symbols-outlined text-[18px] text-slate-400">print</span></div> Config. Impresora
                 </button>
               )}
-              <button 
+              <button
+                onClick={() => {
+                  setShowDriverMenu(false);
+                  setPwdForm({ current: '', next: '', confirm: '' });
+                  setShowChangePwd(true);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                <Settings size={18} className="text-slate-400" /> Cambiar Contraseña
+              </button>
+              <button
                 onClick={() => {
                   setShowDriverMenu(false);
                   handleRefresh();
@@ -270,6 +283,80 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
           </>
         )}
       </div>
+
+      {/* Modal cambiar contraseña */}
+      {showChangePwd && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+            <h3 className="text-base font-black text-slate-800 dark:text-slate-100 mb-1">Cambiar Contraseña</h3>
+            <p className="text-xs text-slate-400 mb-5">Ingresa tu contraseña actual y la nueva</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Contraseña actual</label>
+                <input
+                  type="password"
+                  value={pwdForm.current}
+                  onChange={e => setPwdForm(f => ({ ...f, current: e.target.value }))}
+                  placeholder="••••"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 text-slate-800 dark:text-slate-100 font-bold text-base focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nueva contraseña</label>
+                <input
+                  type="password"
+                  value={pwdForm.next}
+                  onChange={e => setPwdForm(f => ({ ...f, next: e.target.value }))}
+                  placeholder="••••"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 text-slate-800 dark:text-slate-100 font-bold text-base focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Confirmar nueva contraseña</label>
+                <input
+                  type="password"
+                  value={pwdForm.confirm}
+                  onChange={e => setPwdForm(f => ({ ...f, confirm: e.target.value }))}
+                  placeholder="••••"
+                  className={`w-full bg-slate-50 dark:bg-slate-900 border-2 rounded-2xl px-4 py-3 text-slate-800 dark:text-slate-100 font-bold text-base focus:outline-none transition-colors ${
+                    pwdForm.confirm && pwdForm.confirm !== pwdForm.next
+                      ? 'border-red-400 focus:border-red-400'
+                      : 'border-slate-200 dark:border-slate-700 focus:border-primary'
+                  }`}
+                />
+                {pwdForm.confirm && pwdForm.confirm !== pwdForm.next && (
+                  <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">Las contraseñas no coinciden</p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowChangePwd(false)}
+                className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-sm active:scale-95 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={!pwdForm.current || !pwdForm.next || pwdForm.next !== pwdForm.confirm || pwdLoading}
+                onClick={async () => {
+                  setPwdLoading(true);
+                  const res = await changePassword(pwdForm.current, pwdForm.next);
+                  setPwdLoading(false);
+                  if (res.ok) {
+                    showToast('Contraseña actualizada ✓', 'success');
+                    setShowChangePwd(false);
+                  } else {
+                    showToast(res.msg, 'error');
+                  }
+                }}
+                className="flex-1 py-3 rounded-2xl bg-primary text-white font-black text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {pwdLoading ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de confirmación personalizado */}
       {modal && (

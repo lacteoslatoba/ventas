@@ -588,6 +588,27 @@ export const useStore = create(
                 }));
                 get().syncToSupabase();
             },
+            changePassword: async (currentPwd, newPwd) => {
+                const state = get();
+                const user = state.currentUser;
+                if (!user || !supabase) return { ok: false, msg: 'Sin conexión' };
+
+                // Verificar contraseña actual contra el PIN local
+                if (String(user.pin) !== String(currentPwd)) {
+                    return { ok: false, msg: 'La contraseña actual es incorrecta' };
+                }
+
+                // Actualizar en Supabase Auth
+                const newAuthPwd = newPwd.length < 6 ? newPwd.padEnd(6, '0') : newPwd;
+                const { error } = await supabase.auth.updateUser({ password: newAuthPwd });
+                if (error) return { ok: false, msg: 'Error al actualizar: ' + error.message };
+
+                // Actualizar PIN en tabla users y en estado local
+                get().updateUser(user.id, { pin: newPwd });
+                set(s => ({ currentUser: { ...s.currentUser, pin: newPwd } }));
+
+                return { ok: true };
+            },
             deleteUser: (id) => {
                 set((state) => ({ users: state.users.filter((u) => u.id !== id) }));
             },
