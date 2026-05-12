@@ -120,15 +120,15 @@ export default function DeliveryReport() {
                         Sin entregas en este rango
                     </div>
                 ) : (
-                    <div className="flex items-end gap-2 h-40 overflow-x-auto pb-2 scrollbar-none snap-x">
+                    <div className="flex items-end gap-3 overflow-x-auto pb-2 scrollbar-none snap-x" style={{ height: '140px' }}>
                         {chartData.map((d, i) => (
-                            <div key={i} className="flex flex-col items-center gap-2 snap-center group w-12 shrink-0">
-                                <span className="text-[10px] font-black text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div key={i} className="flex flex-col items-center gap-1 snap-center group shrink-0" style={{ width: '44px' }}>
+                                <span className="text-[10px] font-black text-blue-700 opacity-0 group-hover:opacity-100 transition-opacity">
                                     {d.total}
                                 </span>
-                                <div className="w-8 rounded-t-lg relative flex items-end overflow-hidden h-full" style={{ backgroundColor: '#e2e8f0' }}>
+                                <div className="relative overflow-hidden rounded-lg w-8" style={{ height: '100px', backgroundColor: '#cbd5e1' }}>
                                     <div
-                                        className="w-full rounded-t-lg transition-all duration-700"
+                                        className="absolute bottom-0 left-0 right-0 rounded-lg transition-all duration-700"
                                         style={{ height: `${d.heightPercent}%`, backgroundColor: '#1d4ed8' }}
                                     />
                                 </div>
