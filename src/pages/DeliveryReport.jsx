@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store';
-import { Calendar as CalendarIcon, Droplet, BarChart3 } from 'lucide-react';
+import { Calendar as CalendarIcon, Droplet, BarChart3, Trash2 } from 'lucide-react';
 
 const toLocalDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -9,7 +9,7 @@ const toLocalDate = (dateStr) => {
 const todayStr = toLocalDate(new Date());
 
 export default function DeliveryReport() {
-    const { deliveries, currentUser, clients } = useStore();
+    const { deliveries, currentUser, clients, deleteDelivery, showConfirm } = useStore();
     
     // Filtro por defecto: de inicio de mes a hoy
     const defaultStart = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-01`;
@@ -186,8 +186,18 @@ export default function DeliveryReport() {
                                     {new Date(d.date + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
                                 </p>
                             </div>
-                            <div className="text-right">
+                            <div className="flex items-center gap-3">
                                 <p className="text-base font-black text-primary">{d.litrosPurificados || 0} L</p>
+                                <button
+                                    onClick={() => showConfirm({
+                                        message: '¿Eliminar este registro de entrega?',
+                                        confirmText: 'Eliminar', danger: true,
+                                        onConfirm: () => deleteDelivery(d.id),
+                                    })}
+                                    className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-90 transition-all"
+                                >
+                                    <Trash2 size={15} />
+                                </button>
                             </div>
                         </div>
                     ))}
