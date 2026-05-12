@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Calendar as CalendarIcon, Droplet, Package, Snowflake, Plus, Trash2, Save } from 'lucide-react';
+import { Droplet, Package, Snowflake, Plus, Trash2, Save } from 'lucide-react';
+import ModernDatePicker from '../components/Calendar';
 
 const toLocalDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -9,11 +10,10 @@ const toLocalDate = (dateStr) => {
 const todayStr = toLocalDate(new Date());
 
 export default function Stock() {
-    const { deliveries, addDelivery, currentUser, showToast } = useStore();
+    const { addDelivery, currentUser, showToast } = useStore();
     const clients = useStore(s => s.clients);
 
-    const isAdmin = currentUser?.role === 'admin';
-    const isBeto  = currentUser?.name?.toLowerCase().includes('beto');
+    const isBeto = currentUser?.name?.toLowerCase().includes('beto');
     const currentUserId = currentUser?.id;
 
     const [selectedDate, setSelectedDate] = useState(todayStr);
@@ -65,13 +65,11 @@ export default function Stock() {
             </div>
 
             {/* Selector de fecha */}
-            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2.5 px-4 mb-5 focus-within:ring-2 focus-within:ring-primary/20 self-start">
-                <CalendarIcon size={18} className="text-primary" />
-                <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={e => setSelectedDate(e.target.value)}
-                    className="bg-transparent border-none outline-none font-bold text-slate-700 dark:text-slate-200 py-0.5 text-sm cursor-pointer"
+            <div className="mb-6 w-full max-w-[240px]">
+                <ModernDatePicker 
+                    label="Fecha de Registro" 
+                    value={selectedDate} 
+                    onChange={setSelectedDate} 
                 />
             </div>
 

@@ -245,128 +245,127 @@ export const useStore = create(
             // Motor de Sincronización Automática (Subida)
             syncToSupabase: async (notify = false) => {
                 const state = get();
-                if (!state.isOnline || !supabase) return;
+                if (!state.isOnline || !supabase || state.isSyncing) return;
+
+                const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses', 'deliveries'];
+                const pendingDataCount = tablesToSync.reduce((acc, t) => acc + (state[t]?.filter(i => !i.synced).length || 0), 0);
+                const ticketNeedsSync = state.ticketConfig && !state.ticketConfig.synced;
+
+                if (pendingDataCount === 0 && !ticketNeedsSync) return;
 
                 set({ isSyncing: true });
 
                 try {
-                    const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses', 'deliveries'];
-                    const totalPending = tablesToSync.reduce((acc, t) => acc + (state[t]?.filter(i => !i.synced).length || 0), 0)
-                        + (state.ticketConfig && !state.ticketConfig.synced ? 1 : 0);
-                    const successTables = [];
+                    // Timeout de 15 segundos para toda la operación
+                    const syncPromise = (async () => {
+                        const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses', 'deliveries'];
+                        const totalPending = tablesToSync.reduce((acc, t) => acc + (state[t]?.filter(i => !i.synced).length || 0), 0)
+                            + (state.ticketConfig && !state.ticketConfig.synced ? 1 : 0);
+                        
+                        if (totalPending === 0) return;
 
-                    for (const tableName of tablesToSync) {
-                        const pendingData = state[tableName].filter(item => !item.synced);
-                        if (pendingData.length > 0) {
-                            const payload = pendingData.map(({ synced: _synced, ...rest }) => rest);
+                        const successTables = [];
 
-                            // Inverso de COLUMN_MAP — camelCase local → columna lowercase en Supabase
-                            const REVERSE_COLUMN_MAP = {
-                                userId: 'userid', clientId: 'clientid', clientName: 'clientname',
-                                paymentMethod: 'paymentmethod',
-                                priceList: 'pricelist', priceA: 'pricea', priceB: 'priceb', priceC: 'pricec',
-                                lugar1Activo: 'lugar1activo', lugar2Activo: 'lugar2activo',
-                                userName: 'username', litrosPurificados: 'litrospurificados',
-                                ventaGalones: 'ventagalones', bolsasHielo: 'bolsashielo',
-                            };
+                        for (const tableName of tablesToSync) {
+                            const pendingData = state[tableName].filter(item => !item.synced);
+                            if (pendingData.length > 0) {
+                                const payload = pendingData.map(({ synced: _synced, ...rest }) => rest);
 
-                            const safePayload = payload.map(item => {
-                                // Normalizar camelCase → lowercase ANTES del filtro,
-                                // para que funcione incluso cuando cloudColumns está vacío
-                                const normalized = { ...item };
-                                Object.entries(REVERSE_COLUMN_MAP).forEach(([camel, lower]) => {
-                                    if (normalized[camel] !== undefined) {
-                                        normalized[lower] = normalized[camel];
-                                        delete normalized[camel];
-                                    }
+                                const REVERSE_COLUMN_MAP = {
+                                    userId: 'userid', clientId: 'clientid', clientName: 'clientname',
+                                    paymentMethod: 'paymentmethod',
+                                    priceList: 'pricelist', priceA: 'pricea', priceB: 'priceb', priceC: 'pricec',
+                                    lugar1Activo: 'lugar1activo', lugar2Activo: 'lugar2activo',
+                                    userName: 'username', litrosPurificados: 'litrospurificados',
+                                    ventaGalones: 'ventagalones', bolsasHielo: 'bolsashielo',
+                                };
+
+                                const safePayload = payload.map(item => {
+                                    const normalized = { ...item };
+                                    Object.entries(REVERSE_COLUMN_MAP).forEach(([camel, lower]) => {
+                                        if (normalized[camel] !== undefined) {
+                                            normalized[lower] = normalized[camel];
+                                            delete normalized[camel];
+                                        }
+                                    });
+
+                                    const knownCols = state.cloudColumns?.[tableName];
+                                    if (!knownCols) return normalized;
+
+                                    const filtered = {};
+                                    knownCols.forEach(col => {
+                                        if (normalized[col] !== undefined) filtered[col] = normalized[col];
+                                    });
+                                    return filtered;
                                 });
 
-                                const knownCols = state.cloudColumns?.[tableName];
-                                if (!knownCols) return normalized;
-
-                                const filtered = {};
-                                knownCols.forEach(col => {
-                                    if (normalized[col] !== undefined) filtered[col] = normalized[col];
-                                });
-
-                                return filtered;
-                            });
-
-                            const { error } = await supabase.from(tableName).upsert(safePayload);
-                            if (error) {
-                                console.error(`Error Syncing ${tableName}:`, error.message);
-                                if (error.message.includes('column') && !state.cloudColumns?.[tableName]) {
-                                    get().fetchFromSupabase();
+                                const { error } = await supabase.from(tableName).upsert(safePayload);
+                                if (error) {
+                                    console.error(`Error Syncing ${tableName}:`, error.message);
+                                } else {
+                                    successTables.push(tableName);
                                 }
                             } else {
                                 successTables.push(tableName);
                             }
-                        } else {
-                            successTables.push(tableName);
                         }
-                    }
 
-                    set((s) => {
-                        const nextState = { lastSync: new Date().toISOString() };
-                        successTables.forEach(t => {
-                            nextState[t] = s[t].map(x => ({ ...x, synced: true }));
+                        // Actualizar estado local solo para lo que tuvo éxito
+                        set((s) => {
+                            const nextState = { lastSync: new Date().toISOString() };
+                            successTables.forEach(t => {
+                                nextState[t] = s[t].map(x => ({ ...x, synced: true }));
+                            });
+                            return nextState;
                         });
-                        return nextState;
-                    });
 
-                    if (state.ticketConfig && !state.ticketConfig.synced) {
-                        const { synced: _synced, ...payload } = state.ticketConfig;
-                        const knownCols = state.cloudColumns?.['ticket_config'];
-                        const dbColumns = [
-                            'id', 'header', 'footer', 'doubleCopy', 'centerTotal', 
-                            'spaceBetweenItems', 'showCashAndChange'
-                        ];
-                        const availableCols = knownCols && knownCols.length > 0 ? knownCols : dbColumns;
-                        
-                        let finalPayload = { id: 'main' };
-                        const extraData = {};
-                        const legacyMap = {
-                            businessName: 'header',
-                            footerLine1: 'footer',
-                            printCopy: 'doubleCopy'
-                        };
+                        // Sincronizar ticketConfig
+                        if (state.ticketConfig && !state.ticketConfig.synced) {
+                            const { synced: _synced, ...payload } = state.ticketConfig;
+                            const knownCols = state.cloudColumns?.['ticket_config'];
+                            const dbColumns = ['id', 'header', 'footer', 'doubleCopy', 'centerTotal', 'spaceBetweenItems', 'showCashAndChange'];
+                            const availableCols = knownCols && knownCols.length > 0 ? knownCols : dbColumns;
+                            
+                            let finalPayload = { id: 'main' };
+                            const extraData = {};
+                            const legacyMap = { businessName: 'header', footerLine1: 'footer', printCopy: 'doubleCopy' };
+                            const alwaysTrueFields = new Set(['showFooterLine1', 'showFooterLine2']);
 
-                        // Campos que siempre deben ser true — no guardar en Supabase para no contaminar
-                        const alwaysTrueFields = new Set(['showFooterLine1', 'showFooterLine2']);
+                            Object.keys(payload).forEach(key => {
+                                if (alwaysTrueFields.has(key)) return;
+                                const dbCol = legacyMap[key] || key;
+                                const actualCol = availableCols.find(c => c.toLowerCase() === dbCol.toLowerCase()) || dbCol;
+                                if (availableCols.some(c => c.toLowerCase() === dbCol.toLowerCase())) {
+                                    finalPayload[actualCol] = payload[key];
+                                } else {
+                                    extraData[key] = payload[key];
+                                }
+                            });
 
-                        Object.keys(payload).forEach(key => {
-                            if (alwaysTrueFields.has(key)) return; // omitir — se restauran como true al cargar
-                            const dbCol = legacyMap[key] || key;
-                            // Busca la columna ignorando mayúsculas (PostgreSQL puede devolver todo en minúsculas)
-                            const actualCol = availableCols.find(c => c.toLowerCase() === dbCol.toLowerCase()) || dbCol;
-                            if (availableCols.some(c => c.toLowerCase() === dbCol.toLowerCase())) {
-                                finalPayload[actualCol] = payload[key];
-                            } else {
-                                extraData[key] = payload[key];
+                            if (Object.keys(extraData).length > 0) {
+                                finalPayload.footer = `JSON_CONFIG:${JSON.stringify({ ...extraData, _realFooter: payload.footerLine1 || '' })}`;
                             }
-                        });
 
-                        if (Object.keys(extraData).length > 0) {
-                            const currentFooter = payload.footerLine1 || '';
-                            finalPayload.footer = `JSON_CONFIG:${JSON.stringify({ ...extraData, _realFooter: currentFooter })}`;
+                            const { error } = await supabase.from('ticket_config').upsert(finalPayload);
+                            if (!error) set(s => ({ ticketConfig: { ...s.ticketConfig, synced: true } }));
                         }
 
-                        const { error } = await supabase.from('ticket_config').upsert(finalPayload);
-                        if (!error) {
-                            set(s => ({ ticketConfig: { ...s.ticketConfig, synced: true } }));
-                        } else {
-                            console.error(`Error Syncing ticket_config:`, error.message);
+                        if (notify && totalPending > 0) {
+                            get().showToast(`${totalPending} cambio${totalPending !== 1 ? 's' : ''} sincronizado${totalPending !== 1 ? 's' : ''} ✓`, 'success');
                         }
-                    }
+                    })();
 
-                    if (notify && totalPending > 0) {
-                        get().showToast(`${totalPending} cambio${totalPending !== 1 ? 's' : ''} sincronizado${totalPending !== 1 ? 's' : ''} ✓`, 'success');
-                    }
+                    // Race between sync and timeout
+                    await Promise.race([
+                        syncPromise,
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Sync timeout')), 15000))
+                    ]);
 
                 } catch (error) {
                     console.error('Error sincronizando con la nube:', error);
                 } finally {
-                    set({ isSyncing: false });
+                    // Pequeño retraso para evitar parpadeos si la red es muy rápida
+                    setTimeout(() => set({ isSyncing: false }), 500);
                 }
             },
 
@@ -409,7 +408,7 @@ export const useStore = create(
                         sales:     ['id', 'date', 'items', 'total', 'userid', 'clientid', 'paymentmethod', 'cash', 'change'],
                         inventory: ['id', 'productid', 'quantity', 'date', 'type', 'note'],
                         expenses:  ['id', 'date', 'amount', 'description', 'userid'],
-                        deliveries:['id', 'date', 'userid', 'clientid', 'clientname', 'litrospurificados', 'ventagalones', 'bolsashielo', 'note'],
+                        deliveries:['id', 'date', 'userid', 'username', 'clientid', 'clientname', 'litrospurificados', 'ventagalones', 'bolsashielo'],
                     };
 
                     for (const tableName of tablesToPull) {

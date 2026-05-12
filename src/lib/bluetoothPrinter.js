@@ -129,7 +129,6 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         metadataSpacing = 0,
         showMainTitle = true,
         showBusinessName = true,
-        metadataSize = 10,
         multiLineItems = true,
         totalFontSize = 14,
         itemsHeaderLeft = 'CANT/CONCEPTO',
@@ -538,7 +537,7 @@ async function detectService(deviceId) {
                 return { serviceUUID: NORDIC_SERVICE_UUID, charUUID: NORDIC_TX_CHAR_UUID };
             }
         }
-    } catch {}
+    } catch { /* ignore — fallback to default service */ }
     return { serviceUUID: PRINTER_SERVICE_UUID, charUUID: PRINTER_CHAR_UUID };
 }
 
@@ -578,7 +577,7 @@ export async function startPrinterScan(onDeviceFound) {
     try {
         const bonded = await BleClient.getBondedDevices();
         bonded.forEach(d => report({ deviceId: d.deviceId, name: d.name, rssi: -60 }));
-    } catch {}
+    } catch { /* ignore — getBondedDevices not always available */ }
 
     // 2. Escanear BLE activamente para encontrar más
     try {
@@ -590,12 +589,12 @@ export async function startPrinterScan(onDeviceFound) {
                 rssi: result.rssi,
             });
         });
-    } catch {}
+    } catch { /* ignore — scan may fail on web */ }
 }
 
 export async function stopPrinterScan() {
     _scanActive = false;
-    try { await BleClient.stopLEScan(); } catch {}
+    try { await BleClient.stopLEScan(); } catch { /* ignore */ }
 }
 
 export async function connectToDevice(deviceId, displayName) {

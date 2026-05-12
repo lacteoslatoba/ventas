@@ -35,8 +35,6 @@ export default function Reports() {
     const [expenseDesc,      setExpenseDesc]      = useState('');
     const [expenseAmount,    setExpenseAmount]    = useState('');
 
-    if (isChofer) return <DeliveryReport />;
-
     // ── Filtro de fechas ─────────────────────────────────────────────────
     const filterStart = dateMode === 'day' ? selectedDate : (rangeStart || selectedDate);
     const filterEnd   = dateMode === 'day' ? selectedDate : (rangeEnd   || rangeStart || selectedDate);
@@ -67,23 +65,6 @@ export default function Reports() {
                 }
             }
         }
-    };
-
-    // Estilo de un día en el calendario
-    const dayStyle = (dateStr) => {
-        const isToday = dateStr === todayStr;
-        if (dateMode === 'day') {
-            if (dateStr === selectedDate) return 'bg-gray-900 text-white';
-            if (isToday) return 'ring-2 ring-gray-900 text-gray-900 font-black';
-            return 'hover:bg-gray-50 text-gray-700';
-        }
-        // range mode
-        const start = rangeStart;
-        const end   = rangeEnd || rangeStart;
-        if (dateStr === start || dateStr === end) return 'bg-gray-900 text-white';
-        if (start && end && dateStr > start && dateStr < end) return 'bg-gray-200 text-gray-900';
-        if (isToday) return 'ring-2 ring-gray-900 text-gray-900 font-black';
-        return 'hover:bg-gray-50 text-gray-700';
     };
 
     // ── Datos filtrados ──────────────────────────────────────────────────
@@ -164,6 +145,8 @@ export default function Reports() {
 
     const generateImage = async () => generateReportImage({ operatorPDFData, sales, clients, currentUser, repDateFilter: filterStart, todayStr, ticketConfig });
     const generatePDF   = async () => generateReportPDF({ operatorPDFData, sales, clients, currentUser, repDateFilter: filterStart, todayStr, ticketConfig });
+
+    if (isChofer) return <DeliveryReport />;
 
     // ── Calendario ───────────────────────────────────────────────────────
     const daysInMonth  = new Date(calMonth.year, calMonth.month + 1, 0).getDate();
@@ -374,7 +357,7 @@ export default function Reports() {
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Importe</p>
                             </div>
                             <div className="divide-y divide-slate-50 dark:divide-slate-700/30">
-                                {productTotals.map(([name, { qty, pieces, money, unit }], idx) => (
+                                {productTotals.map(([name, { qty, pieces, money, unit }]) => (
                                     <div key={name} className="grid grid-cols-[1fr_52px_52px_84px] items-center px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">

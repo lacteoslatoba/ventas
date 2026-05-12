@@ -4,7 +4,7 @@ import {
     Printer, CheckCircle2, AlertCircle, Trash2, Zap, Info, ChevronRight, ArrowLeft, FileText
 } from 'lucide-react';
 import {
-    connectPrinter, reconnectSaved, printTestPage, printTicket,
+    reconnectSaved, printTestPage, printTicket,
     getSavedPrinterName, getPrinterDisplayName, clearSavedPrinter,
     startPrinterScan, stopPrinterScan, connectToDevice,
 } from '../lib/bluetoothPrinter';
