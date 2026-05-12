@@ -20,14 +20,18 @@ import Sidebar from './components/Sidebar';
 import MenuPage from './pages/Menu';
 
 const NetworkIndicator = () => {
-  const { isOnline, setOnlineStatus, syncToSupabase } = useStore();
+  const { isOnline, setOnlineStatus, syncToSupabase, fetchFromSupabase, showToast } = useStore();
 
   useEffect(() => {
     const handleOnline = () => {
       setOnlineStatus(true);
-      syncToSupabase(true);
+      showToast('Conexión restaurada — sincronizando...', 'success');
+      fetchFromSupabase().then(() => syncToSupabase(true));
     };
-    const handleOffline = () => setOnlineStatus(false);
+    const handleOffline = () => {
+      setOnlineStatus(false);
+      showToast('Sin conexión — los datos se guardan localmente', 'error');
+    };
 
     // Sistema de actualización automática de PWA
     const checkForUpdates = () => {
@@ -80,7 +84,8 @@ const PrinterAutoConnect = () => {
 
 const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
   const isAdmin = currentUser?.role === 'admin';
-  const isChofer = currentUser?.role === 'chofer';
+  const isBeto = currentUser?.name?.toLowerCase().includes('beto');
+  const isChofer = currentUser?.role === 'chofer' || isBeto;
   const isHome = location.pathname === '/' || (!isAdmin && location.pathname === '/ventas') || (isChofer && location.pathname === '/entregas');
   const [showSettings, setShowSettings] = React.useState(false);
   const [showDriverMenu, setShowDriverMenu] = React.useState(false);
@@ -149,15 +154,17 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
               >
                 <Users size={18} className="text-slate-400" /> Clientes
               </button>
-              <button 
-                onClick={() => {
-                  setShowDriverMenu(false);
-                  navigate('/impresora');
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-              >
-                <div className="w-5 flex justify-center"><span className="material-symbols-outlined text-[18px] text-slate-400">print</span></div> Config. Impresora
-              </button>
+              {!isBeto && (
+                <button 
+                  onClick={() => {
+                    setShowDriverMenu(false);
+                    navigate('/impresora');
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <div className="w-5 flex justify-center"><span className="material-symbols-outlined text-[18px] text-slate-400">print</span></div> Config. Impresora
+                </button>
+              )}
               <button 
                 onClick={() => {
                   setShowDriverMenu(false);
@@ -186,27 +193,29 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
       <div className="flex items-center gap-1 relative justify-end">
 
         {/* Indicador impresora BT */}
-        <button
-          onClick={() => {
-            if (printer) { navigate('/impresora'); return; }
-            if (isReconnecting) return;
-            if (getSavedPrinterName()) {
-              startAutoConnect();
-            } else {
-              navigate('/impresora');
-            }
-          }}
-          title={printer ? 'Impresora conectada' : isReconnecting ? 'Buscando impresora...' : 'Toca para reintentar'}
-          className="w-10 h-10 rounded-xl flex items-center justify-center active:scale-95 transition-all"
-        >
-          <span className={`material-symbols-outlined text-xl ${
-            printer ? 'text-emerald-500' :
-            isReconnecting ? 'text-amber-400 animate-pulse' :
-            'text-slate-300'
-          }`}>
-            {printer ? 'print' : isReconnecting ? 'bluetooth_searching' : 'print_disabled'}
-          </span>
-        </button>
+        {!isBeto && (
+          <button
+            onClick={() => {
+              if (printer) { navigate('/impresora'); return; }
+              if (isReconnecting) return;
+              if (getSavedPrinterName()) {
+                startAutoConnect();
+              } else {
+                navigate('/impresora');
+              }
+            }}
+            title={printer ? 'Impresora conectada' : isReconnecting ? 'Buscando impresora...' : 'Toca para reintentar'}
+            className="w-10 h-10 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+          >
+            <span className={`material-symbols-outlined text-xl ${
+              printer ? 'text-emerald-500' :
+              isReconnecting ? 'text-amber-400 animate-pulse' :
+              'text-slate-300'
+            }`}>
+              {printer ? 'print' : isReconnecting ? 'bluetooth_searching' : 'print_disabled'}
+            </span>
+          </button>
+        )}
 
         <button
           onClick={() => openModal('Cerrar sesión', '¿Seguro que deseas salir?', () => useStore.getState().logout())}
@@ -310,7 +319,7 @@ const BottomNavigation = ({ currentUser }) => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
   const isAdmin = currentUser?.role === 'admin';
-  const isChofer = currentUser?.role === 'chofer';
+  const isChofer = currentUser?.role === 'chofer' || currentUser?.name?.toLowerCase().includes('beto');
 
   const navClass = "md:hidden fixed bottom-0 left-0 right-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 z-50 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]";
   const navStyle = { height: 'calc(60px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' };
@@ -319,6 +328,7 @@ const BottomNavigation = ({ currentUser }) => {
     return (
       <div className={navClass} style={navStyle}>
         <NavItem to="/entregas" icon={Truck} label="Entregas" active={isActive('/entregas')} />
+        <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
       </div>
     );
   }
@@ -393,23 +403,32 @@ const InstallBanner = () => {
 };
 
 const OfflineBanner = () => {
-  const { isOnline, products, users, clients, sales, inventory, ticketConfig } = useStore();
+  const { isOnline, isSyncing, products, users, clients, sales, inventory, deliveries, ticketConfig } = useStore();
 
   const pendingCount = React.useMemo(() => {
-    const tables = [products, users, clients, sales, inventory];
+    const tables = [products, users, clients, sales, inventory, deliveries];
     let count = tables.reduce((acc, t) => acc + t.filter(i => !i.synced).length, 0);
     if (ticketConfig && !ticketConfig.synced) count++;
     return count;
-  }, [products, users, clients, sales, inventory, ticketConfig]);
+  }, [products, users, clients, sales, inventory, deliveries, ticketConfig]);
 
-  if (isOnline) return null;
+  if (isOnline && !isSyncing && pendingCount === 0) return null;
+
+  if (isOnline && (isSyncing || pendingCount > 0)) {
+    return (
+      <div className="flex-shrink-0 bg-emerald-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-xs font-black no-print select-none">
+        <RefreshCw size={13} className="animate-spin" />
+        <span>Sincronizando {pendingCount > 0 ? `${pendingCount} cambio${pendingCount !== 1 ? 's' : ''}...` : '...'}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-shrink-0 bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-xs font-black no-print select-none">
       <WifiOff size={13} />
       <span>
-        Sin conexión
-        {pendingCount > 0 && ` · ${pendingCount} cambio${pendingCount !== 1 ? 's' : ''} pendiente${pendingCount !== 1 ? 's' : ''}`}
+        Sin conexión — modo offline
+        {pendingCount > 0 && ` · ${pendingCount} cambio${pendingCount !== 1 ? 's' : ''} por sincronizar`}
       </span>
     </div>
   );
@@ -450,7 +469,8 @@ const AdminRoute = ({ children, currentUser }) => {
 };
 
 const ChoferRoute = ({ children, currentUser }) => {
-  if (currentUser?.role === 'chofer') {
+  const isChofer = currentUser?.role === 'chofer' || currentUser?.name?.toLowerCase().includes('beto');
+  if (isChofer) {
     return <Navigate to="/entregas" replace />;
   }
   return children;
@@ -496,7 +516,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<ChoferRoute currentUser={currentUser}><Sales /></ChoferRoute>} />
                   <Route path="/ventas" element={<ChoferRoute currentUser={currentUser}><Sales /></ChoferRoute>} />
-                  <Route path="/reportes" element={<ChoferRoute currentUser={currentUser}><Reports /></ChoferRoute>} />
+                  <Route path="/reportes" element={<Reports />} />
                   <Route path="/entregas" element={<Entregas />} />
                   <Route path="/clientes" element={<Clients />} />
                   
