@@ -190,65 +190,111 @@ export default function Reports() {
 
     // ── Componente calendario reutilizable ───────────────────────────────
     const Calendar = () => (
-        <div className="bg-white border border-gray-300 rounded-lg p-3">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-5 shadow-xl shadow-slate-200/50 dark:shadow-none animate-in zoom-in-95 duration-500">
             {/* Toggle 1 día / Rango */}
-            <div className="flex gap-1 mb-3 bg-gray-100 rounded-lg p-1">
+            <div className="flex gap-1 mb-5 bg-slate-100 dark:bg-slate-800 rounded-2xl p-1.5">
                 <button
                     onClick={() => { setDateMode('day'); setRangeStart(''); setRangeEnd(''); }}
-                    className={`flex-1 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wide transition-all ${dateMode === 'day' ? 'bg-gray-900 text-white shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${dateMode === 'day' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
                 >
                     1 Día
                 </button>
                 <button
                     onClick={() => { setDateMode('range'); }}
-                    className={`flex-1 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wide transition-all ${dateMode === 'range' ? 'bg-gray-900 text-white shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${dateMode === 'range' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
                 >
                     Rango
                 </button>
             </div>
 
-            {/* Instrucción rango */}
-            {dateMode === 'range' && (
-                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">
-                    {!rangeStart ? 'Toca el día de inicio' : !rangeEnd ? 'Toca el día de fin' : 'Rango seleccionado'}
-                </p>
-            )}
-
             {/* Nav mes */}
-            <div className="flex items-center justify-between mb-2">
-                <button onClick={prevMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
-                    <ChevronLeft size={14} className="text-gray-600" />
+            <div className="flex items-center justify-between mb-4 px-1">
+                <button onClick={prevMonth} className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center active:scale-90 transition-all hover:bg-primary/10 hover:text-primary text-slate-500 dark:text-slate-400">
+                    <ChevronLeft size={20} />
                 </button>
-                <p className="text-xs font-black text-gray-900 capitalize tracking-wide">
-                    {MONTHS[calMonth.month]} {calMonth.year}
-                </p>
-                <button onClick={nextMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
-                    <ChevronRight size={14} className="text-gray-600" />
+                <div className="text-center">
+                    <p className="text-sm font-black text-slate-900 dark:text-white capitalize tracking-tight">
+                        {MONTHS[calMonth.month]}
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-400 leading-none">{calMonth.year}</p>
+                </div>
+                <button onClick={nextMonth} className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center active:scale-90 transition-all hover:bg-primary/10 hover:text-primary text-slate-500 dark:text-slate-400">
+                    <ChevronRight size={20} />
                 </button>
             </div>
 
+            {/* Instrucción rango */}
+            {dateMode === 'range' && (
+                <div className="mb-4 text-center">
+                    <span className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase tracking-widest border border-amber-100 dark:border-amber-800/50">
+                        {!rangeStart ? 'Toca el día de inicio' : !rangeEnd ? 'Toca el día de fin' : 'Rango seleccionado'}
+                    </span>
+                </div>
+            )}
+
             {/* Días semana */}
-            <div className="grid grid-cols-7 mb-1 border-b border-gray-200 pb-1">
-                {DAYS_SHORT.map(d => <div key={d} className="text-center text-[9px] font-black text-gray-400 uppercase">{d}</div>)}
+            <div className="grid grid-cols-7 mb-2">
+                {DAYS_SHORT.map(d => (
+                    <div key={d} className="text-center text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase py-2">
+                        {d}
+                    </div>
+                ))}
             </div>
 
             {/* Cuadrícula días */}
-            <div className="grid grid-cols-7 gap-y-0.5">
+            <div className="grid grid-cols-7 gap-1">
                 {Array.from({ length: firstWeekDay }).map((_, i) => <div key={`e${i}`} />)}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                     const day     = i + 1;
                     const dateStr = `${calMonth.year}-${String(calMonth.month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                    const style   = dayStyle(dateStr);
                     const hasSales = daysWithSales.has(dateStr);
-                    const isSelected = dateMode === 'day' ? dateStr === selectedDate : (dateStr === rangeStart || dateStr === rangeEnd);
+                    const isToday = dateStr === todayStr;
+                    
+                    // Lógica de estilos moderna
+                    let cellStyle = "relative flex flex-col items-center justify-center w-full aspect-square rounded-2xl transition-all duration-200 text-sm font-bold ";
+                    let textStyle = "";
+                    
+                    if (dateMode === 'day') {
+                        if (dateStr === selectedDate) {
+                            cellStyle += "bg-primary text-white shadow-lg shadow-primary/30 z-10 scale-105";
+                        } else {
+                            cellStyle += "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 ";
+                            if (isToday) cellStyle += "ring-2 ring-primary/20 dark:ring-primary/40 ";
+                        }
+                    } else {
+                        // Range mode logic
+                        const start = rangeStart;
+                        const end = rangeEnd;
+                        const inRange = start && end && dateStr > start && dateStr < end;
+                        const isStart = dateStr === start;
+                        const isEnd = dateStr === end;
+
+                        if (isStart || isEnd) {
+                            cellStyle += "bg-primary text-white shadow-lg shadow-primary/30 z-10 scale-105 ";
+                            if (isStart && end) cellStyle += "rounded-r-none ";
+                            if (isEnd && start) cellStyle += "rounded-l-none ";
+                        } else if (inRange) {
+                            cellStyle += "bg-primary/10 dark:bg-primary/20 text-primary rounded-none ";
+                        } else {
+                            cellStyle += "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 ";
+                            if (isToday) cellStyle += "ring-2 ring-primary/20 dark:ring-primary/40 ";
+                        }
+                    }
+
                     return (
                         <button
                             key={day}
                             onClick={() => handleDayClick(dateStr)}
-                            className={`flex flex-col items-center justify-center w-full py-1.5 rounded-lg transition-all active:scale-90 text-[11px] font-black ${style}`}
+                            className={cellStyle}
                         >
-                            <span>{day}</span>
-                            {hasSales && <span className="w-1.5 h-1.5 rounded-full bg-current mt-0.5 opacity-60" />}
+                            <span className={textStyle}>{day}</span>
+                            {hasSales && (
+                                <span className={`absolute bottom-1.5 w-1 h-1 rounded-full ${
+                                    (dateMode === 'day' && dateStr === selectedDate) || (rangeStart === dateStr || rangeEnd === dateStr)
+                                        ? 'bg-white'
+                                        : 'bg-primary'
+                                }`} />
+                            )}
                         </button>
                     );
                 })}
