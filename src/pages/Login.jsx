@@ -49,13 +49,13 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen bg-[#f6f6f8] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
+        <div className="min-h-screen bg-white flex flex-col items-center px-4 pt-14 pb-10 font-sans">
             {/* Aviso de Modo Offline / Sync */}
-            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-10 duration-500 w-full max-w-xs px-4 flex flex-col gap-2">
+            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-10 duration-500 w-full max-w-xs px-4 flex flex-col gap-2">
                 {!isOnline && (
-                    <div className="bg-orange-500 text-white px-4 py-3 rounded-2xl shadow-xl shadow-orange-500/30 flex items-center justify-center gap-3 border border-orange-400/50 backdrop-blur-md">
-                        <div className="bg-white/20 p-1.5 rounded-full ring-4 ring-white/10">
-                            <CloudOff size={16} strokeWidth={3} />
+                    <div className="bg-orange-500 text-white px-4 py-3 rounded-2xl shadow-xl shadow-orange-500/30 flex items-center justify-center gap-3 border border-orange-400/50">
+                        <div className="bg-white/20 p-1.5 rounded-full">
+                            <CloudOff size={15} strokeWidth={3} />
                         </div>
                         <div className="flex flex-col">
                             <span className="text-xs font-black uppercase tracking-widest leading-none">Modo Offline</span>
@@ -64,9 +64,9 @@ export default function Login() {
                     </div>
                 )}
                 {isSyncing && (
-                    <div className="bg-blue-600 text-white px-4 py-3 rounded-2xl shadow-xl shadow-blue-500/30 flex items-center justify-center gap-3 border border-blue-400/50 backdrop-blur-md">
-                        <div className="bg-white/20 p-1.5 rounded-full ring-4 ring-white/10">
-                            <RefreshCw size={16} strokeWidth={3} className="animate-spin" />
+                    <div className="bg-blue-600 text-white px-4 py-3 rounded-2xl shadow-xl shadow-blue-500/30 flex items-center justify-center gap-3 border border-blue-400/50">
+                        <div className="bg-white/20 p-1.5 rounded-full">
+                            <RefreshCw size={15} strokeWidth={3} className="animate-spin" />
                         </div>
                         <div className="flex flex-col">
                             <span className="text-xs font-black uppercase tracking-widest leading-none">Actualizando...</span>
@@ -76,34 +76,32 @@ export default function Login() {
                 )}
             </div>
 
-            <div className="sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex justify-center mb-6">
-                    <div className="p-1 bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 flex items-center justify-center relative overflow-hidden group">
-                        {isOnline ? (
-                            <div className="absolute top-4 right-4 w-4 h-4 bg-green-500 rounded-full border-4 border-white shadow-sm shadow-green-500/50 z-10"></div>
-                        ) : (
-                            <div className="absolute top-4 right-4 w-4 h-4 bg-orange-500 rounded-full border-4 border-white shadow-sm shadow-orange-500/50 z-10"></div>
-                        )}
-                        <img 
-                            src="/pwa-logo.png" 
-                            alt="Lácteos La Toba Logo" 
-                            className="w-40 h-40 object-contain group-hover:scale-110 transition-transform duration-700"
-                        />
+            <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Header estilo Ventas */}
+                <div className="mb-6 px-1 flex justify-between items-start border-b-2 border-gray-900 pb-4">
+                    <div>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">Purificadora Mar de Hielo</p>
+                        <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mt-0.5">Iniciar Sesión</h1>
                     </div>
+                    <div className={`w-3 h-3 rounded-full mt-1.5 shrink-0 ${isOnline ? 'bg-green-500' : 'bg-orange-500'}`} title={isOnline ? 'En línea' : 'Sin conexión'} />
                 </div>
-                <h2 className="mt-2 text-center text-4xl font-black tracking-tighter text-slate-900 leading-tight uppercase font-sans">
-                    Lácteos La Toba
-                </h2>
-                <p className="mt-3 text-center text-base text-slate-500 font-medium">
-                    Ingresa tus credenciales para continuar
-                </p>
-            </div>
 
-            <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-                <div className="bg-white py-10 px-6 sm:px-10 shadow-2xl shadow-slate-200/60 border border-slate-100/50 sm:rounded-[2.5rem] animate-in fade-in zoom-in-95 duration-500 delay-100">
-                    <form className="space-y-5" onSubmit={handleSubmit}>
+                {/* Logo card estilo producto */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center mb-5 relative overflow-hidden group">
+                    <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-blue-50 transition-transform group-hover:scale-125" />
+                    <div className="absolute -left-6 -bottom-6 w-20 h-20 rounded-full bg-slate-50" />
+                    <img
+                        src="/pwa-logo.png"
+                        alt="Mar de Hielo Logo"
+                        className="w-36 h-36 object-contain relative z-10"
+                    />
+                </div>
+
+                {/* Form card */}
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 animate-in fade-in zoom-in-95 duration-500 delay-100">
+                    <form className="space-y-4" onSubmit={handleSubmit}>
                         <div>
-                            <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">
+                            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em] ml-1 mb-2">
                                 Usuario
                             </label>
                             <input
@@ -111,7 +109,7 @@ export default function Login() {
                                 required
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                className="block w-full text-lg font-bold bg-slate-50 border-2 border-slate-100 focus:border-primary focus:bg-white rounded-2xl py-4 px-5 outline-none transition-all text-slate-800 placeholder:text-slate-300 shadow-sm"
+                                className="block w-full text-base font-bold bg-slate-50 border-2 border-slate-100 focus:border-primary focus:bg-white rounded-xl py-3.5 px-4 outline-none transition-all text-slate-800 placeholder:text-slate-300 shadow-sm"
                                 placeholder="Nombre de usuario"
                                 autoComplete="username"
                                 autoFocus
@@ -119,7 +117,7 @@ export default function Login() {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">
+                            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em] ml-1 mb-2">
                                 Contraseña
                             </label>
                             <div className="relative">
@@ -128,77 +126,77 @@ export default function Login() {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full text-lg font-bold bg-slate-50 border-2 border-slate-100 focus:border-primary focus:bg-white rounded-2xl py-4 px-5 pr-14 outline-none transition-all text-slate-800 placeholder:text-slate-300 shadow-sm"
+                                    className="block w-full text-base font-bold bg-slate-50 border-2 border-slate-100 focus:border-primary focus:bg-white rounded-xl py-3.5 px-4 pr-12 outline-none transition-all text-slate-800 placeholder:text-slate-300 shadow-sm"
                                     placeholder="••••••••"
                                     autoComplete="current-password"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-primary transition-colors focus:outline-none"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-primary transition-colors focus:outline-none"
                                 >
-                                    {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
                         </div>
 
                         {error && (
-                            <div className="p-3 bg-red-50 rounded-xl border border-red-100 animate-in shake duration-300 mt-2">
-                                <p className="text-center text-sm font-bold text-red-500">
-                                    {error}
-                                </p>
+                            <div className="p-3 bg-red-50 rounded-xl border border-red-100 animate-in shake duration-300">
+                                <p className="text-center text-sm font-bold text-red-500">{error}</p>
                             </div>
                         )}
 
-                        <div className="pt-2 flex flex-col gap-3">
+                        <div className="pt-1 flex flex-col gap-3">
                             <button
                                 type="submit"
-                                className="w-full flex justify-center gap-3 items-center py-4 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-[1.25rem] shadow-xl shadow-slate-900/10 text-lg font-black active:scale-95 transition-all group"
+                                className="w-full flex justify-center gap-2 items-center py-4 px-4 border-2 border-primary bg-white text-primary rounded-2xl shadow-xl shadow-blue-500/5 text-lg font-black active:scale-95 transition-all hover:bg-blue-50 group"
                             >
-                                <LogIn size={22} className="group-hover:translate-x-1 transition-transform duration-300" />
-                                Iniciar Sesión
+                                <LogIn size={20} className="group-hover:translate-x-1 transition-transform duration-300" />
+                                Ingresar
                             </button>
 
                             {isOnline && (
-                                <div className="flex flex-col items-center gap-1">
+                                <div className="flex flex-col items-center gap-2">
                                     <button
                                         type="button"
                                         onClick={handleSync}
                                         disabled={isSyncing}
-                                        className="w-full flex justify-center gap-2 items-center py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl border border-slate-100 text-xs font-bold transition-all disabled:opacity-50"
+                                        className="w-full flex justify-center gap-2 items-center py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl border border-slate-200 text-xs font-bold transition-all disabled:opacity-50"
                                     >
-                                        <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+                                        <RefreshCw size={13} className={isSyncing ? "animate-spin" : ""} />
                                         {isSyncing ? "Actualizando Base de Datos..." : "Actualizar Datos Online"}
                                     </button>
-                                        <div className="flex flex-col items-center">
-                                            <p className="text-[10px] text-slate-400 font-medium">
-                                                Última actualización:{' '}
-                                                <span className="font-black text-slate-500">
-                                                    {new Date(lastSync).toLocaleString('es-MX', {
-                                                        day: '2-digit', month: 'short', year: 'numeric',
-                                                        hour: '2-digit', minute: '2-digit',
-                                                    })}
-                                                </span>
-                                            </p>
-                                            <div className="mt-2 bg-emerald-500 text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
-                                                {import.meta.env.VITE_APP_VERSION || 'vDev'}
-                                            </div>
+                                    <div className="flex flex-col items-center gap-1">
+                                        <p className="text-[10px] text-slate-400 font-medium">
+                                            Última actualización:{' '}
+                                            <span className="font-black text-slate-500">
+                                                {lastSync ? new Date(lastSync).toLocaleString('es-MX', {
+                                                    day: '2-digit', month: 'short', year: 'numeric',
+                                                    hour: '2-digit', minute: '2-digit',
+                                                }) : '—'}
+                                            </span>
+                                        </p>
+                                        <div className="bg-emerald-500 text-white px-3 py-1 rounded-full text-[11px] font-black tracking-wide shadow-sm">
+                                            v {__BUILD_TIME__}
                                         </div>
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </form>
                 </div>
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 text-center animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
-                <a 
-                    href="/instalar.html" 
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-full text-slate-500 dark:text-slate-400 text-sm font-black hover:bg-white dark:hover:bg-slate-800 hover:text-primary dark:hover:text-primary transition-all shadow-sm"
-                >
-                    <span className="material-symbols-outlined text-[20px]">help_outline</span>
-                    ¿Problemas al instalar? Ayuda aquí
-                </a>
+
+                {/* Help link */}
+                <div className="mt-6 text-center animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
+                    <a
+                        href="/instalar.html"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 text-xs font-bold hover:bg-slate-50 hover:text-primary transition-all shadow-sm"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">help_outline</span>
+                        ¿Problemas al instalar? Ayuda aquí
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
     );
 }
