@@ -11,7 +11,7 @@ export default defineConfig({
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit', hour12: true
     })),
-    __APP_VERSION__: JSON.stringify('1'),
+    __APP_VERSION__: JSON.stringify('2'),
   },
   plugins: [
     react(),
