@@ -78,29 +78,42 @@ export default function SuccessModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-background-light dark:bg-background-dark no-print flex flex-col items-center">
-            <div className="relative flex h-full w-full max-w-md mx-auto flex-col bg-white dark:bg-background-dark overflow-x-hidden shadow-2xl">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm no-print flex flex-col items-center justify-center p-0 md:p-4 animate-in fade-in duration-300">
+            <div className="relative flex h-full w-full max-w-md mx-auto flex-col bg-white dark:bg-slate-900 overflow-hidden shadow-2xl md:rounded-[2.5rem] animate-in slide-in-from-bottom-10 duration-500 ease-out-expo">
 
-                <div className="flex items-center p-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 z-10">
-                    <button onClick={() => setGeneratedTicket(null)} className="p-2 -ml-1 mr-2 text-slate-400 hover:text-slate-900 transition-colors">
+                <div className="flex items-center p-5 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 z-10">
+                    <button 
+                        onClick={() => setGeneratedTicket(null)} 
+                        className="p-2 -ml-1 mr-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all active:scale-90"
+                    >
                         <X size={24} />
                     </button>
-                    <h2 className="flex-1 text-center text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
-                         <span className="material-symbols-outlined text-emerald-500">check_circle</span>
-                         Venta Exitosa
-                    </h2>
+                    <div className="flex-1 flex flex-col items-center">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-0.5">Operación Completada</span>
+                        <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
+                             Venta Exitosa
+                        </h2>
+                    </div>
                     <button
                         onClick={handleShare}
                         disabled={sharing}
-                        className="p-2 -mr-1 ml-2 text-slate-400 hover:text-primary disabled:opacity-50 transition-colors"
+                        className="p-2 -mr-1 ml-2 text-slate-400 hover:text-primary disabled:opacity-50 transition-all active:scale-90"
                         title="Compartir imagen"
                     >
                         <span className="material-symbols-outlined text-[22px]">{sharing ? 'hourglass_empty' : 'share'}</span>
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto w-full flex flex-col items-center py-6 bg-slate-50/50 dark:bg-slate-900/50 relative">
-                    <div ref={ticketRef}>
+                <div className="flex-1 overflow-y-auto w-full flex flex-col items-center py-8 bg-slate-50/50 dark:bg-slate-950/30 custom-scrollbar">
+                    {/* Success Burst Animation Placeholder or Icon */}
+                    <div className="mb-6 relative">
+                        <div className="absolute inset-0 bg-emerald-400/20 blur-2xl rounded-full animate-pulse-soft"></div>
+                        <div className="relative bg-emerald-500 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 animate-float">
+                            <span className="material-symbols-outlined text-4xl">check</span>
+                        </div>
+                    </div>
+
+                    <div ref={ticketRef} className="shadow-2xl shadow-slate-200 dark:shadow-none rounded-sm overflow-hidden transform hover:scale-[1.01] transition-transform duration-300">
                         <TicketPreview
                             config={ticketConfig}
                             sale={generatedTicket}
@@ -108,33 +121,38 @@ export default function SuccessModal({
                             client={client}
                         />
                     </div>
+
+                    <div className="mt-8 px-8 text-center">
+                        <p className="text-slate-400 dark:text-slate-500 text-xs font-medium max-w-[200px]">
+                            El ticket ha sido generado y registrado en el historial local.
+                        </p>
+                    </div>
                 </div>
 
                 {/* Acciones principales */}
-                <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-3 shrink-0 relative z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] pb-6 md:pb-4">
-                    <div className="flex gap-3 h-[60px]">
+                <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-4 shrink-0 relative z-20 shadow-[0_-15px_40px_rgba(0,0,0,0.08)] pb-8 md:pb-6">
+                    <div className="flex gap-4 h-[64px]">
                         <button
                             onClick={() => setGeneratedTicket(null)}
-                            className="w-[30%] h-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 font-bold rounded-[1.25rem] active:scale-95 transition-all text-[11px] uppercase tracking-wider flex flex-col items-center justify-center gap-0.5"
+                            className="flex-1 h-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-2xl active:scale-95 transition-all text-sm flex flex-col items-center justify-center gap-0.5"
                         >
-                            <span className="material-symbols-outlined text-xl leading-none">add_shopping_cart</span>
-                            <span className="mt-1">Nueva</span>
+                            <span className="material-symbols-outlined text-xl">add_shopping_cart</span>
+                            <span>Nueva Venta</span>
                         </button>
                         <button
                             onClick={handlePrint}
                             disabled={btPrinting}
-                            className="w-[70%] h-full bg-primary hover:bg-blue-700 disabled:opacity-60 text-white font-black rounded-[1.25rem] shadow-lg shadow-primary/25 flex items-center justify-center gap-2 text-base active:scale-95 transition-all"
+                            className="flex-[2] h-full bg-primary hover:bg-blue-700 disabled:opacity-60 text-white font-black rounded-2xl shadow-xl shadow-primary/25 flex items-center justify-center gap-3 text-base active:scale-95 transition-all"
                         >
                             {btPrinting
                                 ? <span className="material-symbols-outlined animate-spin">refresh</span>
                                 : <span className="material-symbols-outlined">print</span>
                             }
-                            {btPrinting ? 'Imprimiendo...' : 'Imprimir Ticket'}
+                            {btPrinting ? 'Imprimiendo...' : 'Imprimir Recibo'}
                         </button>
                     </div>
                 </div>
-
-                <div className="h-6 bg-white dark:bg-background-dark"></div>
+                <div className="h-6 bg-white dark:bg-slate-900 shrink-0"></div>
             </div>
 
             {/* TICKET IMPRIMIBLE */}

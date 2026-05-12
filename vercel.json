@@ -1,4 +1,5 @@
 {
+    "name": "mar-de-hielo",
     "buildCommand": "npm run build",
     "outputDirectory": "dist",
     "framework": "vite",

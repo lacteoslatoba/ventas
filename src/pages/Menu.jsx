@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { useNavigate } from 'react-router-dom';
 import {
   DollarSign, FileText, Warehouse, Users, Store, BarChart2, Tag, PrinterIcon, 
-  LayoutDashboard, LogOut
+  LayoutDashboard, LogOut, Truck
 } from 'lucide-react';
 
 export default function Menu() {
@@ -11,11 +11,12 @@ export default function Menu() {
   const { currentUser, ticketConfig, logout, showToast } = useStore();
 
   const menuItems = [
-    { icon: DollarSign, label: 'Ventas', color: 'text-emerald-500', path: '/ventas' },
+    { icon: DollarSign, label: 'Registro', color: 'text-emerald-500', path: '/ventas' },
     { icon: Tag, label: 'Productos', color: 'text-orange-500', path: '/productos' },
     { icon: Warehouse, label: 'Inventario', color: 'text-blue-500', path: '/inventario' },
     { icon: Users, label: 'Repartidores', color: 'text-indigo-500', path: '/usuarios' },
     { icon: Store, label: 'Clientes', color: 'text-teal-600', path: '/clientes' },
+    { icon: Truck, label: 'Entregas', color: 'text-amber-500', path: '/entregas' },
     { icon: BarChart2, label: 'Reportes', color: 'text-rose-500', path: '/reportes' },
     { icon: PrinterIcon, label: 'Impresora BT', color: 'text-slate-600', path: '/impresora' },
     { icon: FileText, label: 'Config. Ticket', color: 'text-violet-600', path: '/ticket' },

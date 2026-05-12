@@ -161,7 +161,7 @@ export default function Stock() {
                     className="mt-5 w-full py-3.5 rounded-2xl font-black text-base flex items-center justify-center gap-2 bg-primary text-white shadow-lg shadow-primary/30 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                     <Plus size={20} strokeWidth={2.5} />
-                    Agregar al registro
+                    Agregar
                 </button>
             </div>
 

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -25,18 +26,18 @@ export default {
           900: '#1e3282',
           950: '#131e4e',
         },
-        cheese: {
-          50: '#fffdf0',
-          100: '#fffbe0',
-          200: '#fff3c2',
-          300: '#ffe690',
-          400: '#ffd453',
-          500: '#ffb91a',
-          600: '#e69800',
-          700: '#c07200',
-          800: '#9b5807',
-          900: '#83470b',
-          950: '#4c2600',
+        ice: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9',
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
+          950: '#082f49',
         },
         background: {
           light: '#f6f6f8',

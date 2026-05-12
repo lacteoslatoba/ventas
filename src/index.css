@@ -3,28 +3,62 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --primary: 17, 82, 212;
+    --background: 240, 244, 248;
+    --foreground: 15, 23, 42;
+  }
+
+  .dark {
+    --background: 16, 22, 34;
+    --foreground: 248, 250, 252;
+  }
+
   html, body {
     height: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden;
-    /* Evitar el comportamiento de pull-to-refresh y el rebote */
     overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    @apply text-slate-800 font-sans antialiased;
-    background-color: #f8fafc;
-    background-image: radial-gradient(at 0% 0%, hsla(43, 100%, 80%, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsla(210, 100%, 90%, 0.1) 0px, transparent 50%);
+    @apply text-slate-800 dark:text-slate-200 font-sans antialiased;
+    background-color: rgb(var(--background));
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.08), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.12), transparent 25%),
+      radial-gradient(circle at 50% 100%, rgba(2, 132, 199, 0.05), transparent 40%);
     background-attachment: fixed;
     height: 100%;
     width: 100%;
+    transition: background-color 0.3s ease;
+  }
+
+  .dark body {
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.04), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.06), transparent 25%),
+      radial-gradient(circle at 50% 100%, rgba(2, 132, 199, 0.03), transparent 40%);
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/40 dark:border-slate-700/50 shadow-sm;
+  }
+  .glass-card {
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border border-white/50 dark:border-slate-800/50 shadow-xl;
   }
 }
 
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @media print {
@@ -35,7 +69,7 @@
   html, body {
     margin: 0;
     padding: 0;
-    background: white;
+    background: white !important;
   }
 
   body * {
@@ -53,8 +87,6 @@
     top: 0;
     padding: 0 !important;
     margin: 0 !important;
-    font-size: 8pt !important;
-    line-height: 1.2 !important;
   }
 
   .no-print {
@@ -62,22 +94,20 @@
   }
 }
 
-/* Scrollbar utilities para vistas móviles limpias */
+/* Scrollbar utilities */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 
 .no-scrollbar {
   -ms-overflow-style: none;
-  /* IE and Edge */
   scrollbar-width: none;
-  /* Firefox */
 }
 
 /* Custom soft scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -85,11 +115,35 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
+  @apply bg-slate-300 dark:bg-slate-700;
   border-radius: 20px;
 }
 
-/* Transition easing */
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-600;
+}
+
+/* Easing */
 .ease-out-expo {
   transition-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
 }
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}

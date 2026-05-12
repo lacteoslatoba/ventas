@@ -23,6 +23,10 @@ const NetworkIndicator = () => {
   const { isOnline, setOnlineStatus, syncToSupabase, fetchFromSupabase, showToast } = useStore();
 
   useEffect(() => {
+    // Dark Mode Handling
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', isDark);
+
     const handleOnline = () => {
       setOnlineStatus(true);
       showToast('Conexión restaurada — sincronizando...', 'success');
@@ -32,6 +36,11 @@ const NetworkIndicator = () => {
       setOnlineStatus(false);
       showToast('Sin conexión — los datos se guardan localmente', 'error');
     };
+
+    // Listen for system theme changes
+    const themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleThemeChange = (e) => document.documentElement.classList.toggle('dark', e.matches);
+    themeMedia.addEventListener('change', handleThemeChange);
 
     // Sistema de actualización automática de PWA
     const checkForUpdates = () => {
@@ -43,7 +52,6 @@ const NetworkIndicator = () => {
     };
 
     // Sistema de altura estable para móviles (evita brincos del menú)
-    let lastWidth = window.innerWidth;
     const updateHeight = () => {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -52,9 +60,9 @@ const NetworkIndicator = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('resize', updateHeight);
-    window.addEventListener('focus', checkForUpdates); // Check when app is focused (opened from home screen)
+    window.addEventListener('focus', checkForUpdates);
     updateHeight();
-    checkForUpdates(); // Check on initial mount
+    checkForUpdates();
 
     if (isOnline) {
       useStore.getState().fetchFromSupabase().then(() => {
@@ -67,6 +75,7 @@ const NetworkIndicator = () => {
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('resize', updateHeight);
       window.removeEventListener('focus', checkForUpdates);
+      themeMedia.removeEventListener('change', handleThemeChange);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -122,7 +131,7 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
   };
 
   return (
-    <div className="md:hidden flex-shrink-0 flex items-center justify-between bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-1.5 no-print z-40 relative">
+    <div className="md:hidden flex-shrink-0 flex items-center justify-between glass border-b border-slate-200 dark:border-slate-800 px-4 h-[60px] no-print z-40 relative shadow-sm">
       {/* Izquierda: Regresar o Hamburger/Menú */}
       <div className="w-10 relative">
         <button 
@@ -408,8 +417,8 @@ const BottomNavigation = ({ currentUser }) => {
   const isAdmin = currentUser?.role === 'admin';
   const isChofer = currentUser?.role === 'chofer' || currentUser?.name?.toLowerCase().includes('beto');
 
-  const navClass = "md:hidden fixed bottom-0 left-0 right-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 z-50 select-none no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]";
-  const navStyle = { height: 'calc(60px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' };
+  const navClass = "md:hidden fixed bottom-0 left-0 right-0 glass border-t border-slate-100 dark:border-slate-800 flex justify-around items-center px-4 z-50 select-none no-print shadow-[0_-8px_30px_rgba(0,0,0,0.08)]";
+  const navStyle = { height: 'calc(65px + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' };
 
   if (isChofer) {
     return (
@@ -422,7 +431,7 @@ const BottomNavigation = ({ currentUser }) => {
 
   return (
     <div className={navClass} style={navStyle}>
-      <NavItem to="/" icon={ShoppingCart} label="Registro" active={isActive('/') || isActive('/ventas')} />
+      <NavItem to="/" icon={ShoppingCart} label="Ventas" active={isActive('/') || isActive('/ventas')} />
       <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
       {isAdmin ? (
         <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
@@ -501,22 +510,26 @@ const OfflineBanner = () => {
 
   if (isOnline && !isSyncing && pendingCount === 0) return null;
 
-  if (isOnline && (isSyncing || pendingCount > 0)) {
-    return (
-      <div className="flex-shrink-0 bg-emerald-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-xs font-black no-print select-none">
-        <RefreshCw size={13} className="animate-spin" />
-        <span>Sincronizando {pendingCount > 0 ? `${pendingCount} cambio${pendingCount !== 1 ? 's' : ''}...` : '...'}</span>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex-shrink-0 bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-xs font-black no-print select-none">
-      <WifiOff size={13} />
-      <span>
-        Sin conexión — modo offline
-        {pendingCount > 0 && ` · ${pendingCount} cambio${pendingCount !== 1 ? 's' : ''} por sincronizar`}
-      </span>
+    <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[35] w-max max-w-[90%] pointer-events-none animate-in slide-in-from-top-2 duration-500">
+      <div className={`px-4 py-2 rounded-full shadow-lg border backdrop-blur-md flex items-center gap-2.5 text-[10px] font-black uppercase tracking-wider ${
+        isOnline 
+          ? 'bg-emerald-500/90 text-white border-emerald-400/30' 
+          : 'bg-amber-500/90 text-white border-amber-400/30'
+      }`}>
+        {isOnline ? (
+          <RefreshCw size={12} className="animate-spin" />
+        ) : (
+          <WifiOff size={12} className="animate-pulse" />
+        )}
+        
+        <span className="truncate">
+          {isOnline 
+            ? `Sincronizando ${pendingCount > 0 ? `${pendingCount} cambios` : 'datos'}...` 
+            : `Sin conexión · ${pendingCount > 0 ? `${pendingCount} pendientes` : 'modo local'}`
+          }
+        </span>
+      </div>
     </div>
   );
 };

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutGrid, ShoppingCart, Banknote, LogOut, 
-  Tag, Warehouse, Users, Store, Settings 
+  Tag, Warehouse, Users, Store, Settings, Truck
 } from 'lucide-react';
 import { useStore } from '../store';
 
@@ -28,6 +28,7 @@ export default function Sidebar() {
   const { currentUser, logout, ticketConfig } = useStore();
   const isActive = (path) => location.pathname === path || (path === '/' && location.pathname === '/ventas');
   const isAdmin = currentUser?.role === 'admin';
+  const isChofer = currentUser?.role === 'chofer' || currentUser?.name?.toLowerCase().includes('beto');
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-full p-2 no-print z-50">
@@ -48,18 +49,27 @@ export default function Sidebar() {
       <div className="flex-1 flex flex-col gap-1 overflow-y-auto custom-scrollbar pr-1">
         <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-2">Principal</p>
         
-        <SidebarItem 
-          to="/" 
-          icon={ShoppingCart} 
-          label="Vender" 
-          active={isActive('/')} 
-        />
+        {!isChofer && (
+          <SidebarItem 
+            to="/" 
+            icon={ShoppingCart} 
+            label="Registro"
+            active={isActive('/')} 
+          />
+        )}
         
         <SidebarItem 
           to="/reportes" 
           icon={Banknote} 
           label="Reportes" 
           active={isActive('/reportes')} 
+        />
+
+        <SidebarItem 
+          to="/entregas" 
+          icon={Truck} 
+          label="Entregas" 
+          active={isActive('/entregas')} 
         />
 
         {isAdmin && (

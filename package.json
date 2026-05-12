@@ -1,7 +1,7 @@
 {
-  "name": "ventas",
+  "name": "mar-de-hielo",
   "private": true,
-  "version": "1.2.54",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,7 +17,9 @@
     "@capacitor/core": "^8.3.1",
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/share": "^8.0.1",
+    "@nodelib/fs.scandir": "^2.1.5",
     "@supabase/supabase-js": "^2.98.0",
+    "jimp": "^1.6.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.577.0",
@@ -36,6 +38,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "pg": "^8.20.0",
     "playwright": "^1.59.1",
     "postcss": "^8.5.8",
     "rollup-plugin-visualizer": "^7.0.1",
