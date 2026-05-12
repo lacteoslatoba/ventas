@@ -120,19 +120,19 @@ export default function DeliveryReport() {
                         Sin entregas en este rango
                     </div>
                 ) : (
-                    <div className="flex items-end gap-3 overflow-x-auto pb-2 scrollbar-none snap-x" style={{ height: '140px' }}>
+                    <div className="flex items-end gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                         {chartData.map((d, i) => (
-                            <div key={i} className="flex flex-col items-center gap-1 snap-center group shrink-0" style={{ width: '44px' }}>
-                                <span className="text-[10px] font-black text-blue-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div key={i} className="flex flex-col items-center shrink-0" style={{ width: '36px' }}>
+                                <span className="text-[9px] font-black text-blue-700 mb-1 leading-none">
                                     {d.total}
                                 </span>
-                                <div className="relative overflow-hidden rounded-lg w-8" style={{ height: '100px', backgroundColor: '#cbd5e1' }}>
+                                <div className="relative overflow-hidden rounded-md w-5" style={{ height: '90px', backgroundColor: '#cbd5e1' }}>
                                     <div
-                                        className="absolute bottom-0 left-0 right-0 rounded-lg transition-all duration-700"
+                                        className="absolute bottom-0 left-0 right-0 rounded-md transition-all duration-700"
                                         style={{ height: `${d.heightPercent}%`, backgroundColor: '#1d4ed8' }}
                                     />
                                 </div>
-                                <span className="text-[9px] font-bold text-slate-400 uppercase">
+                                <span className="text-[8px] font-bold text-slate-400 uppercase mt-1 text-center leading-tight">
                                     {d.formattedDate}
                                 </span>
                             </div>
