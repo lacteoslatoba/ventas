@@ -11,6 +11,7 @@ export default defineConfig({
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit', hour12: true
     })),
+    __APP_VERSION__: JSON.stringify('1'),
   },
   plugins: [
     react(),
@@ -23,10 +24,10 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/instalar\.html/],
       },
       manifest: {
-        name: 'Ventas Repartidor',
-        short_name: 'Ventas',
-        description: 'App de ventas en ruta y control de inventario',
-        theme_color: '#ffb91a',
+        name: 'Purificadora Mar de Hielo',
+        short_name: 'Mar de Hielo',
+        description: 'App de ventas - Purificadora Mar de Hielo',
+        theme_color: '#1152d4',
         background_color: '#f8fafc',
         display: 'standalone',
         orientation: 'portrait',

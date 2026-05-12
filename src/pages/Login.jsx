@@ -177,7 +177,7 @@ export default function Login() {
                                             </span>
                                         </p>
                                         <div className="bg-emerald-500 text-white px-3 py-1 rounded-full text-[11px] font-black tracking-wide shadow-sm">
-                                            v {__BUILD_TIME__}
+                                            v{__APP_VERSION__}
                                         </div>
                                     </div>
                                 </div>
