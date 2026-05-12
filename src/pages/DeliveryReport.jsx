@@ -66,41 +66,31 @@ export default function DeliveryReport() {
             </div>
 
             {/* ── FILTRO DE FECHAS ── */}
-            <div className="mb-5">
-                <div className="flex items-center gap-2">
-                    <label className="relative flex-1">
-                        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Desde</span>
-                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 cursor-pointer hover:border-primary transition-colors">
-                            <CalendarIcon size={13} className="text-primary shrink-0" />
-                            <span className="text-xs font-black text-slate-700 dark:text-slate-200">
-                                {new Date(fromDate + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' })}
-                            </span>
-                        </div>
+            <div className="flex items-center gap-2 mb-5">
+                <div className="flex-1">
+                    <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Desde</span>
+                    <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 focus-within:border-primary transition-colors">
+                        <CalendarIcon size={14} className="text-primary shrink-0" />
                         <input
                             type="date"
                             value={fromDate}
                             onChange={e => setFromDate(e.target.value)}
-                            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                            className="bg-transparent border-none outline-none font-bold text-slate-700 dark:text-slate-200 text-sm w-full cursor-pointer"
                         />
-                    </label>
-
-                    <span className="text-slate-300 dark:text-slate-600 font-black text-lg mt-4">→</span>
-
-                    <label className="relative flex-1">
-                        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Hasta</span>
-                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 cursor-pointer hover:border-primary transition-colors">
-                            <CalendarIcon size={13} className="text-primary shrink-0" />
-                            <span className="text-xs font-black text-slate-700 dark:text-slate-200">
-                                {new Date(toDate + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' })}
-                            </span>
-                        </div>
+                    </div>
+                </div>
+                <span className="text-slate-300 dark:text-slate-600 font-black text-lg mt-5">→</span>
+                <div className="flex-1">
+                    <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Hasta</span>
+                    <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 focus-within:border-primary transition-colors">
+                        <CalendarIcon size={14} className="text-primary shrink-0" />
                         <input
                             type="date"
                             value={toDate}
                             onChange={e => setToDate(e.target.value)}
-                            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                            className="bg-transparent border-none outline-none font-bold text-slate-700 dark:text-slate-200 text-sm w-full cursor-pointer"
                         />
-                    </label>
+                    </div>
                 </div>
             </div>
 
