@@ -9,7 +9,7 @@ const toLocalDate = (dateStr) => {
 const todayStr = toLocalDate(new Date());
 
 export default function Stock() {
-    const { deliveries, addDelivery, currentUser } = useStore();
+    const { deliveries, addDelivery, currentUser, showToast } = useStore();
     const [selectedDate, setSelectedDate] = useState(todayStr);
 
     const isAdmin = currentUser?.role === 'admin';
@@ -66,6 +66,8 @@ export default function Stock() {
             bolsasHielo: Number(form.bolsasHielo) || 0,
             timestamp: new Date().toISOString()
         });
+        showToast('¡Registro guardado!', 'success');
+        setForm({ clientId: '', clientName: '', litrosPurificados: '', ventaGalones: '', bolsasHielo: '' });
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
     };
