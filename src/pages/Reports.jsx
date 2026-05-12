@@ -5,6 +5,7 @@ import { generateReportImage, generateReportPDF } from '../lib/reportExports';
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import SaleDetailModal from '../components/reports/SaleDetailModal';
 import ExpenseModal from '../components/reports/ExpenseModal';
+import DeliveryReport from './DeliveryReport';
 
 const toLocalDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -16,19 +17,76 @@ const DAYS_SHORT = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
 
 export default function Reports() {
     const { sales, users, clients, expenses, currentUser, ticketConfig, showToast, showConfirm, clearAllSales, addExpense, deleteExpense, deleteSale } = useStore();
-    const [filterUser, setFilterUser] = useState('');
-    const [repDateFilter, setRepDateFilter] = useState(todayStr);
-    const [selectedSale, setSelectedSale] = useState(null);
-    const [btPrinting, setBtPrinting] = useState(false);
-    const [showExpenseModal, setShowExpenseModal] = useState(false);
-    const [expenseDesc, setExpenseDesc] = useState('');
-    const [expenseAmount, setExpenseAmount] = useState('');
+    const isChofer = currentUser?.role === 'chofer';
+    const isAdmin  = currentUser?.role === 'admin';
 
     const now = new Date();
-    const [selectedDate, setSelectedDate] = useState(todayStr);
-    const [calMonth, setCalMonth] = useState({ year: now.getFullYear(), month: now.getMonth() });
 
-    const isAdmin = currentUser?.role === 'admin';
+    // ── Todos los hooks ANTES del return condicional ──────────────────────
+    const [filterUser,       setFilterUser]       = useState('');
+    const [selectedDate,     setSelectedDate]     = useState(todayStr);
+    const [calMonth,         setCalMonth]         = useState({ year: now.getFullYear(), month: now.getMonth() });
+    const [dateMode,         setDateMode]         = useState('day');   // 'day' | 'range'
+    const [rangeStart,       setRangeStart]       = useState('');
+    const [rangeEnd,         setRangeEnd]         = useState('');
+    const [selectedSale,     setSelectedSale]     = useState(null);
+    const [btPrinting,       setBtPrinting]       = useState(false);
+    const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [expenseDesc,      setExpenseDesc]      = useState('');
+    const [expenseAmount,    setExpenseAmount]    = useState('');
+
+    if (isChofer) return <DeliveryReport />;
+
+    // ── Filtro de fechas ─────────────────────────────────────────────────
+    const filterStart = dateMode === 'day' ? selectedDate : (rangeStart || selectedDate);
+    const filterEnd   = dateMode === 'day' ? selectedDate : (rangeEnd   || rangeStart || selectedDate);
+
+    const inDateFilter = (dateStr) => {
+        if (!dateStr) return false;
+        const d = toLocalDate(dateStr);
+        return d >= filterStart && d <= filterEnd;
+    };
+
+    // ── Click en día del calendario ──────────────────────────────────────
+    const handleDayClick = (dateStr) => {
+        if (dateMode === 'day') {
+            setSelectedDate(dateStr);
+        } else {
+            if (!rangeStart || (rangeStart && rangeEnd)) {
+                setRangeStart(dateStr);
+                setRangeEnd('');
+            } else {
+                if (dateStr < rangeStart) {
+                    setRangeEnd(rangeStart);
+                    setRangeStart(dateStr);
+                } else if (dateStr === rangeStart) {
+                    setRangeEnd('');
+                    setRangeStart('');
+                } else {
+                    setRangeEnd(dateStr);
+                }
+            }
+        }
+    };
+
+    // Estilo de un día en el calendario
+    const dayStyle = (dateStr) => {
+        const isToday = dateStr === todayStr;
+        if (dateMode === 'day') {
+            if (dateStr === selectedDate) return 'bg-gray-900 text-white';
+            if (isToday) return 'ring-2 ring-gray-900 text-gray-900 font-black';
+            return 'hover:bg-gray-50 text-gray-700';
+        }
+        // range mode
+        const start = rangeStart;
+        const end   = rangeEnd || rangeStart;
+        if (dateStr === start || dateStr === end) return 'bg-gray-900 text-white';
+        if (start && end && dateStr > start && dateStr < end) return 'bg-gray-200 text-gray-900';
+        if (isToday) return 'ring-2 ring-gray-900 text-gray-900 font-black';
+        return 'hover:bg-gray-50 text-gray-700';
+    };
+
+    // ── Datos filtrados ──────────────────────────────────────────────────
     const effectiveFilterUser = isAdmin ? filterUser : currentUser?.id;
 
     const userSales = effectiveFilterUser
@@ -41,25 +99,15 @@ export default function Reports() {
         return s;
     }, [sales, effectiveFilterUser]);
 
-    const daySales = isAdmin
-        ? userSales.filter(s => s?.date && toLocalDate(s.date) === selectedDate)
-        : repDateFilter
-            ? userSales.filter(s => s?.date && toLocalDate(s.date) === repDateFilter)
-            : userSales;
-
+    const daySales   = userSales.filter(s => s?.date && inDateFilter(s.date));
     const sortedSales = [...daySales].reverse();
 
     const dayTotal = daySales.reduce((s, sale) => s + (Number(sale?.total) || 0), 0);
     const dayCount = daySales.length;
 
-    // Totales por método de pago
-    const efectivoTotal = sortedSales
-        .filter(s => (s.paymentMethod || s.paymentmethod || 'efectivo') !== 'transferencia')
-        .reduce((acc, s) => acc + Number(s.total), 0);
-    const transferTotal = sortedSales
-        .filter(s => (s.paymentMethod || s.paymentmethod) === 'transferencia')
-        .reduce((acc, s) => acc + Number(s.total), 0);
-    const granTotal = sortedSales.reduce((acc, s) => acc + Number(s.total), 0);
+    const efectivoTotal = sortedSales.filter(s => (s.paymentMethod || s.paymentmethod || 'efectivo') !== 'transferencia').reduce((acc, s) => acc + Number(s.total), 0);
+    const transferTotal = sortedSales.filter(s => (s.paymentMethod || s.paymentmethod) === 'transferencia').reduce((acc, s) => acc + Number(s.total), 0);
+    const granTotal     = sortedSales.reduce((acc, s) => acc + Number(s.total), 0);
 
     const productMap = {};
     daySales.forEach(sale => {
@@ -71,82 +119,55 @@ export default function Reports() {
             productMap[it.name].money  += (Number(it.quantity) || 0) * (Number(it.price) || 0);
         });
     });
-    const productTotals = Object.entries(productMap).sort((a, b) => b[1].money - a[1].money);
+    const productTotals    = Object.entries(productMap).sort((a, b) => b[1].money - a[1].money);
     const grandTotalPieces = productTotals.reduce((s, [, v]) => s + v.pieces, 0);
     const grandTotalQty    = productTotals.reduce((s, [, v]) => s + v.qty, 0);
     const grandTotalMoney  = productTotals.reduce((s, [, v]) => s + v.money, 0);
 
-    // Gastos del día (operador)
     const dayExpenses = useMemo(() => {
         if (isAdmin) return [];
-        const dateKey = repDateFilter || todayStr;
         return (expenses || []).filter(e =>
-            (e.userId || e.userid) === currentUser?.id && toLocalDate(e.date) === dateKey
+            (e.userId || e.userid) === currentUser?.id && inDateFilter(e.date)
         );
-    }, [expenses, repDateFilter, currentUser, isAdmin]);
+    }, [expenses, filterStart, filterEnd, currentUser, isAdmin, dateMode]);
 
-    const totalExpenses = useMemo(() =>
-        dayExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0),
-    [dayExpenses]);
+    const totalExpenses = dayExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
 
-    // Datos para el PDF del operador (agrupados por cliente + gastos)
     const operatorPDFData = useMemo(() => {
         if (isAdmin) return null;
-        const fechaPDF = repDateFilter || todayStr;
-        const ventasPDF = (sales || []).filter(s =>
-            s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
-        );
-        const fechaLabel = new Date(fechaPDF + 'T12:00:00').toLocaleDateString('es-MX', {
-            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-        });
+        const ventasPDF = (sales || []).filter(s => s?.userId === currentUser?.id && inDateFilter(s.date));
+        const fechaLabel = dateMode === 'range' && rangeEnd
+            ? `${new Date(filterStart + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} – ${new Date(filterEnd + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}`
+            : new Date(filterStart + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         const clientMap = {};
         ventasPDF.forEach(sale => {
             const client = clients.find(c => c.id === sale.clientId);
             const key = sale.clientId || '__general__';
-            const name = client?.name || 'General';
-            if (!clientMap[key]) clientMap[key] = { name, pieces: 0, kg: 0, money: 0 };
+            if (!clientMap[key]) clientMap[key] = { name: client?.name || 'General', pieces: 0, kg: 0, money: 0 };
             (sale.items || []).forEach(it => {
                 clientMap[key].pieces += Number(it.pieces) || 0;
                 if ((it.unit || '').toLowerCase() === 'kg') clientMap[key].kg += Number(it.quantity) || 0;
                 clientMap[key].money += (Number(it.quantity) || 0) * (Number(it.price) || 0);
             });
         });
-        const clientRows = Object.values(clientMap).sort((a, b) => b.money - a.money);
-        const expensesForDay = (expenses || []).filter(e =>
-            (e.userId || e.userid) === currentUser?.id && toLocalDate(e.date) === fechaPDF
-        );
-        const totalMoney    = clientRows.reduce((s, r) => s + r.money, 0);
-        const expTotal      = expensesForDay.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+        const clientRows   = Object.values(clientMap).sort((a, b) => b.money - a.money);
+        const expensesForDay = (expenses || []).filter(e => (e.userId || e.userid) === currentUser?.id && inDateFilter(e.date));
+        const totalMoney   = clientRows.reduce((s, r) => s + r.money, 0);
+        const expTotal     = expensesForDay.reduce((s, e) => s + (Number(e.amount) || 0), 0);
         return {
-            fechaLabel,
-            ventasCount: ventasPDF.length,
-            clientRows,
-            totalPieces:    clientRows.reduce((s, r) => s + r.pieces, 0),
-            totalKg:        clientRows.reduce((s, r) => s + r.kg, 0),
-            totalMoney,
-            expenses:       expensesForDay,
-            totalExpenses:  expTotal,
-            netTotal:       totalMoney - expTotal,
+            fechaLabel, ventasCount: ventasPDF.length, clientRows,
+            totalPieces: clientRows.reduce((s, r) => s + r.pieces, 0),
+            totalKg:     clientRows.reduce((s, r) => s + r.kg, 0),
+            totalMoney, expenses: expensesForDay, totalExpenses: expTotal, netTotal: totalMoney - expTotal,
         };
-    }, [isAdmin, repDateFilter, sales, clients, currentUser, expenses]);
+    }, [isAdmin, filterStart, filterEnd, dateMode, rangeEnd, sales, clients, currentUser, expenses]);
 
-    // Generar imagen PNG renderizando HTML (idéntico al PDF)
-    const generateImage = async () => {
-        await generateReportImage({
-            operatorPDFData, sales, clients, currentUser, repDateFilter, todayStr, ticketConfig
-        });
-    };
+    const generateImage = async () => generateReportImage({ operatorPDFData, sales, clients, currentUser, repDateFilter: filterStart, todayStr, ticketConfig });
+    const generatePDF   = async () => generateReportPDF({ operatorPDFData, sales, clients, currentUser, repDateFilter: filterStart, todayStr, ticketConfig });
 
-    // Generar PDF directo con jsPDF (carga diferida para no aumentar el bundle inicial)
-    const generatePDF = async () => {
-        await generateReportPDF({
-            operatorPDFData, sales, clients, currentUser, repDateFilter, todayStr, ticketConfig
-        });
-    };
-
-    // Calendar
-    const daysInMonth   = new Date(calMonth.year, calMonth.month + 1, 0).getDate();
-    const firstWeekDay  = new Date(calMonth.year, calMonth.month, 1).getDay();
+    // ── Calendario ───────────────────────────────────────────────────────
+    const daysInMonth  = new Date(calMonth.year, calMonth.month + 1, 0).getDate();
+    const firstWeekDay = new Date(calMonth.year, calMonth.month, 1).getDay();
     const prevMonth = () => setCalMonth(p => p.month === 0 ? { year: p.year-1, month: 11 } : { ...p, month: p.month-1 });
     const nextMonth = () => setCalMonth(p => p.month === 11 ? { year: p.year+1, month: 0 } : { ...p, month: p.month+1 });
 
@@ -162,9 +183,80 @@ export default function Reports() {
         finally { setBtPrinting(false); }
     };
 
-    // Format selected date for display
-    const selDateObj = new Date(selectedDate + 'T12:00:00');
-    const selDateLabel = selDateObj.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+    // Etiqueta del período activo
+    const periodLabel = dateMode === 'range' && rangeStart && rangeEnd
+        ? `${new Date(rangeStart + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} → ${new Date(rangeEnd + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}`
+        : new Date((dateMode === 'day' ? selectedDate : (rangeStart || todayStr)) + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+
+    // ── Componente calendario reutilizable ───────────────────────────────
+    const Calendar = () => (
+        <div className="bg-white border border-gray-300 rounded-lg p-3">
+            {/* Toggle 1 día / Rango */}
+            <div className="flex gap-1 mb-3 bg-gray-100 rounded-lg p-1">
+                <button
+                    onClick={() => { setDateMode('day'); setRangeStart(''); setRangeEnd(''); }}
+                    className={`flex-1 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wide transition-all ${dateMode === 'day' ? 'bg-gray-900 text-white shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    1 Día
+                </button>
+                <button
+                    onClick={() => { setDateMode('range'); }}
+                    className={`flex-1 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wide transition-all ${dateMode === 'range' ? 'bg-gray-900 text-white shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    Rango
+                </button>
+            </div>
+
+            {/* Instrucción rango */}
+            {dateMode === 'range' && (
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">
+                    {!rangeStart ? 'Toca el día de inicio' : !rangeEnd ? 'Toca el día de fin' : 'Rango seleccionado'}
+                </p>
+            )}
+
+            {/* Nav mes */}
+            <div className="flex items-center justify-between mb-2">
+                <button onClick={prevMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
+                    <ChevronLeft size={14} className="text-gray-600" />
+                </button>
+                <p className="text-xs font-black text-gray-900 capitalize tracking-wide">
+                    {MONTHS[calMonth.month]} {calMonth.year}
+                </p>
+                <button onClick={nextMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
+                    <ChevronRight size={14} className="text-gray-600" />
+                </button>
+            </div>
+
+            {/* Días semana */}
+            <div className="grid grid-cols-7 mb-1 border-b border-gray-200 pb-1">
+                {DAYS_SHORT.map(d => <div key={d} className="text-center text-[9px] font-black text-gray-400 uppercase">{d}</div>)}
+            </div>
+
+            {/* Cuadrícula días */}
+            <div className="grid grid-cols-7 gap-y-0.5">
+                {Array.from({ length: firstWeekDay }).map((_, i) => <div key={`e${i}`} />)}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const day     = i + 1;
+                    const dateStr = `${calMonth.year}-${String(calMonth.month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                    const style   = dayStyle(dateStr);
+                    const hasSales = daysWithSales.has(dateStr);
+                    const isSelected = dateMode === 'day' ? dateStr === selectedDate : (dateStr === rangeStart || dateStr === rangeEnd);
+                    return (
+                        <button
+                            key={day}
+                            onClick={() => handleDayClick(dateStr)}
+                            className={`flex flex-col items-center justify-center w-full py-1.5 rounded transition-all active:scale-90 ${style}`}
+                        >
+                            <span className="text-[12px] font-black leading-none">{day}</span>
+                            {hasSales && (
+                                <span className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/70' : 'bg-gray-900'}`} />
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-white">
@@ -172,7 +264,7 @@ export default function Reports() {
             {/* ── HEADER ── */}
             <div className="px-4 pt-5 pb-4 md:px-8 flex items-center justify-between border-b-2 border-gray-900">
                 <div>
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{ticketConfig?.businessName || 'Lacteos La Toba'}</p>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{ticketConfig?.businessName || 'Purificadora Mar de Hielo'}</p>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mt-0.5">Reporte de Ventas</h1>
                 </div>
                 {isAdmin && (
@@ -190,82 +282,30 @@ export default function Reports() {
                 )}
             </div>
 
-            {/* ── BLOQUE EXCLUSIVO ADMIN ── */}
+            {/* ── ADMIN: filtro usuario + calendario ── */}
             {isAdmin && (
                 <div className="px-4 md:px-8 space-y-3 mb-2 pt-4">
-
-                    {/* Selector de repartidor — pills */}
+                    {/* Pills repartidores */}
                     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                         <button
                             onClick={() => setFilterUser('')}
                             className={`shrink-0 px-3 py-1.5 rounded text-[11px] font-black uppercase tracking-wider transition-all border ${!filterUser ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-500 hover:border-gray-900'}`}
-                        >
-                            Todos
-                        </button>
+                        >Todos</button>
                         {users.filter(u => u.pin && (u.name || '').toLowerCase() !== 'administrador').map(u => (
-                            <button
-                                key={u.id}
-                                onClick={() => setFilterUser(u.id)}
+                            <button key={u.id} onClick={() => setFilterUser(u.id)}
                                 className={`shrink-0 px-3 py-1.5 rounded text-[11px] font-black uppercase tracking-wider transition-all border ${filterUser === u.id ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-500 hover:border-gray-900'}`}
-                            >
-                                {u.name.split(' ')[0]}
-                            </button>
+                            >{u.name.split(' ')[0]}</button>
                         ))}
                     </div>
 
-                    {/* ── CALENDARIO ── */}
-                    <div className="bg-white border border-gray-300 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                            <button onClick={prevMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
-                                <ChevronLeft size={14} className="text-gray-600" />
-                            </button>
-                            <p className="text-xs font-black text-gray-900 capitalize tracking-wide">
-                                {MONTHS[calMonth.month]} {calMonth.year}
-                            </p>
-                            <button onClick={nextMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
-                                <ChevronRight size={14} className="text-gray-600" />
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-7 mb-1 border-b border-gray-200 pb-1">
-                            {DAYS_SHORT.map(d => (
-                                <div key={d} className="text-center text-[9px] font-black text-gray-400 uppercase">{d}</div>
-                            ))}
-                        </div>
-                        <div className="grid grid-cols-7 gap-y-0.5">
-                            {Array.from({ length: firstWeekDay }).map((_, i) => (
-                                <div key={`e${i}`} />
-                            ))}
-                            {Array.from({ length: daysInMonth }).map((_, i) => {
-                                const day  = i + 1;
-                                const dateStr = `${calMonth.year}-${String(calMonth.month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                                const isSelected = dateStr === selectedDate;
-                                const isToday    = dateStr === todayStr;
-                                const hasSales   = daysWithSales.has(dateStr);
-                                return (
-                                    <button
-                                        key={day}
-                                        onClick={() => setSelectedDate(dateStr)}
-                                        className={`flex flex-col items-center justify-center w-full py-1.5 rounded transition-all active:scale-90
-                                            ${isSelected ? 'bg-gray-900 text-white'
-                                            : isToday    ? 'ring-2 ring-gray-900 text-gray-900 font-black'
-                                            : 'hover:bg-gray-50 text-gray-700'}`}
-                                    >
-                                        <span className="text-[12px] font-black leading-none">{day}</span>
-                                        {hasSales && (
-                                            <span className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/70' : 'bg-gray-900'}`} />
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    <Calendar />
 
-                    {/* ── STATS DEL DÍA ── */}
+                    {/* Stats */}
                     <div className="grid grid-cols-2 gap-2">
                         <div className="bg-white p-4 border border-gray-900 rounded-lg">
-                            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-2">Total del día</p>
+                            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-2">Total del período</p>
                             <p className="text-2xl font-black text-gray-900 leading-none">${dayTotal.toFixed(2)}</p>
-                            <p className="text-[9px] text-gray-500 font-medium mt-1 capitalize truncate">{selDateLabel}</p>
+                            <p className="text-[9px] text-gray-500 font-medium mt-1 capitalize truncate">{periodLabel}</p>
                             <div className="mt-2 h-0.5 bg-gray-900 w-8" />
                         </div>
                         <div className="bg-white p-4 border border-gray-300 rounded-lg">
@@ -276,22 +316,19 @@ export default function Reports() {
                         </div>
                     </div>
 
-                    {/* ── DESGLOSE POR PRODUCTO ── */}
+                    {/* Desglose productos */}
                     {productTotals.length > 0 && (
                         <div className="bg-white border border-gray-900 rounded-lg overflow-hidden">
-                            {/* Título sección */}
                             <div className="px-3 py-2 border-b border-gray-900 flex items-center justify-between">
                                 <p className="text-[9px] font-black text-gray-900 uppercase tracking-[0.2em]">Desglose por Producto</p>
-                                <p className="text-[9px] font-bold text-gray-400">{selDateLabel}</p>
+                                <p className="text-[9px] font-bold text-gray-400 capitalize truncate max-w-[120px]">{periodLabel}</p>
                             </div>
-                            {/* Encabezado tabla */}
                             <div className="grid grid-cols-[1fr_52px_52px_84px] px-3 py-2.5 bg-gray-900">
                                 <p className="text-[9px] font-bold text-white uppercase tracking-widest">Producto</p>
                                 <p className="text-[9px] font-bold text-white uppercase tracking-widest text-right">Cant.</p>
                                 <p className="text-[9px] font-bold text-white uppercase tracking-widest text-right">Pzas</p>
                                 <p className="text-[9px] font-bold text-white uppercase tracking-widest text-right">Importe</p>
                             </div>
-                            {/* Filas */}
                             <div className="divide-y divide-gray-100">
                                 {productTotals.map(([name, { qty, pieces, money, unit }], idx) => (
                                     <div key={name} className={`grid grid-cols-[1fr_52px_52px_84px] items-center px-3 py-2.5 ${idx % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
@@ -301,109 +338,38 @@ export default function Reports() {
                                             </div>
                                             <p className="text-xs font-bold text-gray-800 truncate">{name}</p>
                                         </div>
-                                        <div className="text-right pr-1">
-                                            <span className="text-xs font-black text-gray-700">{qty % 1 === 0 ? qty : qty.toFixed(2)}</span>
-                                            <span className="text-[9px] text-gray-400 ml-0.5">{unit === 'Kg' ? 'kg' : 'u'}</span>
-                                        </div>
-                                        <div className="text-right pr-1">
-                                            {pieces > 0
-                                                ? <span className="text-xs font-black text-gray-800">{pieces}</span>
-                                                : <span className="text-gray-300 text-xs">—</span>
-                                            }
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="text-sm font-black text-gray-900">${money.toFixed(2)}</span>
-                                        </div>
+                                        <div className="text-right pr-1"><span className="text-xs font-black text-gray-700">{qty % 1 === 0 ? qty : qty.toFixed(2)}</span><span className="text-[9px] text-gray-400 ml-0.5">{unit === 'Kg' ? 'kg' : 'u'}</span></div>
+                                        <div className="text-right pr-1">{pieces > 0 ? <span className="text-xs font-black text-gray-800">{pieces}</span> : <span className="text-gray-300 text-xs">—</span>}</div>
+                                        <div className="text-right"><span className="text-sm font-black text-gray-900">${money.toFixed(2)}</span></div>
                                     </div>
                                 ))}
                             </div>
-                            {/* Fila totales */}
                             <div className="grid grid-cols-[1fr_52px_52px_84px] items-center px-3 py-3 bg-gray-50 border-t-2 border-gray-900">
                                 <p className="text-[9px] font-black text-gray-900 uppercase tracking-widest">TOTALES</p>
-                                <div className="text-right pr-1">
-                                    <span className="text-sm font-black text-gray-700">{grandTotalQty % 1 === 0 ? grandTotalQty : grandTotalQty.toFixed(2)}</span>
-                                </div>
-                                <div className="text-right pr-1">
-                                    <span className="text-sm font-black text-gray-900">{grandTotalPieces}</span>
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-sm font-black text-gray-900">${grandTotalMoney.toFixed(2)}</span>
-                                </div>
+                                <div className="text-right pr-1"><span className="text-sm font-black text-gray-700">{grandTotalQty % 1 === 0 ? grandTotalQty : grandTotalQty.toFixed(2)}</span></div>
+                                <div className="text-right pr-1"><span className="text-sm font-black text-gray-900">{grandTotalPieces}</span></div>
+                                <div className="text-right"><span className="text-sm font-black text-gray-900">${grandTotalMoney.toFixed(2)}</span></div>
                             </div>
                         </div>
                     )}
-
                 </div>
             )}
 
-            {/* ── CALENDARIO FIJO + BOTONES (OPERADOR) ── */}
+            {/* ── OPERADOR: calendario + botones ── */}
             {!isAdmin && (
                 <div className="px-4 md:px-8 mb-3 space-y-2 pt-4">
-                    {/* Calendario */}
-                    <div className="bg-white border border-gray-300 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                            <button onClick={prevMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
-                                <ChevronLeft size={14} className="text-gray-600" />
-                            </button>
-                            <p className="text-xs font-black text-gray-900 capitalize tracking-wide">
-                                {MONTHS[calMonth.month]} {calMonth.year}
-                            </p>
-                            <button onClick={nextMonth} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center active:scale-90 transition-all hover:border-gray-900">
-                                <ChevronRight size={14} className="text-gray-600" />
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-7 mb-1 border-b border-gray-200 pb-1">
-                            {DAYS_SHORT.map(d => (
-                                <div key={d} className="text-center text-[9px] font-black text-gray-400 uppercase">{d}</div>
-                            ))}
-                        </div>
-                        <div className="grid grid-cols-7 gap-y-0.5">
-                            {Array.from({ length: new Date(calMonth.year, calMonth.month, 1).getDay() }).map((_, i) => <div key={`e${i}`} />)}
-                            {Array.from({ length: new Date(calMonth.year, calMonth.month + 1, 0).getDate() }).map((_, i) => {
-                                const day = i + 1;
-                                const dateStr = `${calMonth.year}-${String(calMonth.month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                                const isSelected = dateStr === repDateFilter;
-                                const isToday    = dateStr === todayStr;
-                                const hasSales   = daysWithSales.has(dateStr);
-                                return (
-                                    <button
-                                        key={day}
-                                        onClick={() => setRepDateFilter(dateStr)}
-                                        className={`flex flex-col items-center justify-center w-full py-1.5 rounded transition-all active:scale-90
-                                            ${isSelected ? 'bg-gray-900 text-white'
-                                            : isToday    ? 'ring-2 ring-gray-900 text-gray-900 font-black'
-                                            : 'hover:bg-gray-50 text-gray-700'}`}
-                                    >
-                                        <span className="text-[12px] font-black leading-none">{day}</span>
-                                        {hasSales && <span className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/70' : 'bg-gray-900'}`} />}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Info + botones */}
+                    <Calendar />
                     <div className="flex items-center justify-between py-1">
                         <div>
-                            <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest capitalize">
-                                {new Date(repDateFilter + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
-                            </p>
+                            <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest capitalize truncate max-w-[180px]">{periodLabel}</p>
                             <p className="text-[9px] text-gray-400 font-bold">{sortedSales.length} {sortedSales.length === 1 ? 'venta registrada' : 'ventas registradas'}</p>
                         </div>
                         <div className="flex gap-2">
-                            <button
-                                onClick={generateImage}
-                                className="flex items-center gap-1.5 bg-white border border-gray-900 text-gray-900 font-black text-xs px-3 py-2 rounded active:scale-95 transition-all uppercase tracking-wide hover:bg-gray-900 hover:text-white"
-                            >
-                                <span className="material-symbols-outlined" style={{fontSize:15}}>image</span>
-                                IMG
+                            <button onClick={generateImage} className="flex items-center gap-1.5 bg-white border border-gray-900 text-gray-900 font-black text-xs px-3 py-2 rounded active:scale-95 transition-all uppercase tracking-wide hover:bg-gray-900 hover:text-white">
+                                <span className="material-symbols-outlined" style={{fontSize:15}}>image</span>IMG
                             </button>
-                            <button
-                                onClick={generatePDF}
-                                className="flex items-center gap-1.5 bg-gray-900 text-white font-black text-xs px-3 py-2 rounded active:scale-95 transition-all uppercase tracking-wide hover:bg-gray-700"
-                            >
-                                <span className="material-symbols-outlined" style={{fontSize:15}}>picture_as_pdf</span>
-                                PDF
+                            <button onClick={generatePDF} className="flex items-center gap-1.5 bg-gray-900 text-white font-black text-xs px-3 py-2 rounded active:scale-95 transition-all uppercase tracking-wide hover:bg-gray-700">
+                                <span className="material-symbols-outlined" style={{fontSize:15}}>picture_as_pdf</span>PDF
                             </button>
                         </div>
                     </div>
@@ -412,12 +378,8 @@ export default function Reports() {
 
             {/* ── LISTA DE VENTAS ── */}
             <div className="px-4 md:px-8 pb-6">
-
-                {/* Cabecera tabla */}
                 <div className="bg-gray-900 grid grid-cols-[72px_1fr_90px] px-3 py-2 rounded-t-lg mt-1">
-                    <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em]">
-                        {isAdmin ? 'Hora' : 'Fecha'}
-                    </span>
+                    <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em]">{isAdmin ? 'Hora' : 'Fecha'}</span>
                     <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em]">Cliente / Productos</span>
                     <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em] text-right">Total</span>
                 </div>
@@ -425,51 +387,33 @@ export default function Reports() {
                 <div className="border border-gray-900 border-t-0 rounded-b-lg overflow-hidden animate-in fade-in duration-300">
                     {sortedSales.length === 0 && (
                         <div className="text-center py-16 text-gray-400 bg-white">
-                            <p className="font-bold text-sm">
-                                {isAdmin ? 'Sin ventas en este día' : 'Sin transacciones registradas'}
-                            </p>
+                            <p className="font-bold text-sm">{isAdmin ? 'Sin ventas en el período seleccionado' : 'Sin transacciones registradas'}</p>
                         </div>
                     )}
-
                     {sortedSales.map((sale, i) => {
-                        const client  = clients.find(c => c.id === sale.clientId);
-                        const seller  = sale.userId === 'admin' ? 'Admin' : users.find(u => u.id === sale.userId)?.name?.split(' ')[0] || '—';
-                        const dateObj = new Date(sale.date);
-                        const fecha   = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                        const hora    = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-                        const pm      = sale.paymentMethod || sale.paymentmethod || 'efectivo';
+                        const client   = clients.find(c => c.id === sale.clientId);
+                        const seller   = sale.userId === 'admin' ? 'Admin' : users.find(u => u.id === sale.userId)?.name?.split(' ')[0] || '—';
+                        const dateObj  = new Date(sale.date);
+                        const fecha    = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                        const hora     = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                        const pm       = sale.paymentMethod || sale.paymentmethod || 'efectivo';
                         const isTransfer = pm === 'transferencia';
-
                         return (
-                            <button
-                                key={sale.id}
-                                onClick={() => setSelectedSale(sale)}
+                            <button key={sale.id} onClick={() => setSelectedSale(sale)}
                                 style={{ animationDelay: `${i * 20}ms` }}
                                 className={`w-full grid grid-cols-[72px_1fr_90px] items-stretch text-left border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 transition-colors animate-in fade-in ${i % 2 === 1 ? 'bg-gray-50/50' : 'bg-white'}`}
                             >
                                 <div className="shrink-0 px-3 py-3 border-r border-gray-100">
                                     {isAdmin ? (
-                                        <>
-                                            <p className="text-xs font-black text-gray-900 leading-tight">{hora}</p>
-                                            <p className="text-[10px] font-bold text-gray-500 leading-tight mt-0.5">{seller}</p>
-                                        </>
+                                        <><p className="text-xs font-black text-gray-900 leading-tight">{hora}</p><p className="text-[10px] font-bold text-gray-500 leading-tight mt-0.5">{seller}</p></>
                                     ) : (
-                                        <>
-                                            <p className="text-xs font-black text-gray-900 leading-tight">{fecha}</p>
-                                            <p className="text-[10px] font-semibold text-gray-400 leading-tight mt-0.5">{hora}</p>
-                                        </>
+                                        <><p className="text-xs font-black text-gray-900 leading-tight">{fecha}</p><p className="text-[10px] font-semibold text-gray-400 leading-tight mt-0.5">{hora}</p></>
                                     )}
                                 </div>
                                 <div className="min-w-0 px-3 py-3">
                                     <p className="text-sm font-bold text-gray-900 leading-snug">{client?.name || 'General'}</p>
-                                    {sale.items?.length > 0 && (
-                                        <p className="text-[10px] text-gray-400 font-medium leading-tight truncate mt-0.5">
-                                            {sale.items.map(it => it.name).join(', ')}
-                                        </p>
-                                    )}
-                                    <span className={`inline-flex items-center gap-1 mt-1 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 border rounded ${
-                                        isTransfer ? 'bg-white text-gray-600 border-gray-300' : 'bg-white text-gray-600 border-gray-300'
-                                    }`}>
+                                    {sale.items?.length > 0 && <p className="text-[10px] text-gray-400 font-medium leading-tight truncate mt-0.5">{sale.items.map(it => it.name).join(', ')}</p>}
+                                    <span className="inline-flex items-center gap-1 mt-1 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 border rounded bg-white text-gray-600 border-gray-300">
                                         <span className="material-symbols-outlined" style={{fontSize:10}}>{isTransfer ? 'account_balance' : 'payments'}</span>
                                         {isTransfer ? 'Transferencia' : 'Efectivo'}
                                     </span>
@@ -483,9 +427,9 @@ export default function Reports() {
                     })}
                 </div>
 
-                {/* ── RESUMEN POR MÉTODO DE PAGO ── */}
+                {/* Resumen pago */}
                 {sortedSales.length > 0 && (
-                    <div className="mt-3 mb-24 bg-white border border-gray-900 rounded-lg overflow-hidden">
+                    <div className="mt-3 mb-6 bg-white border border-gray-900 rounded-lg overflow-hidden">
                         <div className="px-4 py-2.5 bg-gray-900 flex items-center justify-between">
                             <p className="text-[9px] font-bold text-white uppercase tracking-widest">Resumen de Cobro</p>
                             <p className="text-[9px] font-bold text-gray-400">{sortedSales.length} {sortedSales.length === 1 ? 'venta' : 'ventas'}</p>
@@ -493,24 +437,18 @@ export default function Reports() {
                         <div className="divide-y divide-gray-100">
                             {efectivoTotal > 0 && (
                                 <div className="flex items-center justify-between px-4 py-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-gray-500" style={{fontSize:15}}>payments</span>
-                                        <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Efectivo</span>
-                                    </div>
+                                    <div className="flex items-center gap-2"><span className="material-symbols-outlined text-gray-500" style={{fontSize:15}}>payments</span><span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Efectivo</span></div>
                                     <span className="text-sm font-black text-gray-900">${efectivoTotal.toFixed(2)}</span>
                                 </div>
                             )}
                             {transferTotal > 0 && (
                                 <div className="flex items-center justify-between px-4 py-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-gray-500" style={{fontSize:15}}>account_balance</span>
-                                        <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Transferencia</span>
-                                    </div>
+                                    <div className="flex items-center gap-2"><span className="material-symbols-outlined text-gray-500" style={{fontSize:15}}>account_balance</span><span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Transferencia</span></div>
                                     <span className="text-sm font-black text-gray-900">${transferTotal.toFixed(2)}</span>
                                 </div>
                             )}
                             <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t-2 border-gray-900">
-                                <span className="text-xs font-black text-gray-900 uppercase tracking-widest">Total del Día</span>
+                                <span className="text-xs font-black text-gray-900 uppercase tracking-widest">Total del Período</span>
                                 <span className="text-lg font-black text-gray-900">${granTotal.toFixed(2)}</span>
                             </div>
                         </div>
@@ -518,21 +456,16 @@ export default function Reports() {
                 )}
             </div>
 
-            {/* ── GASTOS DEL DÍA (solo operador) ── */}
+            {/* ── GASTOS (solo operador) ── */}
             {!isAdmin && (
                 <div className="px-4 md:px-8 pb-24">
                     <div className="bg-white border border-gray-900 rounded-lg overflow-hidden">
                         <div className="px-4 py-2.5 bg-gray-900 flex items-center justify-between">
-                            <p className="text-[9px] font-bold text-white uppercase tracking-widest">Gastos del Día</p>
-                            <button
-                                onClick={() => setShowExpenseModal(true)}
-                                className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white rounded px-2 py-0.5 text-[9px] font-black uppercase tracking-wide transition-all active:scale-95"
-                            >
-                                <Plus size={10} />
-                                Agregar
+                            <p className="text-[9px] font-bold text-white uppercase tracking-widest">Gastos del Período</p>
+                            <button onClick={() => setShowExpenseModal(true)} className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white rounded px-2 py-0.5 text-[9px] font-black uppercase tracking-wide transition-all active:scale-95">
+                                <Plus size={10} />Agregar
                             </button>
                         </div>
-
                         {dayExpenses.length === 0 ? (
                             <p className="text-center text-xs text-gray-400 font-medium py-6">Sin gastos registrados</p>
                         ) : (
@@ -542,18 +475,11 @@ export default function Reports() {
                                         <span className="material-symbols-outlined text-gray-400" style={{fontSize:16}}>receipt_long</span>
                                         <p className="flex-1 text-sm font-bold text-gray-700 truncate">{exp.description}</p>
                                         <p className="text-sm font-black text-gray-900 shrink-0">-${Number(exp.amount).toFixed(2)}</p>
-                                        <button
-                                            onClick={() => deleteExpense(exp.id)}
-                                            className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-500 active:scale-90 transition-all"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
+                                        <button onClick={() => deleteExpense(exp.id)} className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-500 active:scale-90 transition-all"><Trash2 size={14} /></button>
                                     </div>
                                 ))}
                             </div>
                         )}
-
-                        {/* Resumen ventas – gastos – neto */}
                         <div className="border-t-2 border-gray-900 divide-y divide-gray-100">
                             <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50">
                                 <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Ventas</span>
@@ -566,7 +492,7 @@ export default function Reports() {
                                 </div>
                             )}
                             <div className="flex items-center justify-between px-4 py-3 bg-white">
-                                <span className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Neto del Día</span>
+                                <span className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Neto del Período</span>
                                 <span className="text-xl font-black text-gray-900">${(dayTotal - totalExpenses).toFixed(2)}</span>
                             </div>
                         </div>
@@ -574,34 +500,23 @@ export default function Reports() {
                 </div>
             )}
 
-            {/* Modal agregar gasto */}
+            {/* Modales */}
             {showExpenseModal && (
                 <ExpenseModal
-                    expenseDesc={expenseDesc}
-                    setExpenseDesc={setExpenseDesc}
-                    expenseAmount={expenseAmount}
-                    setExpenseAmount={setExpenseAmount}
+                    expenseDesc={expenseDesc} setExpenseDesc={setExpenseDesc}
+                    expenseAmount={expenseAmount} setExpenseAmount={setExpenseAmount}
                     setShowExpenseModal={setShowExpenseModal}
-                    addExpense={addExpense}
-                    currentUser={currentUser}
-                    repDateFilter={repDateFilter}
-                    showToast={showToast}
+                    addExpense={addExpense} currentUser={currentUser}
+                    repDateFilter={filterStart} showToast={showToast}
                 />
             )}
 
-            {/* ── DETALLE DE VENTA ── */}
             <SaleDetailModal
-                selectedSale={selectedSale}
-                clients={clients}
-                users={users}
-                btPrinting={btPrinting}
-                handleBTPrint={handleBTPrint}
-                deleteSale={deleteSale}
-                setSelectedSale={setSelectedSale}
-                showConfirm={showConfirm}
+                selectedSale={selectedSale} clients={clients} users={users}
+                btPrinting={btPrinting} handleBTPrint={handleBTPrint}
+                deleteSale={deleteSale} setSelectedSale={setSelectedSale} showConfirm={showConfirm}
             />
 
-            {/* TICKET IMPRIMIBLE */}
             {selectedSale && (
                 <div id="ticket-print-area" className="hidden print:block">
                     <div style={{ fontFamily: 'monospace', fontSize: '8pt', lineHeight: '1.2', width: `${(ticketConfig.paperWidth || 58) - 2}mm`, margin: '0', padding: '2mm 0', color: '#000' }}>
@@ -640,7 +555,6 @@ export default function Reports() {
                     </div>
                 </div>
             )}
-
         </div>
     );
 }
