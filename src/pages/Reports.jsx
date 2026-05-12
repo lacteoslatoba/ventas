@@ -245,12 +245,10 @@ export default function Reports() {
                         <button
                             key={day}
                             onClick={() => handleDayClick(dateStr)}
-                            className={`flex flex-col items-center justify-center w-full py-1.5 rounded transition-all active:scale-90 ${style}`}
+                            className={`flex flex-col items-center justify-center w-full py-1.5 rounded-lg transition-all active:scale-90 text-[11px] font-black ${style}`}
                         >
-                            <span className="text-[12px] font-black leading-none">{day}</span>
-                            {hasSales && (
-                                <span className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/70' : 'bg-gray-900'}`} />
-                            )}
+                            <span>{day}</span>
+                            {hasSales && <span className="w-1.5 h-1.5 rounded-full bg-current mt-0.5 opacity-60" />}
                         </button>
                     );
                 })}
@@ -259,13 +257,13 @@ export default function Reports() {
     );
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="p-4 md:p-8 max-w-3xl mx-auto animate-in fade-in duration-300">
 
             {/* ── HEADER ── */}
-            <div className="px-4 pt-5 pb-4 md:px-8 flex items-center justify-between border-b-2 border-gray-900">
+            <div className="flex items-center justify-between border-b-2 border-slate-200 dark:border-slate-800 pb-4 mb-5">
                 <div>
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{ticketConfig?.businessName || 'Purificadora Mar de Hielo'}</p>
-                    <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mt-0.5">Reporte de Ventas</h1>
+                    <h1 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none">Reporte de Ventas</h1>
+                    <p className="text-[11px] font-bold text-slate-400 mt-1">{ticketConfig?.businessName || 'Purificadora Mar de Hielo'}</p>
                 </div>
                 {isAdmin && (
                     <button
@@ -274,26 +272,26 @@ export default function Reports() {
                             confirmText: 'Vaciar todo', danger: true,
                             onConfirm: async () => { await clearAllSales(); showToast('Ventas eliminadas', 'success'); },
                         })}
-                        className="w-9 h-9 bg-white border border-gray-300 text-gray-400 rounded-lg flex items-center justify-center active:scale-90 transition-all hover:border-red-400 hover:text-red-400"
+                        className="w-10 h-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 rounded-2xl flex items-center justify-center active:scale-95 transition-all hover:border-red-400 hover:text-red-400 shadow-sm"
                         title="Vaciar todas las ventas"
                     >
-                        <span className="material-symbols-outlined" style={{fontSize:18}}>delete_sweep</span>
+                        <Trash2 size={18} />
                     </button>
                 )}
             </div>
 
             {/* ── ADMIN: filtro usuario + calendario ── */}
             {isAdmin && (
-                <div className="px-4 md:px-8 space-y-3 mb-2 pt-4">
+                <div className="space-y-3 mb-2">
                     {/* Pills repartidores */}
-                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none mb-2">
                         <button
                             onClick={() => setFilterUser('')}
-                            className={`shrink-0 px-3 py-1.5 rounded text-[11px] font-black uppercase tracking-wider transition-all border ${!filterUser ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-500 hover:border-gray-900'}`}
+                            className={`shrink-0 px-4 py-2 rounded-full font-black text-[11px] uppercase tracking-widest transition-all ${!filterUser ? 'bg-primary text-white shadow-md shadow-primary/30' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'}`}
                         >Todos</button>
                         {users.filter(u => u.pin && (u.name || '').toLowerCase() !== 'administrador').map(u => (
                             <button key={u.id} onClick={() => setFilterUser(u.id)}
-                                className={`shrink-0 px-3 py-1.5 rounded text-[11px] font-black uppercase tracking-wider transition-all border ${filterUser === u.id ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-500 hover:border-gray-900'}`}
+                                className={`shrink-0 px-4 py-2 rounded-full font-black text-[11px] uppercase tracking-widest transition-all ${filterUser === u.id ? 'bg-primary text-white shadow-md shadow-primary/30' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'}`}
                             >{u.name.split(' ')[0]}</button>
                         ))}
                     </div>
@@ -301,54 +299,61 @@ export default function Reports() {
                     <Calendar />
 
                     {/* Stats */}
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-white p-4 border border-gray-900 rounded-lg">
-                            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-2">Total del período</p>
-                            <p className="text-2xl font-black text-gray-900 leading-none">${dayTotal.toFixed(2)}</p>
-                            <p className="text-[9px] text-gray-500 font-medium mt-1 capitalize truncate">{periodLabel}</p>
-                            <div className="mt-2 h-0.5 bg-gray-900 w-8" />
+                    <div className="grid grid-cols-2 gap-3 mb-5">
+                        <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full -z-0"></div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 relative z-10">Ingresos</p>
+                            <p className="text-3xl font-black text-slate-800 dark:text-slate-100 leading-none tracking-tighter relative z-10">${dayTotal.toFixed(2)}</p>
+                            <p className="text-[10px] text-slate-500 font-bold mt-2 capitalize truncate relative z-10">{periodLabel}</p>
                         </div>
-                        <div className="bg-white p-4 border border-gray-300 rounded-lg">
-                            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-2">Transacciones</p>
-                            <p className="text-2xl font-black text-gray-900 leading-none">{dayCount}</p>
-                            <p className="text-[9px] text-gray-500 font-medium mt-1">{dayCount === 1 ? 'venta registrada' : 'ventas registradas'}</p>
-                            <div className="mt-2 h-0.5 bg-gray-300 w-8" />
+                        <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-slate-100 dark:bg-slate-700/50 rounded-bl-full -z-0"></div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 relative z-10">Transacciones</p>
+                            <p className="text-3xl font-black text-slate-800 dark:text-slate-100 leading-none tracking-tighter relative z-10">{dayCount}</p>
+                            <p className="text-[10px] text-slate-500 font-bold mt-2 relative z-10">{dayCount === 1 ? 'venta' : 'ventas'}</p>
                         </div>
                     </div>
 
                     {/* Desglose productos */}
                     {productTotals.length > 0 && (
-                        <div className="bg-white border border-gray-900 rounded-lg overflow-hidden">
-                            <div className="px-3 py-2 border-b border-gray-900 flex items-center justify-between">
-                                <p className="text-[9px] font-black text-gray-900 uppercase tracking-[0.2em]">Desglose por Producto</p>
-                                <p className="text-[9px] font-bold text-gray-400 capitalize truncate max-w-[120px]">{periodLabel}</p>
+                        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mb-5">
+                            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                                <p className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">Desglose por Producto</p>
+                                <p className="text-[10px] font-bold text-slate-400 capitalize truncate max-w-[120px]">{periodLabel}</p>
                             </div>
-                            <div className="grid grid-cols-[1fr_52px_52px_84px] px-3 py-2.5 bg-gray-900">
-                                <p className="text-[9px] font-bold text-white uppercase tracking-widest">Producto</p>
-                                <p className="text-[9px] font-bold text-white uppercase tracking-widest text-right">Cant.</p>
-                                <p className="text-[9px] font-bold text-white uppercase tracking-widest text-right">Pzas</p>
-                                <p className="text-[9px] font-bold text-white uppercase tracking-widest text-right">Importe</p>
+                            <div className="grid grid-cols-[1fr_52px_52px_84px] px-5 py-3 border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Producto</p>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Cant.</p>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Pzas</p>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Importe</p>
                             </div>
-                            <div className="divide-y divide-gray-100">
+                            <div className="divide-y divide-slate-50 dark:divide-slate-700/30">
                                 {productTotals.map(([name, { qty, pieces, money, unit }], idx) => (
-                                    <div key={name} className={`grid grid-cols-[1fr_52px_52px_84px] items-center px-3 py-2.5 ${idx % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <div className="w-5 h-5 rounded border border-gray-300 flex items-center justify-center shrink-0">
-                                                <span className="text-[9px] font-black text-gray-600 uppercase">{name.charAt(0)}</span>
+                                    <div key={name} className="grid grid-cols-[1fr_52px_52px_84px] items-center px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                                <span className="text-xs font-black uppercase">{name.charAt(0)}</span>
                                             </div>
-                                            <p className="text-xs font-bold text-gray-800 truncate">{name}</p>
+                                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">{name}</p>
                                         </div>
-                                        <div className="text-right pr-1"><span className="text-xs font-black text-gray-700">{qty % 1 === 0 ? qty : qty.toFixed(2)}</span><span className="text-[9px] text-gray-400 ml-0.5">{unit === 'Kg' ? 'kg' : 'u'}</span></div>
-                                        <div className="text-right pr-1">{pieces > 0 ? <span className="text-xs font-black text-gray-800">{pieces}</span> : <span className="text-gray-300 text-xs">—</span>}</div>
-                                        <div className="text-right"><span className="text-sm font-black text-gray-900">${money.toFixed(2)}</span></div>
+                                        <div className="text-right pr-1">
+                                            <span className="text-sm font-black text-slate-700 dark:text-slate-300">{qty % 1 === 0 ? qty : qty.toFixed(2)}</span>
+                                            <span className="text-[10px] text-slate-400 ml-1 font-bold">{unit === 'Kg' ? 'kg' : 'u'}</span>
+                                        </div>
+                                        <div className="text-right pr-1">
+                                            {pieces > 0 ? <span className="text-sm font-black text-slate-800 dark:text-slate-200">{pieces}</span> : <span className="text-slate-300 dark:text-slate-600 text-sm">—</span>}
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-base font-black text-slate-900 dark:text-white">${money.toFixed(2)}</span>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
-                            <div className="grid grid-cols-[1fr_52px_52px_84px] items-center px-3 py-3 bg-gray-50 border-t-2 border-gray-900">
-                                <p className="text-[9px] font-black text-gray-900 uppercase tracking-widest">TOTALES</p>
-                                <div className="text-right pr-1"><span className="text-sm font-black text-gray-700">{grandTotalQty % 1 === 0 ? grandTotalQty : grandTotalQty.toFixed(2)}</span></div>
-                                <div className="text-right pr-1"><span className="text-sm font-black text-gray-900">{grandTotalPieces}</span></div>
-                                <div className="text-right"><span className="text-sm font-black text-gray-900">${grandTotalMoney.toFixed(2)}</span></div>
+                            <div className="grid grid-cols-[1fr_52px_52px_84px] items-center px-5 py-4 bg-primary/5 dark:bg-primary/10 border-t border-primary/20">
+                                <p className="text-[11px] font-black text-primary uppercase tracking-widest">TOTALES</p>
+                                <div className="text-right pr-1"><span className="text-sm font-black text-slate-800 dark:text-slate-200">{grandTotalQty % 1 === 0 ? grandTotalQty : grandTotalQty.toFixed(2)}</span></div>
+                                <div className="text-right pr-1"><span className="text-sm font-black text-slate-800 dark:text-slate-200">{grandTotalPieces}</span></div>
+                                <div className="text-right"><span className="text-base font-black text-slate-900 dark:text-white">${grandTotalMoney.toFixed(2)}</span></div>
                             </div>
                         </div>
                     )}
@@ -357,19 +362,19 @@ export default function Reports() {
 
             {/* ── OPERADOR: calendario + botones ── */}
             {!isAdmin && (
-                <div className="px-4 md:px-8 mb-3 space-y-2 pt-4">
+                <div className="mb-5 space-y-4">
                     <Calendar />
-                    <div className="flex items-center justify-between py-1">
-                        <div>
-                            <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest capitalize truncate max-w-[180px]">{periodLabel}</p>
-                            <p className="text-[9px] text-gray-400 font-bold">{sortedSales.length} {sortedSales.length === 1 ? 'venta registrada' : 'ventas registradas'}</p>
+                    <div className="flex items-center justify-between py-1 bg-white dark:bg-slate-800 rounded-3xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm">
+                        <div className="px-2">
+                            <p className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest capitalize truncate max-w-[150px]">{periodLabel}</p>
+                            <p className="text-[10px] text-slate-400 font-bold mt-1">{sortedSales.length} {sortedSales.length === 1 ? 'venta registrada' : 'ventas registradas'}</p>
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={generateImage} className="flex items-center gap-1.5 bg-white border border-gray-900 text-gray-900 font-black text-xs px-3 py-2 rounded active:scale-95 transition-all uppercase tracking-wide hover:bg-gray-900 hover:text-white">
-                                <span className="material-symbols-outlined" style={{fontSize:15}}>image</span>IMG
+                            <button onClick={generateImage} className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs px-4 py-2.5 rounded-2xl active:scale-95 transition-all uppercase tracking-wide hover:bg-slate-200 dark:hover:bg-slate-600">
+                                <span className="material-symbols-outlined" style={{fontSize:16}}>image</span>IMG
                             </button>
-                            <button onClick={generatePDF} className="flex items-center gap-1.5 bg-gray-900 text-white font-black text-xs px-3 py-2 rounded active:scale-95 transition-all uppercase tracking-wide hover:bg-gray-700">
-                                <span className="material-symbols-outlined" style={{fontSize:15}}>picture_as_pdf</span>PDF
+                            <button onClick={generatePDF} className="flex items-center gap-1.5 bg-primary text-white font-black text-xs px-4 py-2.5 rounded-2xl active:scale-95 transition-all uppercase tracking-wide hover:bg-primary/90 shadow-sm shadow-primary/30">
+                                <span className="material-symbols-outlined" style={{fontSize:16}}>picture_as_pdf</span>PDF
                             </button>
                         </div>
                     </div>
@@ -377,79 +382,99 @@ export default function Reports() {
             )}
 
             {/* ── LISTA DE VENTAS ── */}
-            <div className="px-4 md:px-8 pb-6">
-                <div className="bg-gray-900 grid grid-cols-[72px_1fr_90px] px-3 py-2 rounded-t-lg mt-1">
-                    <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em]">{isAdmin ? 'Hora' : 'Fecha'}</span>
-                    <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em]">Cliente / Productos</span>
-                    <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em] text-right">Total</span>
+            <div className="mb-8">
+                <div className="flex items-center justify-between mb-4 px-2">
+                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        Transacciones
+                    </h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{sortedSales.length} {sortedSales.length === 1 ? 'registro' : 'registros'}</p>
                 </div>
 
-                <div className="border border-gray-900 border-t-0 rounded-b-lg overflow-hidden animate-in fade-in duration-300">
-                    {sortedSales.length === 0 && (
-                        <div className="text-center py-16 text-gray-400 bg-white">
-                            <p className="font-bold text-sm">{isAdmin ? 'Sin ventas en el período seleccionado' : 'Sin transacciones registradas'}</p>
-                        </div>
-                    )}
-                    {sortedSales.map((sale, i) => {
-                        const client   = clients.find(c => c.id === sale.clientId);
-                        const seller   = sale.userId === 'admin' ? 'Admin' : users.find(u => u.id === sale.userId)?.name?.split(' ')[0] || '—';
-                        const dateObj  = new Date(sale.date);
-                        const fecha    = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                        const hora     = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-                        const pm       = sale.paymentMethod || sale.paymentmethod || 'efectivo';
-                        const isTransfer = pm === 'transferencia';
-                        return (
-                            <button key={sale.id} onClick={() => setSelectedSale(sale)}
-                                style={{ animationDelay: `${i * 20}ms` }}
-                                className={`w-full grid grid-cols-[72px_1fr_90px] items-stretch text-left border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 transition-colors animate-in fade-in ${i % 2 === 1 ? 'bg-gray-50/50' : 'bg-white'}`}
-                            >
-                                <div className="shrink-0 px-3 py-3 border-r border-gray-100">
-                                    {isAdmin ? (
-                                        <><p className="text-xs font-black text-gray-900 leading-tight">{hora}</p><p className="text-[10px] font-bold text-gray-500 leading-tight mt-0.5">{seller}</p></>
-                                    ) : (
-                                        <><p className="text-xs font-black text-gray-900 leading-tight">{fecha}</p><p className="text-[10px] font-semibold text-gray-400 leading-tight mt-0.5">{hora}</p></>
-                                    )}
-                                </div>
-                                <div className="min-w-0 px-3 py-3">
-                                    <p className="text-sm font-bold text-gray-900 leading-snug">{client?.name || 'General'}</p>
-                                    {sale.items?.length > 0 && <p className="text-[10px] text-gray-400 font-medium leading-tight truncate mt-0.5">{sale.items.map(it => it.name).join(', ')}</p>}
-                                    <span className="inline-flex items-center gap-1 mt-1 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 border rounded bg-white text-gray-600 border-gray-300">
-                                        <span className="material-symbols-outlined" style={{fontSize:10}}>{isTransfer ? 'account_balance' : 'payments'}</span>
-                                        {isTransfer ? 'Transferencia' : 'Efectivo'}
-                                    </span>
-                                </div>
-                                <div className="text-right shrink-0 px-3 py-3 border-l border-gray-100">
-                                    <p className="text-base font-black text-gray-900 whitespace-nowrap">${Number(sale.total).toFixed(2)}</p>
-                                    <p className="text-[9px] text-gray-400 font-bold">{sale.items?.length || 0} art.</p>
-                                </div>
-                            </button>
-                        );
-                    })}
+                <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mb-5">
+                    <div className="grid grid-cols-[80px_1fr_90px] px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{isAdmin ? 'Hora' : 'Fecha'}</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detalle</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total</span>
+                    </div>
+
+                    <div className="divide-y divide-slate-50 dark:divide-slate-700/30">
+                        {sortedSales.length === 0 && (
+                            <div className="text-center py-12">
+                                <p className="font-bold text-sm text-slate-400">{isAdmin ? 'Sin ventas en el período seleccionado' : 'Sin transacciones registradas'}</p>
+                            </div>
+                        )}
+                        {sortedSales.map((sale, i) => {
+                            const client   = clients.find(c => c.id === sale.clientId);
+                            const seller   = sale.userId === 'admin' ? 'Admin' : users.find(u => u.id === sale.userId)?.name?.split(' ')[0] || '—';
+                            const dateObj  = new Date(sale.date);
+                            const fecha    = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                            const hora     = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                            const pm       = sale.paymentMethod || sale.paymentmethod || 'efectivo';
+                            const isTransfer = pm === 'transferencia';
+                            return (
+                                <button key={sale.id} onClick={() => setSelectedSale(sale)}
+                                    style={{ animationDelay: `${i * 20}ms` }}
+                                    className="w-full grid grid-cols-[80px_1fr_90px] items-center text-left hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors animate-in fade-in"
+                                >
+                                    <div className="px-5 py-4 border-r border-slate-50 dark:border-slate-700/30">
+                                        {isAdmin ? (
+                                            <><p className="text-sm font-black text-slate-800 dark:text-slate-200">{hora}</p><p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">{seller}</p></>
+                                        ) : (
+                                            <><p className="text-sm font-black text-slate-800 dark:text-slate-200">{fecha}</p><p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">{hora}</p></>
+                                        )}
+                                    </div>
+                                    <div className="min-w-0 px-4 py-4">
+                                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-snug truncate">{client?.name || 'General'}</p>
+                                        {sale.items?.length > 0 && <p className="text-[10px] text-slate-400 font-bold leading-tight truncate mt-1">{sale.items.map(it => it.name).join(', ')}</p>}
+                                        <div className="mt-2.5">
+                                            <span className={`inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${isTransfer ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'}`}>
+                                                <span className="material-symbols-outlined" style={{fontSize:12}}>{isTransfer ? 'account_balance' : 'payments'}</span>
+                                                {isTransfer ? 'Transf.' : 'Efectivo'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right px-5 py-4 border-l border-slate-50 dark:border-slate-700/30">
+                                        <p className="text-base font-black text-slate-900 dark:text-white">${Number(sale.total).toFixed(2)}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{sale.items?.length || 0} art.</p>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 {/* Resumen pago */}
                 {sortedSales.length > 0 && (
-                    <div className="mt-3 mb-6 bg-white border border-gray-900 rounded-lg overflow-hidden">
-                        <div className="px-4 py-2.5 bg-gray-900 flex items-center justify-between">
-                            <p className="text-[9px] font-bold text-white uppercase tracking-widest">Resumen de Cobro</p>
-                            <p className="text-[9px] font-bold text-gray-400">{sortedSales.length} {sortedSales.length === 1 ? 'venta' : 'ventas'}</p>
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mb-5">
+                        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                            <p className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">Resumen de Cobro</p>
                         </div>
-                        <div className="divide-y divide-gray-100">
+                        <div className="divide-y divide-slate-50 dark:divide-slate-700/30">
                             {efectivoTotal > 0 && (
-                                <div className="flex items-center justify-between px-4 py-3">
-                                    <div className="flex items-center gap-2"><span className="material-symbols-outlined text-gray-500" style={{fontSize:15}}>payments</span><span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Efectivo</span></div>
-                                    <span className="text-sm font-black text-gray-900">${efectivoTotal.toFixed(2)}</span>
+                                <div className="flex items-center justify-between px-5 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                            <span className="material-symbols-outlined" style={{fontSize:20}}>payments</span>
+                                        </div>
+                                        <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Efectivo</span>
+                                    </div>
+                                    <span className="text-base font-black text-slate-900 dark:text-white">${efectivoTotal.toFixed(2)}</span>
                                 </div>
                             )}
                             {transferTotal > 0 && (
-                                <div className="flex items-center justify-between px-4 py-3">
-                                    <div className="flex items-center gap-2"><span className="material-symbols-outlined text-gray-500" style={{fontSize:15}}>account_balance</span><span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Transferencia</span></div>
-                                    <span className="text-sm font-black text-gray-900">${transferTotal.toFixed(2)}</span>
+                                <div className="flex items-center justify-between px-5 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                                            <span className="material-symbols-outlined" style={{fontSize:20}}>account_balance</span>
+                                        </div>
+                                        <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Transferencia</span>
+                                    </div>
+                                    <span className="text-base font-black text-slate-900 dark:text-white">${transferTotal.toFixed(2)}</span>
                                 </div>
                             )}
-                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t-2 border-gray-900">
-                                <span className="text-xs font-black text-gray-900 uppercase tracking-widest">Total del Período</span>
-                                <span className="text-lg font-black text-gray-900">${granTotal.toFixed(2)}</span>
+                            <div className="flex items-center justify-between px-5 py-5 bg-primary/5 dark:bg-primary/10 border-t border-primary/20">
+                                <span className="text-[11px] font-black text-primary uppercase tracking-widest">Total del Período</span>
+                                <span className="text-2xl font-black text-slate-900 dark:text-white leading-none">${granTotal.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
@@ -458,42 +483,46 @@ export default function Reports() {
 
             {/* ── GASTOS (solo operador) ── */}
             {!isAdmin && (
-                <div className="px-4 md:px-8 pb-24">
-                    <div className="bg-white border border-gray-900 rounded-lg overflow-hidden">
-                        <div className="px-4 py-2.5 bg-gray-900 flex items-center justify-between">
-                            <p className="text-[9px] font-bold text-white uppercase tracking-widest">Gastos del Período</p>
-                            <button onClick={() => setShowExpenseModal(true)} className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white rounded px-2 py-0.5 text-[9px] font-black uppercase tracking-wide transition-all active:scale-95">
-                                <Plus size={10} />Agregar
+                <div className="mb-24">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                            <p className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">Gastos</p>
+                            <button onClick={() => setShowExpenseModal(true)} className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-white rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm">
+                                <Plus size={14} />Agregar
                             </button>
                         </div>
                         {dayExpenses.length === 0 ? (
-                            <p className="text-center text-xs text-gray-400 font-medium py-6">Sin gastos registrados</p>
+                            <p className="text-center text-xs text-slate-400 font-bold py-8">Sin gastos registrados</p>
                         ) : (
-                            <div className="divide-y divide-gray-100">
+                            <div className="divide-y divide-slate-50 dark:divide-slate-700/30">
                                 {dayExpenses.map(exp => (
-                                    <div key={exp.id} className="flex items-center gap-3 px-4 py-3 bg-white animate-in fade-in">
-                                        <span className="material-symbols-outlined text-gray-400" style={{fontSize:16}}>receipt_long</span>
-                                        <p className="flex-1 text-sm font-bold text-gray-700 truncate">{exp.description}</p>
-                                        <p className="text-sm font-black text-gray-900 shrink-0">-${Number(exp.amount).toFixed(2)}</p>
-                                        <button onClick={() => deleteExpense(exp.id)} className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-500 active:scale-90 transition-all"><Trash2 size={14} /></button>
+                                    <div key={exp.id} className="flex items-center gap-4 px-5 py-4 bg-white dark:bg-slate-800 animate-in fade-in">
+                                        <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+                                            <span className="material-symbols-outlined" style={{fontSize:20}}>receipt_long</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">{exp.description}</p>
+                                        </div>
+                                        <p className="text-base font-black text-orange-600 dark:text-orange-400 shrink-0">-${Number(exp.amount).toFixed(2)}</p>
+                                        <button onClick={() => deleteExpense(exp.id)} className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-90 transition-all ml-1 shrink-0"><Trash2 size={16} /></button>
                                     </div>
                                 ))}
                             </div>
                         )}
-                        <div className="border-t-2 border-gray-900 divide-y divide-gray-100">
-                            <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50">
-                                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Ventas</span>
-                                <span className="text-sm font-black text-gray-900">${dayTotal.toFixed(2)}</span>
+                        <div className="bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700/50 divide-y divide-slate-100 dark:divide-slate-700/50">
+                            <div className="flex items-center justify-between px-5 py-4">
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ventas Totales</span>
+                                <span className="text-base font-black text-slate-800 dark:text-slate-200">${dayTotal.toFixed(2)}</span>
                             </div>
                             {totalExpenses > 0 && (
-                                <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50">
-                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Gastos</span>
-                                    <span className="text-sm font-black text-gray-700">-${totalExpenses.toFixed(2)}</span>
+                                <div className="flex items-center justify-between px-5 py-4">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Gastos Totales</span>
+                                    <span className="text-base font-black text-orange-600 dark:text-orange-400">-${totalExpenses.toFixed(2)}</span>
                                 </div>
                             )}
-                            <div className="flex items-center justify-between px-4 py-3 bg-white">
-                                <span className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Neto del Período</span>
-                                <span className="text-xl font-black text-gray-900">${(dayTotal - totalExpenses).toFixed(2)}</span>
+                            <div className="flex items-center justify-between px-5 py-5 bg-primary/5 dark:bg-primary/10">
+                                <span className="text-[11px] font-black text-primary uppercase tracking-widest">Neto del Período</span>
+                                <span className="text-2xl font-black text-slate-900 dark:text-white">${(dayTotal - totalExpenses).toFixed(2)}</span>
                             </div>
                         </div>
                     </div>

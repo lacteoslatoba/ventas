@@ -433,7 +433,7 @@ export const useStore = create(
                                 refreshedUser = {
                                     ...updated,
                                     priceList: updated.priceList || updated.pricelist || 'A',
-                                    role: 'repartidor'
+                                    role: updated.role || 'repartidor'
                                 };
                             }
                         }
