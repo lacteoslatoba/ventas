@@ -155,10 +155,10 @@ export default function DeliveryReport() {
                                 <span className="text-[10px] font-black text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                                     {d.total}
                                 </span>
-                                <div className="w-8 bg-slate-100 dark:bg-slate-700 rounded-t-lg relative flex items-end overflow-hidden group-hover:bg-slate-200 transition-colors h-full">
-                                    <div 
-                                        className="w-full bg-blue-500 rounded-t-lg transition-all duration-700" 
-                                        style={{ height: `${d.heightPercent}%` }} 
+                                <div className="w-8 bg-slate-100 dark:bg-slate-700 rounded-t-lg relative flex items-end overflow-hidden h-full">
+                                    <div
+                                        className="w-full rounded-t-lg transition-all duration-700"
+                                        style={{ height: `${d.heightPercent}%`, backgroundColor: '#3b82f6' }}
                                     />
                                 </div>
                                 <span className="text-[9px] font-bold text-slate-400 uppercase">
