@@ -59,7 +59,7 @@ const AppLogic = () => {
       window.removeEventListener('offline', handleOffline);
       themeMedia.removeEventListener('change', updateTheme);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
 };

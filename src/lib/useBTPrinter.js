@@ -50,8 +50,7 @@ export function useBTPrinter() {
                     if (mountedRef.current) setPrinterState(null);
                     // Reiniciar loop al desconectarse inesperadamente
                     retryCountRef.current = 0;
-                    // eslint-disable-next-line react-hooks/rules-of-hooks
-                    scheduleRetry(connectFn);
+                    scheduleRetry(connectFn); // eslint-disable-line react-hooks/immutability
                 };
 
                 // Pasamos la callback de desconexión directamente

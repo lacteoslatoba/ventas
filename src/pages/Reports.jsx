@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useStore } from '../store';
 import { printTicket } from '../lib/bluetoothPrinter';
 import { generateReportImage, generateReportPDF } from '../lib/reportExports';
@@ -39,11 +39,11 @@ export default function Reports() {
     const filterStart = dateMode === 'day' ? selectedDate : (rangeStart || selectedDate);
     const filterEnd   = dateMode === 'day' ? selectedDate : (rangeEnd   || rangeStart || selectedDate);
 
-    const inDateFilter = (dateStr) => {
+    const inDateFilter = useCallback((dateStr) => {
         if (!dateStr) return false;
         const d = toLocalDate(dateStr);
         return d >= filterStart && d <= filterEnd;
-    };
+    }, [filterStart, filterEnd]);
 
     // ── Click en día del calendario ──────────────────────────────────────
     const handleDayClick = (dateStr) => {
@@ -70,15 +70,17 @@ export default function Reports() {
     // ── Datos filtrados ──────────────────────────────────────────────────
     const effectiveFilterUser = isAdmin ? filterUser : currentUser?.id;
 
-    const userSales = effectiveFilterUser
-        ? (sales || []).filter(s => s?.userId === effectiveFilterUser)
-        : (sales || []);
+    const userSales = useMemo(() =>
+        effectiveFilterUser
+            ? (sales || []).filter(s => s?.userId === effectiveFilterUser)
+            : (sales || [])
+    , [sales, effectiveFilterUser]);
 
     const daysWithSales = useMemo(() => {
         const s = new Set();
         userSales.forEach(sale => { if (sale?.date) s.add(toLocalDate(sale.date)); });
         return s;
-    }, [sales, effectiveFilterUser]);
+    }, [userSales]);
 
     const daySales   = userSales.filter(s => s?.date && inDateFilter(s.date));
     const sortedSales = [...daySales].reverse();
@@ -110,7 +112,7 @@ export default function Reports() {
         return (expenses || []).filter(e =>
             (e.userId || e.userid) === currentUser?.id && inDateFilter(e.date)
         );
-    }, [expenses, filterStart, filterEnd, currentUser, isAdmin, dateMode]);
+    }, [expenses, inDateFilter, currentUser, isAdmin]);
 
     const totalExpenses = dayExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
 
@@ -141,7 +143,7 @@ export default function Reports() {
             totalKg:     clientRows.reduce((s, r) => s + r.kg, 0),
             totalMoney, expenses: expensesForDay, totalExpenses: expTotal, netTotal: totalMoney - expTotal,
         };
-    }, [isAdmin, filterStart, filterEnd, dateMode, rangeEnd, sales, clients, currentUser, expenses]);
+    }, [isAdmin, inDateFilter, dateMode, rangeEnd, filterStart, filterEnd, sales, clients, currentUser, expenses]);
 
     const generateImage = async () => generateReportImage({ operatorPDFData, sales, clients, currentUser, repDateFilter: filterStart, todayStr, ticketConfig });
     const generatePDF   = async () => generateReportPDF({ operatorPDFData, sales, clients, currentUser, repDateFilter: filterStart, todayStr, ticketConfig });
