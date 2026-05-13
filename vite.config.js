@@ -5,6 +5,11 @@ import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig({
   base: './',
+  server: {
+    port: 5180,
+    strictPort: false,
+    host: '127.0.0.1',
+  },
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toLocaleString('es-MX', {
       timeZone: 'America/Mazatlan',

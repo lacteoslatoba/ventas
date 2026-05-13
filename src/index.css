@@ -23,6 +23,14 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* Scroll lives here so long pages (login, modals) are not clipped by body overflow:hidden */
+  #root {
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   body {
     @apply text-slate-800 dark:text-slate-200 font-sans antialiased;
     background-color: rgb(var(--background));

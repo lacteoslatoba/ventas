@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Lock, LogIn, CloudOff, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { LogIn, CloudOff, Eye, EyeOff, RefreshCw, CircleHelp } from 'lucide-react';
 
 export default function Login() {
     const [username, setUsername] = useState('');
@@ -192,7 +192,7 @@ export default function Login() {
                         href="/instalar.html"
                         className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 text-xs font-bold hover:bg-slate-50 hover:text-primary transition-all shadow-sm"
                     >
-                        <span className="material-symbols-outlined text-[18px]">help_outline</span>
+                        <CircleHelp size={18} className="shrink-0 text-slate-400" strokeWidth={2.25} />
                         ¿Problemas al instalar? Ayuda aquí
                     </a>
                 </div>
