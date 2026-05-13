@@ -1,6 +1,112 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 
+export function InlineRangePicker({ fromDate, toDate, onFromChange, onToChange }) {
+    const [viewDate, setViewDate] = useState(() => new Date(fromDate + 'T12:00:00'));
+    const [step, setStep] = useState('from');
+
+    const todayStr = toLocalDate(new Date());
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstWeekDay = new Date(year, month, 1).getDay();
+
+    const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
+    const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
+
+    const handleDay = (day) => {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        if (step === 'from') {
+            onFromChange(dateStr);
+            if (dateStr > toDate) onToChange(dateStr);
+            setStep('to');
+        } else {
+            if (dateStr < fromDate) {
+                onFromChange(dateStr);
+                onToChange(fromDate);
+            } else {
+                onToChange(dateStr);
+            }
+            setStep('from');
+        }
+    };
+
+    return (
+        <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-4 shadow-sm">
+            {/* Desde / Hasta */}
+            <div className="flex gap-2 mb-4">
+                <button
+                    onClick={() => setStep('from')}
+                    className={`flex-1 text-center py-2 px-3 rounded-2xl text-xs font-black transition-all ${step === 'from' ? 'bg-primary text-white shadow-md shadow-primary/30' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+                >
+                    <span className="text-[9px] block opacity-70 uppercase tracking-widest mb-0.5">Desde</span>
+                    {new Date(fromDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </button>
+                <div className="flex items-center text-slate-300 dark:text-slate-600 font-black px-1">→</div>
+                <button
+                    onClick={() => setStep('to')}
+                    className={`flex-1 text-center py-2 px-3 rounded-2xl text-xs font-black transition-all ${step === 'to' ? 'bg-primary text-white shadow-md shadow-primary/30' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+                >
+                    <span className="text-[9px] block opacity-70 uppercase tracking-widest mb-0.5">Hasta</span>
+                    {new Date(toDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </button>
+            </div>
+
+            {/* Navegación mes */}
+            <div className="flex items-center justify-between mb-3 px-1">
+                <button onClick={prevMonth} className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-500 active:scale-90 transition-all hover:bg-primary/10 hover:text-primary">
+                    <ChevronLeft size={18} />
+                </button>
+                <div className="text-center">
+                    <p className="text-sm font-black text-slate-800 dark:text-white capitalize tracking-tight">{MONTHS[month]}</p>
+                    <p className="text-[10px] font-bold text-slate-400 leading-none">{year}</p>
+                </div>
+                <button onClick={nextMonth} className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-500 active:scale-90 transition-all hover:bg-primary/10 hover:text-primary">
+                    <ChevronRight size={18} />
+                </button>
+            </div>
+
+            {/* Cabecera días */}
+            <div className="grid grid-cols-7 mb-1">
+                {DAYS_SHORT.map(d => (
+                    <div key={d} className="text-center text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase py-1">{d}</div>
+                ))}
+            </div>
+
+            {/* Cuadrícula */}
+            <div className="grid grid-cols-7 gap-y-1">
+                {Array.from({ length: firstWeekDay }).map((_, i) => <div key={`e${i}`} />)}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const day = i + 1;
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const isFrom = dateStr === fromDate;
+                    const isTo = dateStr === toDate;
+                    const inRange = fromDate !== toDate && dateStr > fromDate && dateStr < toDate;
+                    const isToday = dateStr === todayStr;
+                    return (
+                        <button
+                            key={day}
+                            onClick={() => handleDay(day)}
+                            className={`relative flex items-center justify-center w-full aspect-square text-sm font-bold transition-all duration-150
+                                ${(isFrom || isTo) ? 'bg-primary text-white rounded-xl shadow-md shadow-primary/30 scale-105 z-10' : ''}
+                                ${inRange ? 'bg-primary/15 text-primary dark:text-primary rounded-none' : ''}
+                                ${!isFrom && !isTo && !inRange ? 'rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300' : ''}
+                                ${isToday && !isFrom && !isTo ? 'ring-2 ring-primary/30 dark:ring-primary/40' : ''}
+                            `}
+                        >
+                            {day}
+                        </button>
+                    );
+                })}
+            </div>
+
+            <p className="text-center text-[10px] font-bold text-primary/70 mt-3 uppercase tracking-widest">
+                {step === 'from' ? '↑ Toca un día para inicio' : '↑ Toca un día para fin'}
+            </p>
+        </div>
+    );
+}
+
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const DAYS_SHORT = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'];
 

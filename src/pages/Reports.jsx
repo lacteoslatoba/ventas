@@ -6,7 +6,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import SaleDetailModal from '../components/reports/SaleDetailModal';
 import ExpenseModal from '../components/reports/ExpenseModal';
 import DeliveryReport from './DeliveryReport';
-import ModernDatePicker from '../components/Calendar';
+import { InlineRangePicker } from '../components/Calendar';
 
 const toLocalDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -134,10 +134,7 @@ export default function Reports() {
         : `${new Date(fromDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} → ${new Date(toDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
     const datePickers = (
-        <div className="grid grid-cols-2 gap-3">
-            <ModernDatePicker label="Desde" value={fromDate} onChange={setFromDate} />
-            <ModernDatePicker label="Hasta" value={toDate} onChange={setToDate} />
-        </div>
+        <InlineRangePicker fromDate={fromDate} toDate={toDate} onFromChange={setFromDate} onToChange={setToDate} />
     );
 
     return (
