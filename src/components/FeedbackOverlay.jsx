@@ -3,7 +3,7 @@ import { RefreshCw, WifiOff } from 'lucide-react';
 import { useStore } from '../store';
 
 export const OfflineBanner = () => {
-  const { isOnline, isSyncing, products, users, clients, sales, inventory, deliveries, ticketConfig } = useStore();
+  const { isOnline, products, users, clients, sales, inventory, deliveries, ticketConfig } = useStore();
   const [show, setShow] = React.useState(true);
 
   const pendingCount = React.useMemo(() => {
@@ -13,9 +13,11 @@ export const OfflineBanner = () => {
     return count;
   }, [products, users, clients, sales, inventory, deliveries, ticketConfig]);
 
-  React.useEffect(() => { setShow(true); }, [isSyncing, isOnline]);
+  React.useEffect(() => {
+    if (!isOnline || pendingCount > 0) setShow(true);
+  }, [isOnline, pendingCount]);
 
-  if (!show || (isOnline && !isSyncing && pendingCount === 0)) return null;
+  if (!show || (isOnline && pendingCount === 0)) return null;
 
   return (
     <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[35] w-max max-w-[90%] animate-in slide-in-from-top-2 duration-500">
@@ -24,7 +26,7 @@ export const OfflineBanner = () => {
       }`}>
         {isOnline ? <RefreshCw size={12} className="animate-spin" /> : <WifiOff size={12} className="animate-pulse" />}
         <span className="truncate pr-2">
-          {isOnline ? `Sincronizando ${pendingCount > 0 ? `${pendingCount} cambios` : 'datos'}...` : `Sin conexión · ${pendingCount > 0 ? `${pendingCount} pendientes` : 'modo local'}`}
+          {isOnline ? `Sincronizando ${pendingCount} cambio${pendingCount !== 1 ? 's' : ''}...` : `Sin conexión · ${pendingCount > 0 ? `${pendingCount} pendientes` : 'modo local'}`}
         </span>
         <button onClick={() => setShow(false)} className="w-5 h-5 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center pointer-events-auto">
           <span className="material-symbols-outlined text-[14px]">close</span>
@@ -37,10 +39,11 @@ export const OfflineBanner = () => {
 export const GlobalConfirmDialog = () => {
   const { confirmDialog, hideConfirm } = useStore();
   if (!confirmDialog) return null;
-  const { message, onConfirm, confirmText = 'Confirmar', danger = false } = confirmDialog;
+  const { message, title, onConfirm, confirmText = 'Confirmar', danger = false } = confirmDialog;
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
       <div className="w-full max-w-xs bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-150 text-center">
+        {title && <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">{title}</h3>}
         <p className="text-base font-black text-slate-800 dark:text-slate-100 mb-6 leading-snug">{message}</p>
         <div className="flex gap-3">
           <button onClick={hideConfirm} className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-sm">Cancelar</button>

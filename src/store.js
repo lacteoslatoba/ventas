@@ -106,8 +106,8 @@ export const useStore = create(
 
             // Diálogo de confirmación global
             confirmDialog: null,
-            showConfirm: ({ message, onConfirm, confirmText = 'Confirmar', danger = false }) => {
-                set({ confirmDialog: { message, onConfirm, confirmText, danger } });
+            showConfirm: ({ title, message, onConfirm, confirmText = 'Confirmar', danger = false }) => {
+                set({ confirmDialog: { title, message, onConfirm, confirmText, danger } });
             },
             hideConfirm: () => set({ confirmDialog: null }),
 
@@ -385,7 +385,8 @@ export const useStore = create(
                     // Mapa global lowercase→camelCase para todas las tablas.
                     // Agregar aquí cualquier columna nueva — nunca más editar por tabla.
                     const COLUMN_MAP = {
-                        userid: 'userId', clientid: 'clientId', paymentmethod: 'paymentMethod',
+                        userid: 'userId', clientid: 'clientId', clientname: 'clientName',
+                        paymentmethod: 'paymentMethod',
                         pricelist: 'priceList', pricea: 'priceA', priceb: 'priceB', pricec: 'priceC',
                         lugar1activo: 'lugar1Activo', lugar2activo: 'lugar2Activo',
                         username: 'userName', litrospurificados: 'litrosPurificados',
