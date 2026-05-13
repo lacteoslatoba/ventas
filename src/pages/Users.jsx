@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Plus, Edit2, Trash2, ArrowLeft, Save, User as UserIcon, Phone, Truck, Lock, List, MapPin } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArrowLeft, Save, User as UserIcon, Lock, List, MapPin } from 'lucide-react';
 
-const EMPTY_FORM = { name: '', phone: '', vehicle: '', pin: '', priceList: 'A', lugar1: '', lugar2: '', lugar1activo: false, lugar2activo: false };
+const EMPTY_FORM = { name: '', pin: '', priceList: 'A', lugar1: '', lugar2: '', lugar1activo: false, lugar2activo: false };
 
 export default function Users() {
     const { users, addUser, deleteUser, updateUser, showToast, showConfirm } = useStore();
@@ -30,7 +30,7 @@ export default function Users() {
 
     const handleDelete = (id) => {
         showConfirm({
-            message: '¿Eliminar este repartidor permanentemente?',
+            message: '¿Eliminar este usuario permanentemente?',
             confirmText: 'Eliminar',
             danger: true,
             onConfirm: () => { deleteUser(id); resetForm(); },
@@ -40,8 +40,6 @@ export default function Users() {
     const edit = (user) => {
         setFormData({
             name: user.name,
-            phone: user.phone || '',
-            vehicle: user.vehicle || '',
             pin: user.pin || '',
             priceList: user.priceList || 'A',
             lugar1: user.lugar1 || '',
@@ -62,7 +60,7 @@ export default function Users() {
                         <ArrowLeft size={24} />
                     </button>
                     <h2 className="flex-1 text-center mr-8 text-sm font-black text-slate-800 uppercase tracking-widest">
-                        {editId ? 'Configurar Repartidor' : 'Nuevo Repartidor'}
+                        {editId ? 'Configurar Usuario' : 'Nuevo Usuario'}
                     </h2>
                 </div>
 
@@ -71,7 +69,7 @@ export default function Users() {
                         <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-6">
                             <div>
                                 <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">
-                                    <UserIcon size={12} /> Nombre del Repartidor
+                                    <UserIcon size={12} /> Nombre del Usuario
                                 </label>
                                 <input 
                                     required 
@@ -81,33 +79,6 @@ export default function Users() {
                                     className="w-full bg-slate-50 border-2 border-transparent focus:border-primary/20 rounded-2xl p-4 text-slate-800 font-bold outline-none text-lg transition-all" 
                                     placeholder="Ej. Juan Pérez" 
                                 />
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">
-                                        <Phone size={12} /> Teléfono
-                                    </label>
-                                    <input 
-                                        type="text" 
-                                        value={formData.phone} 
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })} 
-                                        className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500/20 rounded-2xl p-4 text-slate-800 font-bold outline-none transition-all" 
-                                        placeholder="555-000-0000" 
-                                    />
-                                </div>
-                                <div>
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">
-                                        <Truck size={12} /> Vehículo / Placas
-                                    </label>
-                                    <input 
-                                        type="text" 
-                                        value={formData.vehicle} 
-                                        onChange={e => setFormData({ ...formData, vehicle: e.target.value })} 
-                                        className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500/20 rounded-2xl p-4 text-slate-800 font-bold outline-none transition-all" 
-                                        placeholder="Moto Cargo #1" 
-                                    />
-                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -186,7 +157,7 @@ export default function Users() {
                                 type="submit"
                                 className="flex-1 bg-primary text-white py-5 rounded-[2.5rem] shadow-xl shadow-primary/20 font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all text-xs"
                             >
-                                <Save size={20} /> Guardar Repartidor
+                                <Save size={20} /> Guardar Usuario
                             </button>
                             
                             {editId && (
@@ -209,7 +180,7 @@ export default function Users() {
         <div className="p-4 md:p-8 animate-in fade-in duration-500 pb-32">
             <div className="flex justify-between items-center mb-8 px-2">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none uppercase">Repartidores</h1>
+                    <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none uppercase">Usuarios</h1>
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2 ml-1">{users.length} Registrados</p>
                 </div>
                 <button
@@ -223,7 +194,7 @@ export default function Users() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {users.length === 0 ? (
                     <div className="col-span-full py-20 text-center opacity-50 font-bold uppercase tracking-widest text-[10px]">
-                        Sin repartidores registrados
+                        Sin usuarios registrados
                     </div>
                 ) : (
                     users.map((u) => (
@@ -250,7 +221,6 @@ export default function Users() {
                                         ))
                                     }
                                 </div>
-                                {u.phone && <p className="text-[9px] text-slate-400 font-medium mt-0.5">{u.phone}</p>}
                             </div>
                             <div className="text-slate-200 group-hover:text-primary transition-colors">
                                 <Edit2 size={16} />

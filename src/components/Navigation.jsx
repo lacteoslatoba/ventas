@@ -76,7 +76,7 @@ export const MobileHeader = ({ currentUser, isSyncing }) => {
             <div className="absolute left-0 top-12 w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-left">
               <div className="px-4 py-2 border-b border-slate-50 dark:border-slate-700 mb-1">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{currentUser?.name}</p>
-                <p className="text-[9px] font-bold text-primary uppercase">Opciones de Repartidor</p>
+                <p className="text-[9px] font-bold text-primary uppercase">Opciones de Usuario</p>
               </div>
               <button 
                 onClick={() => { setShowDriverMenu(false); navigate('/clientes'); }}

@@ -60,7 +60,7 @@ export const generateReportImage = async ({
             </div>
             <div style="text-align:right;font-size:10px;color:#787878;line-height:1.8">
                 <div>${esc(fechaCap)}</div>
-                <div>Repartidor: ${esc(currentUser?.name || '')}</div>
+                <div>Usuario: ${esc(currentUser?.name || '')}</div>
                 <div>${operatorPDFData.ventasCount} venta${operatorPDFData.ventasCount !== 1 ? 's' : ''}</div>
             </div>
         </div>
@@ -162,7 +162,7 @@ export const generateReportPDF = async ({
     const fechaCap = operatorPDFData.fechaLabel.charAt(0).toUpperCase() + operatorPDFData.fechaLabel.slice(1);
     doc.setFontSize(8); doc.setTextColor(...GRAY_400);
     doc.text(fechaCap, pageWidth - 14, 22, { align: 'right' });
-    doc.text(`Repartidor: ${currentUser?.name || ''}`, pageWidth - 14, 28, { align: 'right' });
+    doc.text(`Usuario: ${currentUser?.name || ''}`, pageWidth - 14, 28, { align: 'right' });
     doc.text(`${operatorPDFData.ventasCount} venta${operatorPDFData.ventasCount !== 1 ? 's' : ''}`, pageWidth - 14, 34, { align: 'right' });
 
     doc.setDrawColor(...BLACK); doc.setLineWidth(0.5);

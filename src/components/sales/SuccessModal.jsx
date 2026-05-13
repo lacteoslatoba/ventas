@@ -172,7 +172,7 @@ export default function SuccessModal({
                     {(ticketConfig.showSeller !== false || ticketConfig.showCustomer !== false) && (
                         <>
                             <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
-                            {ticketConfig.showSeller !== false && <div>Repartidor: {user?.name || 'Administrador'}</div>}
+                            {ticketConfig.showSeller !== false && <div>Usuario: {user?.name || 'Administrador'}</div>}
                             {ticketConfig.showCustomer !== false && <div>Cliente   : {client?.name || 'General'}</div>}
                         </>
                     )}

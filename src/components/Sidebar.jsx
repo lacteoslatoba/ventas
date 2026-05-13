@@ -93,7 +93,7 @@ export default function Sidebar() {
             <SidebarItem 
               to="/usuarios" 
               icon={Users} 
-              label="Repartidores" 
+              label="Usuarios" 
               active={isActive('/usuarios')} 
             />
             
@@ -130,7 +130,7 @@ export default function Sidebar() {
           </div>
           <div className="flex flex-col truncate">
             <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{currentUser?.name}</p>
-            <p className="text-[10px] font-medium text-slate-400 uppercase">{isAdmin ? 'Admin' : 'Repartidor'}</p>
+            <p className="text-[10px] font-medium text-slate-400 uppercase">{isAdmin ? 'Admin' : 'Usuario'}</p>
           </div>
         </div>
         <button 

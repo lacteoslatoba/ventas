@@ -271,7 +271,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         }
         if (showSeller) {
             const sName = (user?.name || 'VENDEDOR').slice(0, 15);
-            add(formatMetaLine(showLabels ? 'Repartidor' : '', sName));
+            add(formatMetaLine(showLabels ? 'Vendedor' : '', sName));
         }
         if (showPaymentMethod) {
             const pm = ticket.paymentMethod === 'transferencia' ? 'TRANSFERENCIA' : 'EFECTIVO';
@@ -411,7 +411,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         add(formatMetaLine(showLabels ? 'Fecha' : '', `${dStr} ${tStr}`));
         add(formatMetaLine(showLabels ? 'Ticket' : '', tId));
 
-        if (showSeller) add(formatMetaLine(showLabels ? 'Repartidor' : '', user?.name || 'Vendedor'));
+        if (showSeller) add(formatMetaLine(showLabels ? 'Usuario' : '', user?.name || 'Vendedor'));
         if (showCustomer) add(formatMetaLine(showLabels ? 'Cliente' : '', client?.name || 'General'));
         if (showPaymentMethod) {
             const pm = ticket.paymentMethod === 'transferencia' ? 'TRANSFERENCIA' : 'EFECTIVO';

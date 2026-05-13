@@ -316,7 +316,7 @@ export default function TicketConfig() {
                             />
                             <Toggle
                                 id="showSeller"
-                                label="Repartidor/Vendedor"
+                                label="Vendedor / Usuario"
                                 checked={form.showSeller}
                                 onChange={update('showSeller')}
                             />
@@ -411,7 +411,7 @@ export default function TicketConfig() {
                             <Toggle
                                 id="metadataUppercase"
                                 label="Texto en Mayúsculas"
-                                desc="Convierte automáticamente a mayúsculas la fecha, cliente y repartidor"
+                                desc="Convierte automáticamente a mayúsculas la fecha, cliente y vendedor"
                                 checked={form.metadataUppercase}
                                 onChange={update('metadataUppercase')}
                             />
@@ -969,7 +969,7 @@ export default function TicketConfig() {
                             </div>
                         </button>
                         <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-4">
-                            Se aplica a todos los repartidores y dispositivos
+                            Se aplica a todos los usuarios y dispositivos
                         </p>
                     </div>
                 </div>

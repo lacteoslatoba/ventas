@@ -11,7 +11,7 @@ export default function Dashboard() {
     const stats = [
         { label: 'Ventas Totales', value: `$${totalSales.toFixed(2)}`, icon: TrendingUp, color: 'text-[#1152d4] bg-[#1152d4]/10', trend: '+15%' },
         { label: 'Productos en Stock', value: totalStock, icon: Package, color: 'text-orange-600 bg-orange-100 dark:bg-orange-900/30' },
-        { label: 'Repartidores', value: users.length, icon: UsersIcon, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' },
+        { label: 'Usuarios', value: users.length, icon: UsersIcon, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' },
         { label: 'Clientes', value: clients.length, icon: Store, color: 'text-purple-600 bg-purple-100 dark:bg-purple-900/30' },
         { label: 'Tickets Emitidos', value: sales.length, icon: ShoppingCart, color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30' },
     ];
@@ -70,7 +70,7 @@ export default function Dashboard() {
                                         <thead>
                                             <tr className="border-b border-slate-200 dark:border-slate-800">
                                                 <th className="py-3 px-4 text-slate-500 font-medium text-sm">Fecha</th>
-                                                <th className="py-3 px-4 text-slate-500 font-medium text-sm">Repartidor</th>
+                                                <th className="py-3 px-4 text-slate-500 font-medium text-sm">Usuario</th>
                                                 <th className="py-3 px-4 text-slate-500 font-medium text-sm text-center">Artículos</th>
                                                 <th className="py-3 px-4 text-slate-500 font-medium text-sm text-right">Total</th>
                                             </tr>
