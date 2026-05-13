@@ -2,33 +2,28 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useStore } from '../store';
 import { printTicket } from '../lib/bluetoothPrinter';
 import { generateReportImage, generateReportPDF } from '../lib/reportExports';
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import SaleDetailModal from '../components/reports/SaleDetailModal';
 import ExpenseModal from '../components/reports/ExpenseModal';
 import DeliveryReport from './DeliveryReport';
+import ModernDatePicker from '../components/Calendar';
 
 const toLocalDate = (dateStr) => {
     const d = new Date(dateStr);
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
 const todayStr = toLocalDate(new Date());
-const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DAYS_SHORT = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
+const defaultStart = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-01`;
 
 export default function Reports() {
     const { sales, users, clients, expenses, currentUser, ticketConfig, showToast, showConfirm, clearAllSales, addExpense, deleteExpense, deleteSale } = useStore();
     const isChofer = currentUser?.role === 'chofer';
     const isAdmin  = currentUser?.role === 'admin';
 
-    const now = new Date();
-
     // ── Todos los hooks ANTES del return condicional ──────────────────────
     const [filterUser,       setFilterUser]       = useState('');
-    const [selectedDate,     setSelectedDate]     = useState(todayStr);
-    const [calMonth,         setCalMonth]         = useState({ year: now.getFullYear(), month: now.getMonth() });
-    const [dateMode,         setDateMode]         = useState('day');   // 'day' | 'range'
-    const [rangeStart,       setRangeStart]       = useState('');
-    const [rangeEnd,         setRangeEnd]         = useState('');
+    const [fromDate,         setFromDate]         = useState(defaultStart);
+    const [toDate,           setToDate]           = useState(todayStr);
     const [selectedSale,     setSelectedSale]     = useState(null);
     const [btPrinting,       setBtPrinting]       = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -36,36 +31,14 @@ export default function Reports() {
     const [expenseAmount,    setExpenseAmount]    = useState('');
 
     // ── Filtro de fechas ─────────────────────────────────────────────────
-    const filterStart = dateMode === 'day' ? selectedDate : (rangeStart || selectedDate);
-    const filterEnd   = dateMode === 'day' ? selectedDate : (rangeEnd   || rangeStart || selectedDate);
+    const filterStart = fromDate;
+    const filterEnd   = toDate >= fromDate ? toDate : fromDate;
 
     const inDateFilter = useCallback((dateStr) => {
         if (!dateStr) return false;
         const d = toLocalDate(dateStr);
         return d >= filterStart && d <= filterEnd;
     }, [filterStart, filterEnd]);
-
-    // ── Click en día del calendario ──────────────────────────────────────
-    const handleDayClick = (dateStr) => {
-        if (dateMode === 'day') {
-            setSelectedDate(dateStr);
-        } else {
-            if (!rangeStart || (rangeStart && rangeEnd)) {
-                setRangeStart(dateStr);
-                setRangeEnd('');
-            } else {
-                if (dateStr < rangeStart) {
-                    setRangeEnd(rangeStart);
-                    setRangeStart(dateStr);
-                } else if (dateStr === rangeStart) {
-                    setRangeEnd('');
-                    setRangeStart('');
-                } else {
-                    setRangeEnd(dateStr);
-                }
-            }
-        }
-    };
 
     // ── Datos filtrados ──────────────────────────────────────────────────
     const effectiveFilterUser = isAdmin ? filterUser : currentUser?.id;
@@ -75,12 +48,6 @@ export default function Reports() {
             ? (sales || []).filter(s => s?.userId === effectiveFilterUser)
             : (sales || [])
     , [sales, effectiveFilterUser]);
-
-    const daysWithSales = useMemo(() => {
-        const s = new Set();
-        userSales.forEach(sale => { if (sale?.date) s.add(toLocalDate(sale.date)); });
-        return s;
-    }, [userSales]);
 
     const daySales   = userSales.filter(s => s?.date && inDateFilter(s.date));
     const sortedSales = [...daySales].reverse();
@@ -119,9 +86,9 @@ export default function Reports() {
     const operatorPDFData = useMemo(() => {
         if (isAdmin) return null;
         const ventasPDF = (sales || []).filter(s => s?.userId === currentUser?.id && inDateFilter(s.date));
-        const fechaLabel = dateMode === 'range' && rangeEnd
-            ? `${new Date(filterStart + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} – ${new Date(filterEnd + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}`
-            : new Date(filterStart + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const fechaLabel = fromDate === toDate
+            ? new Date(fromDate + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+            : `${new Date(fromDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} – ${new Date(toDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}`;
         const clientMap = {};
         ventasPDF.forEach(sale => {
             const client = clients.find(c => c.id === sale.clientId);
@@ -143,18 +110,12 @@ export default function Reports() {
             totalKg:     clientRows.reduce((s, r) => s + r.kg, 0),
             totalMoney, expenses: expensesForDay, totalExpenses: expTotal, netTotal: totalMoney - expTotal,
         };
-    }, [isAdmin, inDateFilter, dateMode, rangeEnd, filterStart, filterEnd, sales, clients, currentUser, expenses]);
+    }, [isAdmin, inDateFilter, fromDate, toDate, sales, clients, currentUser, expenses]);
 
     const generateImage = async () => generateReportImage({ operatorPDFData, sales, clients, currentUser, repDateFilter: filterStart, todayStr, ticketConfig });
     const generatePDF   = async () => generateReportPDF({ operatorPDFData, sales, clients, currentUser, repDateFilter: filterStart, todayStr, ticketConfig });
 
     if (isChofer) return <DeliveryReport />;
-
-    // ── Calendario ───────────────────────────────────────────────────────
-    const daysInMonth  = new Date(calMonth.year, calMonth.month + 1, 0).getDate();
-    const firstWeekDay = new Date(calMonth.year, calMonth.month, 1).getDay();
-    const prevMonth = () => setCalMonth(p => p.month === 0 ? { year: p.year-1, month: 11 } : { ...p, month: p.month-1 });
-    const nextMonth = () => setCalMonth(p => p.month === 11 ? { year: p.year+1, month: 0 } : { ...p, month: p.month+1 });
 
     const handleBTPrint = async (sale) => {
         const btPrinter = window.__btPrinter;
@@ -168,122 +129,14 @@ export default function Reports() {
         finally { setBtPrinting(false); }
     };
 
-    // Etiqueta del período activo
-    const periodLabel = dateMode === 'range' && rangeStart && rangeEnd
-        ? `${new Date(rangeStart + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} → ${new Date(rangeEnd + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}`
-        : new Date((dateMode === 'day' ? selectedDate : (rangeStart || todayStr)) + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+    const periodLabel = fromDate === toDate
+        ? new Date(fromDate + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
+        : `${new Date(fromDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} → ${new Date(toDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
-    // ── Componente calendario reutilizable ───────────────────────────────
-    const Calendar = () => (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-5 shadow-xl shadow-slate-200/50 dark:shadow-none animate-in zoom-in-95 duration-500">
-            {/* Toggle 1 día / Rango */}
-            <div className="flex gap-1 mb-5 bg-slate-100 dark:bg-slate-800 rounded-2xl p-1.5">
-                <button
-                    onClick={() => { setDateMode('day'); setRangeStart(''); setRangeEnd(''); }}
-                    className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${dateMode === 'day' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
-                >
-                    1 Día
-                </button>
-                <button
-                    onClick={() => { setDateMode('range'); }}
-                    className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${dateMode === 'range' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
-                >
-                    Rango
-                </button>
-            </div>
-
-            {/* Nav mes */}
-            <div className="flex items-center justify-between mb-4 px-1">
-                <button onClick={prevMonth} className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center active:scale-90 transition-all hover:bg-primary/10 hover:text-primary text-slate-500 dark:text-slate-400">
-                    <ChevronLeft size={20} />
-                </button>
-                <div className="text-center">
-                    <p className="text-sm font-black text-slate-900 dark:text-white capitalize tracking-tight">
-                        {MONTHS[calMonth.month]}
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-400 leading-none">{calMonth.year}</p>
-                </div>
-                <button onClick={nextMonth} className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center active:scale-90 transition-all hover:bg-primary/10 hover:text-primary text-slate-500 dark:text-slate-400">
-                    <ChevronRight size={20} />
-                </button>
-            </div>
-
-            {/* Instrucción rango */}
-            {dateMode === 'range' && (
-                <div className="mb-4 text-center">
-                    <span className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase tracking-widest border border-amber-100 dark:border-amber-800/50">
-                        {!rangeStart ? 'Toca el día de inicio' : !rangeEnd ? 'Toca el día de fin' : 'Rango seleccionado'}
-                    </span>
-                </div>
-            )}
-
-            {/* Días semana */}
-            <div className="grid grid-cols-7 mb-2">
-                {DAYS_SHORT.map(d => (
-                    <div key={d} className="text-center text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase py-2">
-                        {d}
-                    </div>
-                ))}
-            </div>
-
-            {/* Cuadrícula días */}
-            <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: firstWeekDay }).map((_, i) => <div key={`e${i}`} />)}
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                    const day     = i + 1;
-                    const dateStr = `${calMonth.year}-${String(calMonth.month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                    const hasSales = daysWithSales.has(dateStr);
-                    const isToday = dateStr === todayStr;
-                    
-                    // Lógica de estilos moderna
-                    let cellStyle = "relative flex flex-col items-center justify-center w-full aspect-square rounded-2xl transition-all duration-200 text-sm font-bold ";
-                    let textStyle = "";
-                    
-                    if (dateMode === 'day') {
-                        if (dateStr === selectedDate) {
-                            cellStyle += "bg-primary text-white shadow-lg shadow-primary/30 z-10 scale-105";
-                        } else {
-                            cellStyle += "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 ";
-                            if (isToday) cellStyle += "ring-2 ring-primary/20 dark:ring-primary/40 ";
-                        }
-                    } else {
-                        // Range mode logic
-                        const start = rangeStart;
-                        const end = rangeEnd;
-                        const inRange = start && end && dateStr > start && dateStr < end;
-                        const isStart = dateStr === start;
-                        const isEnd = dateStr === end;
-
-                        if (isStart || isEnd) {
-                            cellStyle += "bg-primary text-white shadow-lg shadow-primary/30 z-10 scale-105 ";
-                            if (isStart && end) cellStyle += "rounded-r-none ";
-                            if (isEnd && start) cellStyle += "rounded-l-none ";
-                        } else if (inRange) {
-                            cellStyle += "bg-primary/10 dark:bg-primary/20 text-primary rounded-none ";
-                        } else {
-                            cellStyle += "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 ";
-                            if (isToday) cellStyle += "ring-2 ring-primary/20 dark:ring-primary/40 ";
-                        }
-                    }
-
-                    return (
-                        <button
-                            key={day}
-                            onClick={() => handleDayClick(dateStr)}
-                            className={cellStyle}
-                        >
-                            <span className={textStyle}>{day}</span>
-                            {hasSales && (
-                                <span className={`absolute bottom-1.5 w-1 h-1 rounded-full ${
-                                    (dateMode === 'day' && dateStr === selectedDate) || (rangeStart === dateStr || rangeEnd === dateStr)
-                                        ? 'bg-white'
-                                        : 'bg-primary'
-                                }`} />
-                            )}
-                        </button>
-                    );
-                })}
-            </div>
+    const datePickers = (
+        <div className="grid grid-cols-2 gap-3">
+            <ModernDatePicker label="Desde" value={fromDate} onChange={setFromDate} />
+            <ModernDatePicker label="Hasta" value={toDate} onChange={setToDate} />
         </div>
     );
 
@@ -327,7 +180,7 @@ export default function Reports() {
                         ))}
                     </div>
 
-                    <Calendar />
+                    {datePickers}
 
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-3 mb-5">
@@ -394,7 +247,7 @@ export default function Reports() {
             {/* ── OPERADOR: calendario + botones ── */}
             {!isAdmin && (
                 <div className="mb-5 space-y-4">
-                    <Calendar />
+                    {datePickers}
                     <div className="flex items-center justify-between py-1 bg-white dark:bg-slate-800 rounded-3xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm">
                         <div className="px-2">
                             <p className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest capitalize truncate max-w-[150px]">{periodLabel}</p>
@@ -592,7 +445,7 @@ export default function Reports() {
                         <div>Fecha  : {new Date(selectedSale.date).toLocaleDateString('es-MX')}</div>
                         <div>Hora   : {new Date(selectedSale.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
-                        <div>Repartidor: {selectedSale.userId === 'admin' ? 'Administrador' : (users.find(u => u.id === selectedSale.userId)?.name || 'Repartidor')}</div>
+                        <div>Usuario: {selectedSale.userId === 'admin' ? 'Administrador' : (users.find(u => u.id === selectedSale.userId)?.name || 'Usuario')}</div>
                         <div>Cliente   : {clients.find(c => c.id === selectedSale.clientId)?.name || 'General'}</div>
                         <div style={{ borderTop: '1px dashed #000', margin: '3px 0' }} />
                         <div style={{ fontWeight: 'bold' }}>CANT CONCEPTO         IMPORTE</div>
