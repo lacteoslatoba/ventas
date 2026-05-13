@@ -256,68 +256,65 @@ export const useStore = create(
                 set({ isSyncing: true });
 
                 try {
-                    // Timeout de 15 segundos para toda la operación
                     const syncPromise = (async () => {
-                        const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses', 'deliveries'];
-                        const totalPending = tablesToSync.reduce((acc, t) => acc + (state[t]?.filter(i => !i.synced).length || 0), 0)
-                            + (state.ticketConfig && !state.ticketConfig.synced ? 1 : 0);
-                        
-                        if (totalPending === 0) return;
+                        const REVERSE_COLUMN_MAP = {
+                            userId: 'userid', clientId: 'clientid', clientName: 'clientname',
+                            paymentMethod: 'paymentmethod',
+                            priceList: 'pricelist', priceA: 'pricea', priceB: 'priceb', priceC: 'pricec',
+                            lugar1Activo: 'lugar1activo', lugar2Activo: 'lugar2activo',
+                            userName: 'username', litrosPurificados: 'litrospurificados',
+                            ventaGalones: 'ventagalones', bolsasHielo: 'bolsashielo',
+                        };
 
-                        const successTables = [];
+                        const buildPayload = (item, tableName) => {
+                            const { synced: _, ...rest } = item;
+                            const normalized = { ...rest };
+                            Object.entries(REVERSE_COLUMN_MAP).forEach(([camel, lower]) => {
+                                if (normalized[camel] !== undefined) {
+                                    normalized[lower] = normalized[camel];
+                                    delete normalized[camel];
+                                }
+                            });
+                            const knownCols = state.cloudColumns?.[tableName];
+                            if (!knownCols) return normalized;
+                            const filtered = {};
+                            knownCols.forEach(col => {
+                                if (normalized[col] !== undefined) filtered[col] = normalized[col];
+                            });
+                            return filtered;
+                        };
+
+                        // Procesar cada item individualmente para que uno malo no bloquee al resto
+                        const tableSuccessIds = {};
+                        let totalSynced = 0;
 
                         for (const tableName of tablesToSync) {
                             const pendingData = state[tableName].filter(item => !item.synced);
-                            if (pendingData.length > 0) {
-                                const payload = pendingData.map(({ synced: _synced, ...rest }) => rest);
-
-                                const REVERSE_COLUMN_MAP = {
-                                    userId: 'userid', clientId: 'clientid', clientName: 'clientname',
-                                    paymentMethod: 'paymentmethod',
-                                    priceList: 'pricelist', priceA: 'pricea', priceB: 'priceb', priceC: 'pricec',
-                                    lugar1Activo: 'lugar1activo', lugar2Activo: 'lugar2activo',
-                                    userName: 'username', litrosPurificados: 'litrospurificados',
-                                    ventaGalones: 'ventagalones', bolsasHielo: 'bolsashielo',
-                                };
-
-                                const safePayload = payload.map(item => {
-                                    const normalized = { ...item };
-                                    Object.entries(REVERSE_COLUMN_MAP).forEach(([camel, lower]) => {
-                                        if (normalized[camel] !== undefined) {
-                                            normalized[lower] = normalized[camel];
-                                            delete normalized[camel];
-                                        }
-                                    });
-
-                                    const knownCols = state.cloudColumns?.[tableName];
-                                    if (!knownCols) return normalized;
-
-                                    const filtered = {};
-                                    knownCols.forEach(col => {
-                                        if (normalized[col] !== undefined) filtered[col] = normalized[col];
-                                    });
-                                    return filtered;
-                                });
-
-                                const { error } = await supabase.from(tableName).upsert(safePayload);
+                            if (pendingData.length === 0) continue;
+                            tableSuccessIds[tableName] = [];
+                            for (const item of pendingData) {
+                                const { error } = await supabase.from(tableName).upsert([buildPayload(item, tableName)]);
                                 if (error) {
-                                    console.error(`Error Syncing ${tableName}:`, error.message);
+                                    console.error(`Sync error [${tableName}] ${item.id}:`, error.message);
                                 } else {
-                                    successTables.push(tableName);
+                                    tableSuccessIds[tableName].push(item.id);
+                                    totalSynced++;
                                 }
-                            } else {
-                                successTables.push(tableName);
                             }
                         }
 
-                        // Actualizar estado local solo para lo que tuvo éxito
-                        set((s) => {
-                            const nextState = { lastSync: new Date().toISOString() };
-                            successTables.forEach(t => {
-                                nextState[t] = s[t].map(x => ({ ...x, synced: true }));
+                        // Marcar como synced solo los items que subieron correctamente
+                        if (Object.keys(tableSuccessIds).length > 0) {
+                            set((s) => {
+                                const nextState = { lastSync: new Date().toISOString() };
+                                for (const [t, ids] of Object.entries(tableSuccessIds)) {
+                                    if (ids.length > 0) {
+                                        nextState[t] = s[t].map(x => ids.includes(x.id) ? { ...x, synced: true } : x);
+                                    }
+                                }
+                                return nextState;
                             });
-                            return nextState;
-                        });
+                        }
 
                         // Sincronizar ticketConfig
                         if (state.ticketConfig && !state.ticketConfig.synced) {
@@ -325,7 +322,7 @@ export const useStore = create(
                             const knownCols = state.cloudColumns?.['ticket_config'];
                             const dbColumns = ['id', 'header', 'footer', 'doubleCopy', 'centerTotal', 'spaceBetweenItems', 'showCashAndChange'];
                             const availableCols = knownCols && knownCols.length > 0 ? knownCols : dbColumns;
-                            
+
                             let finalPayload = { id: 'main' };
                             const extraData = {};
                             const legacyMap = { businessName: 'header', footerLine1: 'footer', printCopy: 'doubleCopy' };
@@ -350,8 +347,8 @@ export const useStore = create(
                             if (!error) set(s => ({ ticketConfig: { ...s.ticketConfig, synced: true } }));
                         }
 
-                        if (notify && totalPending > 0) {
-                            get().showToast(`${totalPending} cambio${totalPending !== 1 ? 's' : ''} sincronizado${totalPending !== 1 ? 's' : ''} ✓`, 'success');
+                        if (notify && totalSynced > 0) {
+                            get().showToast(`${totalSynced} cambio${totalSynced !== 1 ? 's' : ''} sincronizado${totalSynced !== 1 ? 's' : ''} ✓`, 'success');
                         }
                     })();
 
@@ -364,9 +361,26 @@ export const useStore = create(
                 } catch (error) {
                     console.error('Error sincronizando con la nube:', error);
                 } finally {
-                    // Pequeño retraso para evitar parpadeos si la red es muy rápida
                     setTimeout(() => set({ isSyncing: false }), 500);
                 }
+            },
+
+            // Descarta items locales atascados y re-descarga todo del servidor
+            clearStuckSync: async () => {
+                const TABLES = ['products', 'users', 'clients', 'sales', 'inventory', 'expenses', 'deliveries'];
+                await get().fetchFromSupabase();
+                await get().syncToSupabase();
+                // Forzar synced: true en cualquier item que siga atascado después del intento
+                setTimeout(() => {
+                    set(s => {
+                        const next = {};
+                        TABLES.forEach(t => {
+                            if (s[t]?.some(x => !x.synced)) next[t] = s[t].map(x => ({ ...x, synced: true }));
+                        });
+                        if (s.ticketConfig && !s.ticketConfig.synced) next.ticketConfig = { ...s.ticketConfig, synced: true };
+                        return next;
+                    });
+                }, 3000);
             },
 
             // Descarga de datos oficiales desde Supabase

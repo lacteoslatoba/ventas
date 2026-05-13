@@ -15,16 +15,19 @@ export const MobileHeader = ({ currentUser, isSyncing }) => {
   
   const [showDriverMenu, setShowDriverMenu] = React.useState(false);
   const [showSettings, setShowSettings] = React.useState(false);
-  const [modal, setModal] = React.useState(null);
   const [showChangePwd, setShowChangePwd] = React.useState(false);
   const [pwdForm, setPwdForm] = React.useState({ current: '', next: '', confirm: '' });
   const [pwdLoading, setPwdLoading] = React.useState(false);
   
-  const { showToast, changePassword, logout } = useStore();
+  const { showToast, changePassword, logout, showConfirm, clearStuckSync, products, users, clients, sales, inventory, deliveries, ticketConfig } = useStore();
+  const pendingCount = React.useMemo(() => {
+    const tables = [products, users, clients, sales, inventory, deliveries];
+    let count = tables.reduce((acc, t) => acc + t.filter(i => !i.synced).length, 0);
+    if (ticketConfig && !ticketConfig.synced) count++;
+    return count;
+  }, [products, users, clients, sales, inventory, deliveries, ticketConfig]);
   const { printer, isReconnecting, startAutoConnect } = useBTPrinter();
 
-  const openModal = (title, message, onConfirm) => setModal({ title, message, onConfirm });
-  const closeModal = () => setModal(null);
 
   const doRefresh = () => {
     if ('caches' in window) {
@@ -44,10 +47,11 @@ export const MobileHeader = ({ currentUser, isSyncing }) => {
       showToast('Conéctate a Internet para actualizar', 'error');
       return;
     }
-    openModal('Actualizar App', '¿Buscar actualizaciones y refrescar la aplicación?', doRefresh);
+    showConfirm({ title: 'Actualizar App', message: '¿Buscar actualizaciones y refrescar la aplicación?', onConfirm: doRefresh });
   };
 
   return (
+    <>
     <div className="md:hidden flex-shrink-0 flex items-center justify-between glass border-b border-slate-200 dark:border-slate-800 px-4 h-[60px] no-print z-40 relative shadow-sm">
       {/* Izquierda: Regresar o Hamburger/Menú */}
       <div className="w-10 relative">
@@ -94,6 +98,14 @@ export const MobileHeader = ({ currentUser, isSyncing }) => {
               >
                 <Settings size={18} className="text-slate-400" /> Cambiar Contraseña
               </button>
+              {pendingCount > 0 && (
+                <button
+                  onClick={() => { setShowDriverMenu(false); showToast('Limpiando sincronización...', 'success'); clearStuckSync(); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                >
+                  <RefreshCw size={18} /> Limpiar sync ({pendingCount})
+                </button>
+              )}
               <button
                 onClick={() => { setShowDriverMenu(false); handleRefresh(); }}
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
@@ -136,7 +148,7 @@ export const MobileHeader = ({ currentUser, isSyncing }) => {
         )}
 
         <button
-          onClick={() => openModal('Cerrar sesión', '¿Seguro que deseas salir?', logout)}
+          onClick={() => showConfirm({ title: 'Cerrar sesión', message: '¿Seguro que deseas salir?', onConfirm: logout, danger: true })}
           className="w-10 h-10 rounded-xl flex items-center justify-center text-red-500 active:scale-95 transition-all"
         >
           <LogOut size={22} />
@@ -175,49 +187,36 @@ export const MobileHeader = ({ currentUser, isSyncing }) => {
         )}
       </div>
 
-      {/* Modals are kept in App.jsx for global consistency or moved here if they are header-specific */}
-      {/* Actually, keeping the modals in the common parent is better, but since these are triggered by header, I'll keep them here for now */}
-      {showChangePwd && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6">
-            <h3 className="text-base font-black mb-1">Cambiar Contraseña</h3>
-            <div className="space-y-3 mt-4">
-              <input type="password" value={pwdForm.current} onChange={e => setPwdForm(f => ({ ...f, current: e.target.value }))} placeholder="Actual" className="w-full bg-slate-50 dark:bg-slate-900 border-2 rounded-2xl px-4 py-3" />
-              <input type="password" value={pwdForm.next} onChange={e => setPwdForm(f => ({ ...f, next: e.target.value }))} placeholder="Nueva" className="w-full bg-slate-50 dark:bg-slate-900 border-2 rounded-2xl px-4 py-3" />
-              <input type="password" value={pwdForm.confirm} onChange={e => setPwdForm(f => ({ ...f, confirm: e.target.value }))} placeholder="Confirmar" className="w-full bg-slate-50 dark:bg-slate-900 border-2 rounded-2xl px-4 py-3" />
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowChangePwd(false)} className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-700 font-black">Cancelar</button>
-              <button 
-                onClick={async () => {
-                  setPwdLoading(true);
-                  const res = await changePassword(pwdForm.current, pwdForm.next);
-                  setPwdLoading(false);
-                  if (res.ok) { showToast('Actualizada ✓', 'success'); setShowChangePwd(false); }
-                  else showToast(res.msg, 'error');
-                }}
-                className="flex-1 py-3 rounded-2xl bg-primary text-white font-black"
-              >
-                {pwdLoading ? '...' : 'Guardar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {modal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6">
-            <h3 className="text-base font-black mb-1">{modal.title}</h3>
-            <p className="text-sm text-slate-500 mb-6">{modal.message}</p>
-            <div className="flex gap-3">
-              <button onClick={closeModal} className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-700 font-black">Cancelar</button>
-              <button onClick={() => { closeModal(); modal.onConfirm(); }} className="flex-1 py-3 rounded-2xl bg-primary text-white font-black">Confirmar</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
+
+    {showChangePwd && (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+        <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6">
+          <h3 className="text-base font-black mb-1 text-center">Cambiar Contraseña</h3>
+          <div className="space-y-3 mt-4">
+            <input type="password" value={pwdForm.current} onChange={e => setPwdForm(f => ({ ...f, current: e.target.value }))} placeholder="Actual" className="w-full bg-slate-50 dark:bg-slate-900 border-2 rounded-2xl px-4 py-3" />
+            <input type="password" value={pwdForm.next} onChange={e => setPwdForm(f => ({ ...f, next: e.target.value }))} placeholder="Nueva" className="w-full bg-slate-50 dark:bg-slate-900 border-2 rounded-2xl px-4 py-3" />
+            <input type="password" value={pwdForm.confirm} onChange={e => setPwdForm(f => ({ ...f, confirm: e.target.value }))} placeholder="Confirmar" className="w-full bg-slate-50 dark:bg-slate-900 border-2 rounded-2xl px-4 py-3" />
+          </div>
+          <div className="flex gap-3 mt-6">
+            <button onClick={() => setShowChangePwd(false)} className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-700 font-black">Cancelar</button>
+            <button
+              onClick={async () => {
+                setPwdLoading(true);
+                const res = await changePassword(pwdForm.current, pwdForm.next);
+                setPwdLoading(false);
+                if (res.ok) { showToast('Actualizada ✓', 'success'); setShowChangePwd(false); }
+                else showToast(res.msg, 'error');
+              }}
+              className="flex-1 py-3 rounded-2xl bg-primary text-white font-black"
+            >
+              {pwdLoading ? '...' : 'Guardar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
@@ -242,12 +241,21 @@ export const BottomNavigation = ({ currentUser }) => {
 
   return (
     <div className={navClass} style={navStyle}>
-      <NavItem to={isChofer ? "/entregas" : "/ventas"} icon={isChofer ? Truck : ShoppingCart} label={isChofer ? "Entregas" : "Ventas"} active={isActive('/') || isActive('/ventas') || isActive('/entregas')} />
-      <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
-      {isAdmin ? (
-        <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
-      ) : (
-        <NavItem to="/clientes" icon={Users} label="Clientes" active={isActive('/clientes')} />
+      {/* Para Choferes: Entregas | Reportes */}
+      {isChofer && (
+        <>
+          <NavItem to="/entregas" icon={Truck} label="Entregas" active={isActive('/entregas') || isActive('/')} />
+          <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
+        </>
+      )}
+
+      {/* Para Admins: Ventas | Reportes | Menú */}
+      {isAdmin && (
+        <>
+          <NavItem to="/ventas" icon={ShoppingCart} label="Ventas" active={isActive('/ventas') || isActive('/')} />
+          <NavItem to="/reportes" icon={Banknote} label="Reportes" active={isActive('/reportes')} />
+          <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
+        </>
       )}
     </div>
   );
