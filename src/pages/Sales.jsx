@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useStore } from '../store';
 import { ShoppingCart, Printer, Delete, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth, Banknote, LogOut, Users, LayoutGrid, Package } from 'lucide-react';
 
-import { printTicket } from '../lib/bluetoothPrinter';
 import { Link } from 'react-router-dom';
 import TicketPreview from '../components/TicketPreview';
 import ProductDialog from '../components/sales/ProductDialog';
@@ -15,7 +14,6 @@ export default function Sales() {
     const todayStr = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD en local
     const [saleDate, setSaleDate] = useState(todayStr);
     const [generatedTicket, setGeneratedTicket] = useState(null);
-    const [btPrinting, setBtPrinting] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('efectivo');
 
     // Mobile Cart State
@@ -23,9 +21,6 @@ export default function Sales() {
 
     // Product Selection Modal State
     const [selectedProductDialog, setSelectedProductDialog] = useState(null);
-    const [selectedQuantity, setSelectedQuantity] = useState('');
-    const [selectedPieces, setSelectedPieces] = useState('');
-    const [activeField, setActiveField] = useState('qty'); // 'qty' or 'pieces'
 
     // Lista de precios activa del usuario (soporta camelCase y lowercase de Supabase)
     const userPriceList = currentUser?.priceList || currentUser?.pricelist || 'A';
@@ -38,9 +33,6 @@ export default function Sales() {
 
     const openProductDialog = (product) => {
         setSelectedProductDialog(product);
-        setSelectedQuantity('');
-        setSelectedPieces('');
-        setActiveField('qty');
     };
 
     const handleAddToCart = (numQty, numPieces) => {
@@ -72,7 +64,7 @@ export default function Sales() {
 
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    const processSale = () => {
+    const processSale = React.useCallback(() => {
         const effectiveUserId = currentUser?.id;
 
         if (!effectiveUserId) { showToast('No hay usuario activo', 'error'); return; }
@@ -82,7 +74,9 @@ export default function Sales() {
         const now = new Date();
         const [y, m, d] = saleDate.split('-').map(Number);
         const saleDateTime = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds());
+        const saleId = now.getTime().toString();
         const sale = {
+            id: saleId,
             userId: effectiveUserId,
             clientId: selectedCartClient,
             items: cart,
@@ -92,12 +86,12 @@ export default function Sales() {
         };
 
         addSale(sale);
-        setGeneratedTicket({ ...sale, id: Date.now().toString() });
+        setGeneratedTicket(sale);
         updateCart([]);
         updateSelectedCartClient('');
         setPaymentMethod('efectivo');
         setMobileCartOpen(false);
-    };
+    }, [currentUser, selectedCartClient, cart, total, paymentMethod, saleDate, addSale, showToast, updateCart, updateSelectedCartClient]);
 
     const clearCart = () => {
         if (cart.length === 0) return;
@@ -147,7 +141,7 @@ export default function Sales() {
                     <div className="flex gap-2">
                         {[
                             { value: 'efectivo',       label: 'Efectivo',       icon: 'payments',         activeClass: 'border-emerald-500 bg-emerald-50', dotClass: 'border-emerald-500 bg-emerald-500', textClass: 'text-emerald-700' },
-                            { value: 'transferencia',  label: 'Transferencia',  icon: 'account_balance',  activeClass: 'border-blue-500 bg-blue-50',        dotClass: 'border-blue-500 bg-blue-500',        textClass: 'text-blue-700'    },
+                            { value: 'transferencia',  label: 'Crédito',        icon: 'credit_card',      activeClass: 'border-blue-500 bg-blue-50',        dotClass: 'border-blue-500 bg-blue-500',        textClass: 'text-blue-700'    },
                         ].map(opt => (
                             <label
                                 key={opt.value}

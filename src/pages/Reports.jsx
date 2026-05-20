@@ -578,8 +578,8 @@ export default function Reports() {
                                                 ? 'bg-blue-50 text-blue-600 border-blue-200'
                                                 : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                         }`}>
-                                            <span className="material-symbols-outlined" style={{fontSize:9}}>{isTransfer ? 'account_balance' : 'payments'}</span>
-                                            {isTransfer ? 'Transfer.' : 'Efectivo'}
+                                            <span className="material-symbols-outlined" style={{fontSize:9}}>{isTransfer ? 'credit_card' : 'payments'}</span>
+                                            {isTransfer ? 'Crédito' : 'Efectivo'}
                                         </span>
                                     </div>
                                     <div className="text-right shrink-0 px-2 py-3 border-l border-slate-100">

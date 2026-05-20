@@ -91,7 +91,8 @@ export default function TicketPreview({ config, sale, user, client }) {
                         width: '200px', 
                         minHeight: '300px', 
                         fontSize: `${useFontB ? 8.5 : 10}px`,
-                        paddingTop: `${headerSpacing}px`
+                        paddingTop: `${headerSpacing}px`,
+                        paddingBottom: `${footerSpacing}px`
                     }}
                 >
                     {showLogo && logoUrl && (
@@ -122,7 +123,7 @@ export default function TicketPreview({ config, sale, user, client }) {
                     
                     {showCustomer && <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>{showLabels ? 'Cliente' : ''}</span><span className="uppercase text-right">{displayClient.name}</span></div>}
                     {showSeller && <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>{showLabels ? 'Repartidor' : ''}</span><span className="uppercase text-right">{displayUser.name}</span></div>}
-                    {showPaymentMethod && <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>{showLabels ? 'Pago' : ''}</span><span className="uppercase text-right">{(displaySale.paymentMethod || 'efectivo') === 'transferencia' ? 'TRANSFERENCIA' : 'EFECTIVO'}</span></div>}
+                    {showPaymentMethod && <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}><span>{showLabels ? 'Pago' : ''}</span><span className="uppercase text-right">{(displaySale.paymentMethod || 'efectivo') === 'transferencia' ? 'CRÉDITO' : 'EFECTIVO'}</span></div>}
 
                     {showSeparatorItems && <Separator separatorStyle={separatorStyle} />}
 
@@ -206,7 +207,8 @@ export default function TicketPreview({ config, sale, user, client }) {
                     width: '200px', 
                     minHeight: '300px', 
                     fontSize: `${useFontB ? 8.5 : 10}px`,
-                    paddingTop: `${headerSpacing}px`
+                    paddingTop: `${headerSpacing}px`,
+                    paddingBottom: `${footerSpacing}px`
                 }}
             >
                 {showLogo && logoUrl && (
@@ -253,7 +255,7 @@ export default function TicketPreview({ config, sale, user, client }) {
                     )}
                     {showPaymentMethod && (
                         <div style={metaStyle} className={metadataAlignment === 'between' ? 'flex justify-between' : `text-${metadataAlignment}`}>
-                            <span>{showLabels ? 'Pago   :' : ''}</span> <span className="uppercase">{(displaySale.paymentMethod || 'efectivo') === 'transferencia' ? 'Transferencia' : 'Efectivo'}</span>
+                            <span>{showLabels ? 'Pago   :' : ''}</span> <span className="uppercase">{(displaySale.paymentMethod || 'efectivo') === 'transferencia' ? 'Crédito' : 'Efectivo'}</span>
                         </div>
                     )}
                 </div>

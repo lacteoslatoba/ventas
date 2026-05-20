@@ -63,15 +63,15 @@ export default function SaleDetailModal({
                     <div className="mx-4 mt-2 flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg">
                         <div className="flex items-center gap-3">
                             <span className="material-symbols-outlined text-gray-500" style={{ fontSize: 18 }}>
-                                {isTransfer ? 'account_balance' : 'payments'}
+                                {isTransfer ? 'credit_card' : 'payments'}
                             </span>
                             <div>
                                 <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Forma de Pago</p>
-                                <p className="text-sm font-black text-gray-900">{isTransfer ? 'Transferencia' : 'Efectivo'}</p>
+                                <p className="text-sm font-black text-gray-900">{isTransfer ? 'Crédito' : 'Efectivo'}</p>
                             </div>
                         </div>
                         <span className="text-[9px] font-black text-gray-500 uppercase tracking-wide border border-gray-200 px-2 py-1 rounded">
-                            {isTransfer ? 'TRANSF.' : 'EFECTIVO'}
+                            {isTransfer ? 'CRÉDITO' : 'EFECTIVO'}
                         </span>
                     </div>
 

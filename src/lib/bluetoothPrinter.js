@@ -129,7 +129,6 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         metadataSpacing = 0,
         showMainTitle = true,
         showBusinessName = true,
-        metadataSize = 10,
         multiLineItems = true,
         totalFontSize = 14,
         itemsHeaderLeft = 'CANT/CONCEPTO',
@@ -275,7 +274,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
             add(formatMetaLine(showLabels ? 'Repartidor' : '', sName));
         }
         if (showPaymentMethod) {
-            const pm = ticket.paymentMethod === 'transferencia' ? 'TRANSFERENCIA' : 'EFECTIVO';
+            const pm = ticket.paymentMethod === 'transferencia' ? 'CRÉDITO' : 'EFECTIVO';
             add(formatMetaLine(showLabels ? 'Pago' : '', pm));
         }
 
@@ -415,7 +414,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         if (showSeller) add(formatMetaLine(showLabels ? 'Repartidor' : '', user?.name || 'Vendedor'));
         if (showCustomer) add(formatMetaLine(showLabels ? 'Cliente' : '', client?.name || 'General'));
         if (showPaymentMethod) {
-            const pm = ticket.paymentMethod === 'transferencia' ? 'TRANSFERENCIA' : 'EFECTIVO';
+            const pm = ticket.paymentMethod === 'transferencia' ? 'CRÉDITO' : 'EFECTIVO';
             add(formatMetaLine(showLabels ? 'Pago' : '', pm));
         }
 
@@ -538,7 +537,9 @@ async function detectService(deviceId) {
                 return { serviceUUID: NORDIC_SERVICE_UUID, charUUID: NORDIC_TX_CHAR_UUID };
             }
         }
-    } catch {}
+    } catch (_e) {
+        // ignore
+    }
     return { serviceUUID: PRINTER_SERVICE_UUID, charUUID: PRINTER_CHAR_UUID };
 }
 
@@ -578,7 +579,9 @@ export async function startPrinterScan(onDeviceFound) {
     try {
         const bonded = await BleClient.getBondedDevices();
         bonded.forEach(d => report({ deviceId: d.deviceId, name: d.name, rssi: -60 }));
-    } catch {}
+    } catch (_e) {
+        // ignore
+    }
 
     // 2. Escanear BLE activamente para encontrar más
     try {
@@ -590,12 +593,16 @@ export async function startPrinterScan(onDeviceFound) {
                 rssi: result.rssi,
             });
         });
-    } catch {}
+    } catch (_e) {
+        // ignore
+    }
 }
 
 export async function stopPrinterScan() {
     _scanActive = false;
-    try { await BleClient.stopLEScan(); } catch {}
+    try { await BleClient.stopLEScan(); } catch (_e) {
+        // ignore
+    }
 }
 
 export async function connectToDevice(deviceId, displayName) {
