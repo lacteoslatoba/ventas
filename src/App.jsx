@@ -20,16 +20,32 @@ import Sidebar from './components/Sidebar';
 import MenuPage from './pages/Menu';
 
 const NetworkIndicator = () => {
-  const { isOnline, setOnlineStatus, syncToSupabase } = useStore();
+  const { isOnline, setOnlineStatus } = useStore();
 
   useEffect(() => {
+    // ── Al recuperar conexión: renovar sesión + subir pendientes + bajar frescos ──
     const handleOnline = () => {
       setOnlineStatus(true);
-      syncToSupabase(true);
+      // 800 ms para que la red se estabilice antes de la primera llamada
+      setTimeout(() => useStore.getState().syncOnReconnect(), 800);
     };
+
     const handleOffline = () => setOnlineStatus(false);
 
-    // Sistema de actualización automática de PWA
+    // ── Al volver al foco (app minimizada o tab oculta) ──
+    const handleVisibility = () => {
+      if (document.visibilityState !== 'visible') return;
+      const s = useStore.getState();
+      // Si el navegador sabe que hay red pero el store dice offline, corregirlo
+      if (navigator.onLine && !s.isOnline) s.setOnlineStatus(true);
+      if (!navigator.onLine || !s.isOnline) return;
+      // Sincronizar si el último sync fue hace más de 2 minutos
+      const TWO_MIN = 2 * 60 * 1000;
+      const stale = !s.lastSync || Date.now() - new Date(s.lastSync).getTime() > TWO_MIN;
+      if (stale) setTimeout(() => useStore.getState().syncOnReconnect(), 800);
+    };
+
+    // ── Actualización automática de PWA ──
     const checkForUpdates = () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistration().then(reg => {
@@ -38,8 +54,7 @@ const NetworkIndicator = () => {
       }
     };
 
-    // Sistema de altura estable para móviles (evita brincos del menú)
-    let lastWidth = window.innerWidth;
+    // ── Altura estable para móviles (evita brincos del menú) ──
     const updateHeight = () => {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -48,13 +63,15 @@ const NetworkIndicator = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('resize', updateHeight);
-    window.addEventListener('focus', checkForUpdates); // Check when app is focused (opened from home screen)
+    window.addEventListener('focus', checkForUpdates);
+    document.addEventListener('visibilitychange', handleVisibility);
     updateHeight();
-    checkForUpdates(); // Check on initial mount
+    checkForUpdates();
 
+    // Sync inicial al montar (si hay conexión)
     if (isOnline) {
       useStore.getState().fetchFromSupabase().then(() => {
-        syncToSupabase();
+        useStore.getState().syncToSupabase();
       });
     }
 
@@ -63,6 +80,7 @@ const NetworkIndicator = () => {
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('resize', updateHeight);
       window.removeEventListener('focus', checkForUpdates);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -85,7 +103,7 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
   const [showDriverMenu, setShowDriverMenu] = React.useState(false);
   const [modal, setModal] = React.useState(null); // { title, message, onConfirm }
   const { showToast } = useStore();
-  const { printer, setPrinter, isReconnecting, startAutoConnect } = useBTPrinter();
+  const { printer, isReconnecting, startAutoConnect } = useBTPrinter();
 
   const openModal = (title, message, onConfirm) =>
     setModal({ title, message, onConfirm });
@@ -109,7 +127,24 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
       showToast('Conéctate a Internet para actualizar', 'error');
       return;
     }
-    openModal('Actualizar App', '¿Buscar actualizaciones y refrescar la aplicación?', doRefresh);
+    // Si hay ventas/datos sin subir, sincronizar PRIMERO para no perder nada
+    const s = useStore.getState();
+    const tables = [s.products, s.users, s.clients, s.sales, s.inventory, s.expenses];
+    const pending = tables.reduce((acc, t) => acc + (t || []).filter(i => !i.synced).length, 0)
+      + (s.ticketConfig && !s.ticketConfig.synced ? 1 : 0);
+    if (pending > 0) {
+      openModal(
+        '⚠️ Hay datos sin subir',
+        `${pending} registro${pending !== 1 ? 's' : ''} (ventas/gastos) aún no se ha${pending !== 1 ? 'n' : ''} sincronizado con la nube. Al confirmar se subirán primero y luego se actualizará la app.`,
+        async () => {
+          showToast('Subiendo datos a la nube…', 'success');
+          await useStore.getState().syncOnReconnect();
+          setTimeout(doRefresh, 1500);
+        }
+      );
+    } else {
+      openModal('Actualizar App', '¿Buscar actualizaciones y refrescar la aplicación?', doRefresh);
+    }
   };
 
   return (
@@ -382,26 +417,54 @@ const InstallBanner = () => {
 };
 
 const OfflineBanner = () => {
-  const { isOnline, products, users, clients, sales, inventory, ticketConfig } = useStore();
+  const { isOnline, isSyncing, products, users, clients, sales, inventory, expenses, ticketConfig } = useStore();
 
   const pendingCount = React.useMemo(() => {
-    const tables = [products, users, clients, sales, inventory];
-    let count = tables.reduce((acc, t) => acc + t.filter(i => !i.synced).length, 0);
+    const tables = [products, users, clients, sales, inventory, expenses];
+    let count = tables.reduce((acc, t) => acc + (t || []).filter(i => !i.synced).length, 0);
     if (ticketConfig && !ticketConfig.synced) count++;
     return count;
-  }, [products, users, clients, sales, inventory, ticketConfig]);
+  }, [products, users, clients, sales, inventory, expenses, ticketConfig]);
 
-  if (isOnline) return null;
+  // ── Sin conexión ──────────────────────────────────────────────────────────
+  if (!isOnline) {
+    return (
+      <div className="flex-shrink-0 bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-xs font-black no-print select-none">
+        <WifiOff size={13} />
+        <span>
+          Sin conexión
+          {pendingCount > 0 && ` · ${pendingCount} cambio${pendingCount !== 1 ? 's' : ''} sin subir`}
+        </span>
+      </div>
+    );
+  }
 
-  return (
-    <div className="flex-shrink-0 bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-xs font-black no-print select-none">
-      <WifiOff size={13} />
-      <span>
-        Sin conexión
-        {pendingCount > 0 && ` · ${pendingCount} cambio${pendingCount !== 1 ? 's' : ''} pendiente${pendingCount !== 1 ? 's' : ''}`}
-      </span>
-    </div>
-  );
+  // ── Online + sincronizando ────────────────────────────────────────────────
+  if (isSyncing) {
+    return (
+      <div className="flex-shrink-0 bg-blue-500 text-white px-4 py-1.5 flex items-center justify-center gap-2 text-[11px] font-bold no-print select-none">
+        <RefreshCw size={11} className="animate-spin" />
+        <span>Sincronizando{pendingCount > 0 ? ` ${pendingCount} cambio${pendingCount !== 1 ? 's' : ''}` : ''}…</span>
+      </div>
+    );
+  }
+
+  // ── Online + hay pendientes sin subir (sync falló o aún no corrió) ────────
+  if (pendingCount > 0) {
+    return (
+      <button
+        onClick={() => useStore.getState().syncOnReconnect()}
+        className="flex-shrink-0 bg-orange-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-xs font-black no-print select-none w-full active:bg-orange-600 transition-colors"
+      >
+        <RefreshCw size={12} />
+        <span>
+          {pendingCount} cambio{pendingCount !== 1 ? 's' : ''} sin subir · Toca para sincronizar
+        </span>
+      </button>
+    );
+  }
+
+  return null;
 };
 
 const GlobalConfirmDialog = () => {
@@ -441,7 +504,7 @@ const AdminRoute = ({ children, currentUser }) => {
 function App() {
   const { currentUser, isSyncing, initAuth } = useStore();
 
-  useEffect(() => { initAuth(); }, []);
+  useEffect(() => { initAuth(); }, [initAuth]);
 
   // Ya no se fuerza Fullscreen porque el usuario prefiere su barra de navegación y para evitar bugs de teclado en Android.
 

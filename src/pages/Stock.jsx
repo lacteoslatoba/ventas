@@ -144,10 +144,10 @@ export default function Stock() {
                                 <button
                                     key={day}
                                     onClick={() => setSelectedDate(dateStr)}
-                                    className={`flex flex-col items-center justify-center w-full py-1.5 rounded-xl transition-all active:scale-90
-                                        ${isSelected ? 'bg-primary text-white shadow-sm shadow-primary/30'
-                                        : isToday    ? 'ring-2 ring-primary/30 text-primary font-black'
-                                        : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`}
+                                    className={`flex flex-col items-center justify-center w-full py-1.5 transition-all active:scale-90
+                                        ${isSelected ? 'rounded-full bg-primary text-white shadow-sm shadow-primary/30'
+                                        : isToday    ? 'rounded-xl ring-2 ring-primary/30 text-primary font-black'
+                                        : 'rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`}
                                 >
                                     <span className={`text-[12px] font-black leading-none ${isSelected ? 'text-white' : ''}`}>{day}</span>
                                     {hasSales && (

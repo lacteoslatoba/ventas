@@ -239,6 +239,58 @@ export const useStore = create(
 
             setOnlineStatus: (status) => set({ isOnline: status }),
 
+            // Sincronización completa al reconectar desde offline
+            // 1) Renueva sesión Supabase (puede expirar tras offline prolongado)
+            // 2) Sube cambios pendientes locales
+            // 3) Baja datos frescos del servidor
+            // 4) Reintenta una vez si falla
+            syncOnReconnect: async () => {
+                const state = get();
+                if (!state.isOnline || !supabase) return;
+
+                // Renovar token antes de cualquier llamada (evita 401 tras offline largo)
+                try { await supabase.auth.refreshSession(); } catch (_) {}
+
+                // Contar pendientes para el toast
+                const tables = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses'];
+                const pending = tables.reduce(
+                    (acc, t) => acc + ((get()[t] || []).filter(i => !i.synced).length), 0
+                ) + (get().ticketConfig && !get().ticketConfig.synced ? 1 : 0);
+
+                const attempt = async () => {
+                    await get().syncToSupabase(false);   // ① Sube cambios locales
+                    await get().fetchFromSupabase();      // ② Baja datos del servidor
+                };
+
+                try {
+                    await attempt();
+                    if (pending > 0) {
+                        get().showToast(
+                            `${pending} cambio${pending !== 1 ? 's' : ''} sincronizado${pending !== 1 ? 's' : ''} ✓`,
+                            'success'
+                        );
+                    }
+                } catch (err) {
+                    console.warn('Sync inicial falló, reintentando en 4 s…', err);
+                    // Reintento automático a los 4 segundos
+                    setTimeout(async () => {
+                        if (!get().isOnline) return;
+                        try {
+                            await supabase.auth.refreshSession().catch(() => {});
+                            await attempt();
+                            if (pending > 0) {
+                                get().showToast(
+                                    `${pending} cambio${pending !== 1 ? 's' : ''} sincronizado${pending !== 1 ? 's' : ''} ✓`,
+                                    'success'
+                                );
+                            }
+                        } catch (e2) {
+                            console.error('Reintento de sync también falló:', e2);
+                        }
+                    }, 4000);
+                }
+            },
+
             // Motor de Sincronización Automática (Subida)
             syncToSupabase: async (notify = false) => {
                 const state = get();
