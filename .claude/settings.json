@@ -22,8 +22,11 @@
       "PowerShell(& \"C:\\Program Files (x86)\\ClockworkMod\\Universal Adb Driver\\adb.exe\" *)",
       "Bash(npm run build *)",
       "Bash(npm run dev *)",
+      "PowerShell(npm run dev *)",
+      "PowerShell(cd *; npm run dev *)",
       "Bash(npx cap sync *)",
-      "PowerShell(cd *; git *)"
+      "PowerShell(cd *; git *)",
+      "PowerShell(& \"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\" \"https://github.com/lacteoslatoba/ventas\")"
     ]
   }
 }

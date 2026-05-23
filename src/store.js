@@ -505,6 +505,9 @@ export const useStore = create(
                                                finalConfig.printCopy
                                 };
 
+                                // Eliminar versiones crudas para evitar conflictos en syncToSupabase
+                                ['header', 'footer', 'doubleCopy', 'doublecopy'].forEach(k => delete mappedConfig[k]);
+
                                 const cleanData = {};
                                 Object.keys(mappedConfig).forEach(key => {
                                     if (mappedConfig[key] !== null && mappedConfig[key] !== undefined) {
