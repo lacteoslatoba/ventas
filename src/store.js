@@ -13,6 +13,16 @@ const REVERSE_COLUMN_MAP = Object.fromEntries(
     Object.entries(COLUMN_MAP).map(([lower, camel]) => [camel, lower])
 );
 
+const FALLBACK_COLUMNS = {
+    products: ['id', 'name', 'code', 'price', 'unit', 'stock', 'priceA', 'priceB', 'priceC', 'orden'],
+    users: ['id', 'name', 'phone', 'pin', 'vehicle', 'priceList', 'lugar1', 'lugar2', 'lugar1activo', 'lugar2activo', 'auth_id'],
+    clients: ['id', 'name', 'phone', 'address', 'userId'],
+    sales: ['id', 'userId', 'clientId', 'total', 'items', 'date', 'paymentmethod'],
+    inventory: ['id', 'productId', 'type', 'quantity', 'notes', 'date'],
+    expenses: ['id', 'userid', 'date', 'description', 'amount'],
+    ticket_config: ['id', 'header', 'footer', 'doubleCopy', 'centerTotal', 'spaceBetweenItems', 'showCashAndChange']
+};
+
 const mergeStateHelper = (localItems, freshItems) => {
     if (!freshItems) return localItems || [];
     const local = localItems || [];
@@ -321,7 +331,7 @@ export const useStore = create(
                             const payload = pendingData.map(({ synced: _synced, ...rest }) => rest);
 
                             const safePayload = payload.map(item => {
-                                const knownCols = state.cloudColumns?.[tableName];
+                                const knownCols = state.cloudColumns?.[tableName] || FALLBACK_COLUMNS[tableName];
                                 if (!knownCols) return item;
 
                                 const filtered = {};

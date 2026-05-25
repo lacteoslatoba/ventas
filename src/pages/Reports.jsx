@@ -254,15 +254,13 @@ export default function Reports() {
                         <span className="material-symbols-outlined text-rose-500" style={{fontSize:18}}>receipt_long</span>
                         <p className="text-sm font-black text-slate-800 uppercase tracking-wide">Gastos del día</p>
                     </div>
-                    {!isAdmin && (
-                        <button
-                            onClick={() => setShowExpenseModal(true)}
-                            className="flex items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wide transition-all active:scale-95"
-                        >
-                            <Plus size={12} />
-                            Agregar
-                        </button>
-                    )}
+                    <button
+                        onClick={() => setShowExpenseModal(true)}
+                        className="flex items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wide transition-all active:scale-95"
+                    >
+                        <Plus size={12} />
+                        Agregar
+                    </button>
                 </div>
 
                 {dayExpenses.length === 0 ? (
@@ -279,14 +277,12 @@ export default function Reports() {
                                 </div>
                                 <p className="flex-1 text-sm font-bold text-slate-700 truncate">{exp.description}</p>
                                 <p className="text-sm font-black text-rose-600 shrink-0">-${Number(exp.amount).toFixed(2)}</p>
-                                {!isAdmin && (
-                                    <button
-                                        onClick={() => deleteExpense(exp.id)}
-                                        className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-red-500 active:scale-90 transition-all"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                )}
+                                <button
+                                    onClick={() => deleteExpense(exp.id)}
+                                    className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-red-500 active:scale-90 transition-all"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
                             </div>
                         ))}
                     </div>
@@ -297,6 +293,25 @@ export default function Reports() {
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Gastos</span>
                     <span className="text-xl font-black text-rose-600">-${totalExpenses.toFixed(2)}</span>
                 </div>
+
+                {/* Botón de Guardar en Base de Datos */}
+                {dayExpenses.some(e => !e.synced) && (
+                    <div className="px-4 py-3 bg-rose-50 border-t border-rose-100 flex justify-end">
+                        <button
+                            onClick={async () => {
+                                if (!navigator.onLine) {
+                                    showToast('Sin conexión a Internet. Se guardará localmente.', 'warning');
+                                    return;
+                                }
+                                await useStore.getState().syncToSupabase(true);
+                            }}
+                            className="flex items-center gap-2 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all active:scale-95 shadow-md shadow-rose-200 w-full justify-center sm:w-auto"
+                        >
+                            <span className="material-symbols-outlined text-white" style={{fontSize:16}}>cloud_upload</span>
+                            Guardar en Base de Datos
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -603,7 +618,7 @@ export default function Reports() {
                     setShowExpenseModal={setShowExpenseModal}
                     addExpense={addExpense}
                     currentUser={currentUser}
-                    repDateFilter={repDateFilter}
+                    repDateFilter={activeDate}
                     showToast={showToast}
                 />
             )}
