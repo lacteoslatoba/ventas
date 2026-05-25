@@ -260,7 +260,7 @@ export const useStore = create(
                 if (!state.isOnline || !supabase) return;
 
                 // Renovar token antes de cualquier llamada (evita 401 tras offline largo)
-                try { await supabase.auth.refreshSession(); } catch (_) {}
+                try { await supabase.auth.refreshSession(); } catch (_) { /* ignore token refresh failure */ }
 
                 // Contar pendientes para el toast
                 const tables = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses'];

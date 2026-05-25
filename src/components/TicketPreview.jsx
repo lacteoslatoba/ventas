@@ -51,7 +51,7 @@ export default function TicketPreview({ config, sale, user, client }) {
         totalToFooterSpacing = 0,
         itemsSectionSpacing = 0,
         headerSpacing = 0,
-        // footerSpacing is used in bluetoothPrinter.js only
+        footerSpacing = 0,
         showPaymentMethod = true,
     } = config || {};
 

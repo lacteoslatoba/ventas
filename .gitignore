@@ -27,3 +27,10 @@ dist-ssr
 
 # Capacitor
 ios/
+
+# Claude Code agent skills (dev tools, not part of the app)
+.claude/skills/
+skills-lock.json
+
+# Test scripts
+valyu-test.mjs
