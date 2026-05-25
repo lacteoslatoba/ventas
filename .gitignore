@@ -34,3 +34,8 @@ skills-lock.json
 
 # Test scripts
 valyu-test.mjs
+
+# Environment variables (secrets)
+.env
+.env.*
+!.env.example
