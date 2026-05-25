@@ -2,119 +2,12 @@ import React, { useState } from 'react';
 import { useStore } from '../store';
 import { ShoppingCart, Printer, Delete, Trash2, CheckCircle, ChevronUp, X, PackageOpen, Minus, Plus, ArrowLeft, Bluetooth, Banknote, LogOut, Users, LayoutGrid, Package } from 'lucide-react';
 
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import TicketPreview from '../components/TicketPreview';
 import ProductDialog from '../components/sales/ProductDialog';
 import SuccessModal from '../components/sales/SuccessModal';
-export default function Sales() {
-    const {
-        products, clients, users, addSale, currentUser, ticketConfig,
-        cart, updateCart, selectedCartClient, updateSelectedCartClient, showToast
-    } = useStore();
-    const todayStr = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD en local
-    const [saleDate, setSaleDate] = useState(todayStr);
-    const [generatedTicket, setGeneratedTicket] = useState(null);
-    const [paymentMethod, setPaymentMethod] = useState('efectivo');
-
-    // Mobile Cart State
-    const [mobileCartOpen, setMobileCartOpen] = useState(false);
-
-    // Product Selection Modal State
-    const [selectedProductDialog, setSelectedProductDialog] = useState(null);
-
-    // Lista de precios activa del usuario (soporta camelCase y lowercase de Supabase)
-    const userPriceList = currentUser?.priceList || currentUser?.pricelist || 'A';
-    const getPrecio = (p) => {
-        if (!p) return 0;
-        if (userPriceList === 'B') return Number(p.priceB || p.priceb) || Number(p.priceA || p.pricea || p.price) || 0;
-        if (userPriceList === 'C') return Number(p.priceC || p.pricec) || Number(p.priceA || p.pricea || p.price) || 0;
-        return Number(p.priceA || p.pricea || p.price) || 0;
-    };
-
-    const openProductDialog = (product) => {
-        setSelectedProductDialog(product);
-    };
-
-    const handleAddToCart = (numQty, numPieces) => {
-        const productPrice = getPrecio(selectedProductDialog);
-        updateCart(currentCart => {
-            const existing = currentCart.find(item => item.productId === selectedProductDialog.id);
-            if (existing) {
-                return currentCart.map(item => item.productId === selectedProductDialog.id
-                    ? { ...item, quantity: item.quantity + numQty, pieces: (item.pieces || 0) + numPieces }
-                    : item);
-            } else {
-                return [...currentCart, {
-                    productId: selectedProductDialog.id,
-                    name: selectedProductDialog.name,
-                    price: productPrice,
-                    quantity: numQty,
-                    pieces: numPieces,
-                    unit: selectedProductDialog.unit || 'u'
-                }];
-            }
-        });
-        setSelectedProductDialog(null);
-    };
-
-    const removeFromCart = (productId) => {
-        updateCart(cart.filter(item => item.productId !== productId));
-        if (cart.length === 1) setMobileCartOpen(false); // Close if last item removed
-    };
-
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-    const processSale = React.useCallback(() => {
-        const effectiveUserId = currentUser?.id;
-
-        if (!effectiveUserId) { showToast('No hay usuario activo', 'error'); return; }
-        if (!selectedCartClient) { showToast('Selecciona un cliente destino', 'warning'); return; }
-        if (cart.length === 0) { showToast('El carrito está vacío', 'warning'); return; }
-
-        const now = new Date();
-        const [y, m, d] = saleDate.split('-').map(Number);
-        const saleDateTime = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds());
-        const saleId = now.getTime().toString();
-        const sale = {
-            id: saleId,
-            userId: effectiveUserId,
-            clientId: selectedCartClient,
-            items: cart,
-            total,
-            paymentMethod,
-            date: saleDateTime.toISOString()
-        };
-
-        addSale(sale);
-        setGeneratedTicket(sale);
-        updateCart([]);
-        updateSelectedCartClient('');
-        setPaymentMethod('efectivo');
-        setMobileCartOpen(false);
-    }, [currentUser, selectedCartClient, cart, total, paymentMethod, saleDate, addSale, showToast, updateCart, updateSelectedCartClient]);
-
-    const clearCart = () => {
-        if (cart.length === 0) return;
-        updateCart([]);
-        updateSelectedCartClient('');
-        setMobileCartOpen(false);
-    };
-
-    if (generatedTicket) {
-        return (
-            <SuccessModal 
-                generatedTicket={generatedTicket} 
-                setGeneratedTicket={setGeneratedTicket} 
-                users={users} 
-                clients={clients} 
-                ticketConfig={ticketConfig} 
-                showToast={showToast} 
-            />
-        );
-    }
-
-    // Elemento del Carrito (Reutilizable en Desktop / Móvil)
-    const renderCartPanel = () => (
+function CartPanel({ cart, clients, currentUser, selectedCartClient, updateSelectedCartClient, paymentMethod, setPaymentMethod, clearCart, removeFromCart, total, processSale }) {
+    return (
         <div className="flex flex-col h-full bg-white lg:rounded-3xl lg:shadow-xl border-t lg:border border-slate-100 relative">
             <div className="p-5 flex justify-between items-center bg-slate-50/50 border-b border-slate-100 shrink-0">
                 <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">🛒 Detalle del Carrito</h2>
@@ -124,7 +17,7 @@ export default function Sales() {
                     </button>
                 )}
             </div>
-            
+
             <div className="px-5 py-4 bg-white border-b border-slate-100 shrink-0 space-y-3">
                 <div>
                     <label className="block text-slate-400 font-black mb-1.5 uppercase text-[10px] tracking-widest">Información de Entrega</label>
@@ -208,6 +101,116 @@ export default function Sales() {
             </div>
         </div>
     );
+}
+
+export default function Sales() {
+    const {
+        products, clients, users, addSale, currentUser, ticketConfig,
+        cart, updateCart, selectedCartClient, updateSelectedCartClient, showToast
+    } = useStore();
+    const navigate = useNavigate();
+    const todayStr = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD en local
+    const [saleDate, setSaleDate] = useState(todayStr);
+    const [generatedTicket, setGeneratedTicket] = useState(null);
+    const [paymentMethod, setPaymentMethod] = useState('efectivo');
+
+    // Mobile Cart State
+    const [mobileCartOpen, setMobileCartOpen] = useState(false);
+
+    // Product Selection Modal State
+    const [selectedProductDialog, setSelectedProductDialog] = useState(null);
+
+    // Lista de precios activa del usuario (soporta camelCase y lowercase de Supabase)
+    const userPriceList = currentUser?.priceList || currentUser?.pricelist || 'A';
+    const getPrecio = (p) => {
+        if (!p) return 0;
+        if (userPriceList === 'B') return Number(p.priceB || p.priceb) || Number(p.priceA || p.pricea || p.price) || 0;
+        if (userPriceList === 'C') return Number(p.priceC || p.pricec) || Number(p.priceA || p.pricea || p.price) || 0;
+        return Number(p.priceA || p.pricea || p.price) || 0;
+    };
+
+    const openProductDialog = (product) => {
+        setSelectedProductDialog(product);
+    };
+
+    const handleAddToCart = (numQty, numPieces) => {
+        const productPrice = getPrecio(selectedProductDialog);
+        updateCart(currentCart => {
+            const existing = currentCart.find(item => item.productId === selectedProductDialog.id);
+            if (existing) {
+                return currentCart.map(item => item.productId === selectedProductDialog.id
+                    ? { ...item, quantity: item.quantity + numQty, pieces: (item.pieces || 0) + numPieces }
+                    : item);
+            } else {
+                return [...currentCart, {
+                    productId: selectedProductDialog.id,
+                    name: selectedProductDialog.name,
+                    price: productPrice,
+                    quantity: numQty,
+                    pieces: numPieces,
+                    unit: selectedProductDialog.unit || 'u'
+                }];
+            }
+        });
+        setSelectedProductDialog(null);
+    };
+
+    const removeFromCart = (productId) => {
+        updateCart(cart.filter(item => item.productId !== productId));
+        if (cart.length === 1) setMobileCartOpen(false); // Close if last item removed
+    };
+
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    const processSale = React.useCallback(() => {
+        const effectiveUserId = currentUser?.id;
+
+        if (!effectiveUserId) { showToast('No hay usuario activo', 'error'); return; }
+        if (!selectedCartClient) { showToast('Selecciona un cliente destino', 'warning'); return; }
+        if (cart.length === 0) { showToast('El carrito está vacío', 'warning'); return; }
+
+        const now = new Date();
+        const [y, m, d] = saleDate.split('-').map(Number);
+        const saleDateTime = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds());
+        const sale = {
+            id: crypto.randomUUID(),
+            userId: effectiveUserId,
+            clientId: selectedCartClient,
+            items: cart,
+            total,
+            paymentMethod,
+            date: saleDateTime.toISOString()
+        };
+
+        addSale(sale);
+        setGeneratedTicket(sale);
+        updateCart([]);
+        updateSelectedCartClient('');
+        setPaymentMethod('efectivo');
+        setMobileCartOpen(false);
+    }, [currentUser, selectedCartClient, cart, total, paymentMethod, saleDate, addSale, showToast, updateCart, updateSelectedCartClient]);
+
+    const clearCart = () => {
+        if (cart.length === 0) return;
+        updateCart([]);
+        updateSelectedCartClient('');
+        setMobileCartOpen(false);
+    };
+
+    if (generatedTicket) {
+        return (
+            <SuccessModal 
+                generatedTicket={generatedTicket} 
+                setGeneratedTicket={setGeneratedTicket} 
+                users={users} 
+                clients={clients} 
+                ticketConfig={ticketConfig} 
+                showToast={showToast} 
+            />
+        );
+    }
+
+    const cartPanelProps = { cart, clients, currentUser, selectedCartClient, updateSelectedCartClient, paymentMethod, setPaymentMethod, clearCart, removeFromCart, total, processSale };
 
     return (
         <div className="p-4 md:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 h-full min-h-0 relative">
@@ -261,7 +264,7 @@ export default function Sales() {
 
             {/* Cart Desktop Side */}
             <div className="hidden lg:block w-[380px] xl:w-[420px] shrink-0 h-full pb-8">
-                {renderCartPanel()}
+                <CartPanel {...cartPanelProps} />
             </div>
 
             {/* Cart Mobile Floating Bar -> Modal */}
@@ -305,7 +308,7 @@ export default function Sales() {
                     </div>
 
                     <div className="flex-1 overflow-hidden">
-                        {renderCartPanel()}
+                        <CartPanel {...cartPanelProps} />
                     </div>
 
                     {/* Footer estilo App */}
@@ -317,8 +320,8 @@ export default function Sales() {
                         <button 
                             onClick={() => {
                                 setMobileCartOpen(false);
-                                window.location.href = '/reportes';
-                            }} 
+                                navigate('/reportes');
+                            }}
                             className="flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 text-slate-500"
                         >
                             <Banknote size={22} strokeWidth={2} />
@@ -328,8 +331,8 @@ export default function Sales() {
                             <button 
                                 onClick={() => {
                                     setMobileCartOpen(false);
-                                    window.location.href = '/menu';
-                                }} 
+                                    navigate('/menu');
+                                }}
                                 className="flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 text-slate-500"
                             >
                                 <LayoutGrid size={22} strokeWidth={2} />
@@ -339,8 +342,8 @@ export default function Sales() {
                             <button 
                                 onClick={() => {
                                     setMobileCartOpen(false);
-                                    window.location.href = '/stock';
-                                }} 
+                                    navigate('/stock');
+                                }}
                                 className="flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 text-slate-500"
                             >
                                 <Package size={22} strokeWidth={2} />

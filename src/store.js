@@ -2,6 +2,17 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabase';
 
+// Mapa global lowercase→camelCase (PostgreSQL devuelve columnas en minúsculas)
+const COLUMN_MAP = {
+    userid: 'userId', clientid: 'clientId', paymentmethod: 'paymentMethod',
+    pricelist: 'priceList', pricea: 'priceA', priceb: 'priceB', pricec: 'priceC',
+    lugar1activo: 'lugar1Activo', lugar2activo: 'lugar2Activo',
+};
+// Inverso: camelCase local → columna lowercase en Supabase
+const REVERSE_COLUMN_MAP = Object.fromEntries(
+    Object.entries(COLUMN_MAP).map(([lower, camel]) => [camel, lower])
+);
+
 const mergeStateHelper = (localItems, freshItems) => {
     if (!freshItems) return localItems || [];
     const local = localItems || [];
@@ -309,13 +320,6 @@ export const useStore = create(
                         if (pendingData.length > 0) {
                             const payload = pendingData.map(({ synced: _synced, ...rest }) => rest);
 
-                            // Inverso de COLUMN_MAP — camelCase local → columna lowercase en Supabase
-                            const REVERSE_COLUMN_MAP = {
-                                userId: 'userid', clientId: 'clientid', paymentMethod: 'paymentmethod',
-                                priceList: 'pricelist', priceA: 'pricea', priceB: 'priceb', priceC: 'pricec',
-                                lugar1Activo: 'lugar1activo', lugar2Activo: 'lugar2activo',
-                            };
-
                             const safePayload = payload.map(item => {
                                 const knownCols = state.cloudColumns?.[tableName];
                                 if (!knownCols) return item;
@@ -425,14 +429,6 @@ export const useStore = create(
                     const freshData = {};
                     const cloudColumns = {};
 
-                    // Mapea columnas que PostgreSQL devuelve en minúsculas a camelCase
-                    // Mapa global lowercase→camelCase para todas las tablas.
-                    // Agregar aquí cualquier columna nueva — nunca más editar por tabla.
-                    const COLUMN_MAP = {
-                        userid: 'userId', clientid: 'clientId', paymentmethod: 'paymentMethod',
-                        pricelist: 'priceList', pricea: 'priceA', priceb: 'priceB', pricec: 'priceC',
-                        lugar1activo: 'lugar1Activo', lugar2activo: 'lugar2Activo',
-                    };
                     const normalizeRow = (_tableName, item) => {
                         const n = { ...item };
                         Object.keys(n).forEach(col => {
@@ -586,7 +582,7 @@ export const useStore = create(
             // Inventario (Entradas/Salidas)
             addInventory: (item) => {
                 set((state) => ({
-                    inventory: [...state.inventory, { ...item, id: Date.now().toString(), date: new Date().toISOString(), synced: false }],
+                    inventory: [...state.inventory, { ...item, id: crypto.randomUUID(), date: new Date().toISOString(), synced: false }],
                     products: state.products.map(p => {
                         if (p.id === item.productId) {
                             return {
@@ -618,13 +614,16 @@ export const useStore = create(
                 }));
                 get().syncToSupabase();
             },
-            deleteUser: (id) => {
+            deleteUser: async (id) => {
                 set((state) => ({ users: state.users.filter((u) => u.id !== id) }));
+                if (get().isOnline && supabase) {
+                    await supabase.from('users').delete().eq('id', id);
+                }
             },
 
             // Clientes
             addClient: (client) => {
-                set((state) => ({ clients: [...state.clients, { ...client, id: Date.now().toString(), synced: false }] }));
+                set((state) => ({ clients: [...state.clients, { ...client, id: crypto.randomUUID(), synced: false }] }));
                 get().syncToSupabase();
             },
             updateClient: (id, client) => {
@@ -641,7 +640,7 @@ export const useStore = create(
             // Ventas
             addSale: (sale) => {
                 set((state) => {
-                    const newSale = { id: Date.now().toString(), date: new Date().toISOString(), ...sale, synced: false };
+                    const newSale = { id: crypto.randomUUID(), date: new Date().toISOString(), ...sale, synced: false };
 
                     const updatedProducts = state.products.map(p => {
                         const saleItem = sale.items.find(i => i.productId === p.id);
@@ -703,7 +702,7 @@ export const useStore = create(
                 const state = get();
                 if (state.isOnline && supabase) {
                     try {
-                        await supabase.from('sales').delete().neq('id', 'placeholder');
+                        await supabase.from('sales').delete().not('id', 'is', null);
                     } catch (error) {
                         console.error('Error vaciando ventas en la nube:', error);
                     }
