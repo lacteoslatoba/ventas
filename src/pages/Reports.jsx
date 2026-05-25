@@ -466,15 +466,15 @@ export default function Reports() {
                     {/* TAB: INFORME (operador) */}
                     {activeTab === 'informe' && (
                         <div className="pb-24 space-y-3 animate-in fade-in duration-200">
-                            <div className="bg-white border border-violet-100 rounded-2xl overflow-hidden shadow-sm">
-                                <div className="px-4 py-3 bg-gradient-to-r from-violet-700 to-indigo-700 flex items-center justify-between">
+                            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                                <div className="px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Generar Informe</p>
-                                        <p className="text-xs font-black text-white capitalize mt-0.5">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Generar Informe</p>
+                                        <p className="text-xs font-black text-slate-800 capitalize mt-0.5">
                                             {new Date(repDateFilter + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
                                         </p>
                                     </div>
-                                    <span className="material-symbols-outlined text-white/80" style={{fontSize:20}}>analytics</span>
+                                    <span className="material-symbols-outlined text-slate-400" style={{fontSize:20}}>analytics</span>
                                 </div>
 
                                 <div className="p-4 space-y-3 bg-white">

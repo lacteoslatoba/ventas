@@ -1,3 +1,4 @@
+/* global __BUILD_TIME__ */
 import React from 'react';
 import { useStore } from '../store';
 import { useNavigate } from 'react-router-dom';

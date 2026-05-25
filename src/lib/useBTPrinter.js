@@ -18,6 +18,7 @@ export function useBTPrinter() {
     const retryTimerRef = useRef(null);
     const retryCountRef = useRef(0);
     const mountedRef = useRef(true);
+    const scheduleRetryRef = useRef(null);
 
     const setPrinter = useCallback((p) => {
         setGlobalPrinter(p);
@@ -50,8 +51,7 @@ export function useBTPrinter() {
                     if (mountedRef.current) setPrinterState(null);
                     // Reiniciar loop al desconectarse inesperadamente
                     retryCountRef.current = 0;
-                    // eslint-disable-next-line react-hooks/immutability
-                    scheduleRetry(connectFn);
+                    scheduleRetryRef.current(connectFn);
                 };
 
                 // Pasamos la callback de desconexión directamente
@@ -61,13 +61,18 @@ export function useBTPrinter() {
                     setPrinterState(result);
                     stopRetry();
                 } else {
-                    scheduleRetry(connectFn);
+                    scheduleRetryRef.current(connectFn);
                 }
             } catch {
-                scheduleRetry(connectFn);
+                scheduleRetryRef.current(connectFn);
             }
         }, RETRY_DELAY);
     }, [stopRetry]);
+
+    // Sincronizar la referencia en un efecto para evitar la actualización en fase de renderizado
+    useEffect(() => {
+        scheduleRetryRef.current = scheduleRetry;
+    }, [scheduleRetry]);
 
     const startAutoConnect = useCallback(() => {
         const savedDeviceId = getSavedPrinterName();
@@ -88,7 +93,7 @@ export function useBTPrinter() {
             setGlobalPrinter(null);
             if (mountedRef.current) setPrinterState(null);
             retryCountRef.current = 0;
-            scheduleRetry(connectFn);
+            scheduleRetryRef.current(connectFn);
         };
         
         connectFn().then(result => {
@@ -98,18 +103,22 @@ export function useBTPrinter() {
                 setPrinterState(result);
                 stopRetry();
             } else {
-                scheduleRetry(connectFn);
+                scheduleRetryRef.current(connectFn);
             }
         }).catch(() => {
-            if (mountedRef.current) scheduleRetry(connectFn);
+            if (mountedRef.current) scheduleRetryRef.current(connectFn);
         });
-    }, [scheduleRetry, stopRetry]);
+    }, [stopRetry]);
 
     useEffect(() => {
         mountedRef.current = true;
 
         // Auto-conectar al montar (inicio de sesión)
-        startAutoConnect();
+        setTimeout(() => {
+            if (mountedRef.current) {
+                startAutoConnect();
+            }
+        }, 0);
 
         // Reconectar cuando el usuario vuelve a la app
         const handleVisible = () => {
