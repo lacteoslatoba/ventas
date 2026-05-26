@@ -15,7 +15,7 @@ const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto
 const DAYS_SHORT = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
 
 export default function Reports() {
-    const { sales, users, clients, expenses, currentUser, ticketConfig, showToast, showConfirm, clearAllSales, addExpense, deleteExpense, deleteSale } = useStore();
+    const { sales, users, clients, expenses, currentUser, ticketConfig, showToast, showConfirm, clearAllSales, addExpense, deleteExpense, deleteSale, updateSale } = useStore();
     const [filterUser, setFilterUser] = useState('');
     const [repDateFilter, setRepDateFilter] = useState(todayStr);
     const [selectedSale, setSelectedSale] = useState(null);
@@ -624,6 +624,7 @@ export default function Reports() {
                 btPrinting={btPrinting}
                 handleBTPrint={handleBTPrint}
                 deleteSale={deleteSale}
+                updateSale={updateSale}
                 setSelectedSale={setSelectedSale}
                 showConfirm={showConfirm}
             />

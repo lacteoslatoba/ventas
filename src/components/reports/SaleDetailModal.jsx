@@ -1,14 +1,15 @@
 import React from 'react';
 
-export default function SaleDetailModal({ 
-    selectedSale, 
-    clients, 
-    users, 
-    btPrinting, 
-    handleBTPrint, 
-    deleteSale, 
-    setSelectedSale, 
-    showConfirm 
+export default function SaleDetailModal({
+    selectedSale,
+    clients,
+    users,
+    btPrinting,
+    handleBTPrint,
+    deleteSale,
+    updateSale,
+    setSelectedSale,
+    showConfirm
 }) {
     if (!selectedSale) return null;
 
@@ -17,8 +18,10 @@ export default function SaleDetailModal({
     const dateObj = new Date(selectedSale.date);
     const fecha = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
     const hora = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-    const pm = selectedSale.paymentMethod || selectedSale.paymentmethod || 'efectivo';
-    const isTransfer = pm === 'transferencia';
+    const originalPm = selectedSale.paymentMethod || selectedSale.paymentmethod || 'efectivo';
+
+    const [editPm, setEditPm] = React.useState(originalPm);
+    const changed = editPm !== originalPm;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 no-print">
@@ -59,20 +62,33 @@ export default function SaleDetailModal({
                         </div>
                     </div>
 
-                    {/* ── Forma de pago ── */}
-                    <div className="mx-4 mt-2 flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg">
-                        <div className="flex items-center gap-3">
-                            <span className="material-symbols-outlined text-gray-500" style={{ fontSize: 18 }}>
-                                {isTransfer ? 'credit_card' : 'payments'}
-                            </span>
-                            <div>
-                                <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Forma de Pago</p>
-                                <p className="text-sm font-black text-gray-900">{isTransfer ? 'Crédito' : 'Efectivo'}</p>
-                            </div>
+                    {/* ── Forma de pago (editable) ── */}
+                    <div className="mx-4 mt-3">
+                        <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 px-0.5">
+                            Forma de Pago
+                            {changed && <span className="ml-2 text-amber-500">· modificado</span>}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={() => setEditPm('efectivo')}
+                                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 font-black text-sm transition-all active:scale-95 ${editPm !== 'transferencia' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-400 hover:border-gray-400'}`}
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>payments</span>
+                                Efectivo
+                            </button>
+                            <button
+                                onClick={() => setEditPm('transferencia')}
+                                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 font-black text-sm transition-all active:scale-95 ${editPm === 'transferencia' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-400 hover:border-gray-400'}`}
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>credit_card</span>
+                                Crédito
+                            </button>
                         </div>
-                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-wide border border-gray-200 px-2 py-1 rounded">
-                            {isTransfer ? 'CRÉDITO' : 'EFECTIVO'}
-                        </span>
+                        {changed && (
+                            <p className="text-[9px] text-amber-600 font-bold mt-1.5 px-0.5">
+                                El cambio se guardará al reimprimir
+                            </p>
+                        )}
                     </div>
 
                     {/* ── Productos ── */}
@@ -106,15 +122,19 @@ export default function SaleDetailModal({
                 <div className="px-4 py-3 border-t-2 border-gray-900 flex gap-2 bg-white">
                     <button
                         onClick={async () => {
+                            if (changed && updateSale) {
+                                updateSale(selectedSale.id, { paymentMethod: editPm });
+                            }
+                            const saleToprint = { ...selectedSale, paymentMethod: editPm };
                             const btPrinter = window.__btPrinter;
-                            if (btPrinter) await handleBTPrint(selectedSale);
+                            if (btPrinter) await handleBTPrint(saleToprint);
                             else window.print();
                         }}
                         disabled={btPrinting}
                         className="flex-1 flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-700 text-white font-black py-3 rounded-lg active:scale-95 transition-all disabled:opacity-50 text-xs uppercase tracking-wide"
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: 17 }}>{btPrinting ? 'refresh' : 'print'}</span>
-                        {btPrinting ? 'Imprimiendo…' : 'Reimprimir'}
+                        {btPrinting ? 'Imprimiendo…' : changed ? 'Guardar y Reimprimir' : 'Reimprimir'}
                     </button>
                     <button
                         onClick={() => showConfirm({

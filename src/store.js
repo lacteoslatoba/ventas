@@ -672,6 +672,14 @@ export const useStore = create(
                 });
                 get().syncToSupabase();
             },
+            updateSale: (saleId, data) => {
+                set((s) => ({
+                    sales: s.sales.map(sale =>
+                        sale.id === saleId ? { ...sale, ...data, synced: false } : sale
+                    )
+                }));
+                get().syncToSupabase();
+            },
             deleteSale: async (saleId) => {
                 const state = get();
                 const saleToDelete = state.sales.find(s => s.id === saleId);
