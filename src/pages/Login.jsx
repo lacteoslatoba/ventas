@@ -181,7 +181,7 @@ export default function Login() {
                                                 </span>
                                             </p>
                                             <div className="mt-2 bg-emerald-500 text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
-                                                {import.meta.env.VITE_APP_VERSION || 'vDev'}
+                                                v{__PKG_VERSION__}
                                             </div>
                                         </div>
                                 </div>
