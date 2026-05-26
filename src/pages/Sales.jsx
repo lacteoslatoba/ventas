@@ -347,7 +347,7 @@ export default function Sales() {
                                 className="flex flex-col items-center justify-center gap-1 w-20 pt-1 pb-1 text-slate-500"
                             >
                                 <Package size={22} strokeWidth={2} />
-                                <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">Stock</span>
+                                <span className="text-[10px] font-black uppercase tracking-tight leading-none mt-1">Registro</span>
                             </button>
                         )}
                     </div>

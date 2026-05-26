@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:host": "vite --host",
+    "dev:apk": "node scripts/dev-apk.mjs",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:apk": "node scripts/build-apk.mjs"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.35",

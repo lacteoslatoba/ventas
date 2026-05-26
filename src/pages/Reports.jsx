@@ -509,17 +509,10 @@ export default function Reports() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-2.5 pt-1">
-                                        <button
-                                            onClick={generateImage}
-                                            className="flex items-center justify-center gap-1.5 bg-white border border-violet-400 text-violet-700 font-black text-xs py-2.5 rounded-xl active:scale-95 transition-all uppercase tracking-wide hover:bg-violet-600 hover:text-white hover:border-violet-600 shadow-sm"
-                                        >
-                                            <span className="material-symbols-outlined" style={{fontSize:14}}>image</span>
-                                            Imagen (IMG)
-                                        </button>
+                                    <div className="pt-1">
                                         <button
                                             onClick={generatePDF}
-                                            className="flex items-center justify-center gap-1.5 bg-indigo-600 text-white font-black text-xs py-2.5 rounded-xl active:scale-95 transition-all uppercase tracking-wide hover:bg-indigo-700 shadow-sm shadow-indigo-300"
+                                            className="w-full flex items-center justify-center gap-1.5 bg-indigo-600 text-white font-black text-xs py-2.5 rounded-xl active:scale-95 transition-all uppercase tracking-wide hover:bg-indigo-700 shadow-sm shadow-indigo-300"
                                         >
                                             <span className="material-symbols-outlined" style={{fontSize:14}}>picture_as_pdf</span>
                                             Documento (PDF)

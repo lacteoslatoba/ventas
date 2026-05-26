@@ -138,13 +138,13 @@ export const generateReportPDF = async ({
     const pageWidth = doc.internal.pageSize.getWidth();
     const businessName = (ticketConfig?.businessName || 'LACTEOS LA TOBA').toUpperCase();
 
-    // ── Paleta monocromática (mismo tema que la UI) ───────────────────
     const BLACK = [0, 0, 0];
     const WHITE = [255, 255, 255];
     const GRAY_50 = [248, 248, 248];
     const GRAY_200 = [200, 200, 200];
     const GRAY_400 = [120, 120, 120];
     const GRAY_900 = [20, 20, 20];
+    const HEADER_BG = [71, 85, 105];
 
     // ── Encabezado ────────────────────────────────────────────────────
     doc.setDrawColor(...BLACK); doc.setLineWidth(0.8);
@@ -216,11 +216,11 @@ export const generateReportPDF = async ({
             `$${operatorPDFData.totalMoney.toFixed(2)}`,
             '',
         ]],
-        headStyles: { fillColor: BLACK, textColor: WHITE, fontStyle: 'bold', fontSize: 9, lineColor: BLACK, lineWidth: 0.3 },
+        headStyles: { fillColor: HEADER_BG, textColor: WHITE, fontStyle: 'bold', fontSize: 9, lineColor: HEADER_BG, lineWidth: 0.3 },
         footStyles: { fillColor: GRAY_50, textColor: GRAY_900, fontStyle: 'bold', fontSize: 9, lineColor: GRAY_200, lineWidth: 0.3 },
         bodyStyles: { fontSize: 9, textColor: GRAY_900, lineColor: GRAY_200, lineWidth: 0.2 },
         alternateRowStyles: { fillColor: GRAY_50 },
-        tableLineColor: BLACK, tableLineWidth: 0.3,
+        tableLineColor: HEADER_BG, tableLineWidth: 0.3,
         columnStyles: {
             0: { cellWidth: 'auto' },
             1: { cellWidth: 16 },
@@ -259,11 +259,11 @@ export const generateReportPDF = async ({
             ['Crédito', `$${transferenciaTotal.toFixed(2)}`],
         ],
         foot: [['TOTAL VENTAS', `$${operatorPDFData.totalMoney.toFixed(2)}`]],
-        headStyles: { fillColor: BLACK, textColor: WHITE, fontStyle: 'bold', fontSize: 9, lineColor: BLACK, lineWidth: 0.3 },
+        headStyles: { fillColor: HEADER_BG, textColor: WHITE, fontStyle: 'bold', fontSize: 9, lineColor: HEADER_BG, lineWidth: 0.3 },
         footStyles: { fillColor: GRAY_50, textColor: GRAY_900, fontStyle: 'bold', fontSize: 9, lineColor: GRAY_200, lineWidth: 0.3 },
         bodyStyles: { fontSize: 9, textColor: GRAY_900, lineColor: GRAY_200, lineWidth: 0.2 },
         alternateRowStyles: { fillColor: GRAY_50 },
-        tableLineColor: BLACK, tableLineWidth: 0.3,
+        tableLineColor: HEADER_BG, tableLineWidth: 0.3,
         columnStyles: {
             0: { cellWidth: 'auto', halign: 'left' },
             1: { cellWidth: 36, halign: 'right' },
@@ -286,11 +286,11 @@ export const generateReportPDF = async ({
             head: [['Descripción', 'Monto']],
             body: operatorPDFData.expenses.map(e => [e.description, `$${Number(e.amount).toFixed(2)}`]),
             foot: [['Total Gastos', `$${operatorPDFData.totalExpenses.toFixed(2)}`]],
-            headStyles: { fillColor: BLACK, textColor: WHITE, fontStyle: 'bold', fontSize: 9, lineColor: BLACK, lineWidth: 0.3 },
+            headStyles: { fillColor: HEADER_BG, textColor: WHITE, fontStyle: 'bold', fontSize: 9, lineColor: HEADER_BG, lineWidth: 0.3 },
             footStyles: { fillColor: GRAY_50, textColor: GRAY_900, fontStyle: 'bold', fontSize: 9, lineColor: GRAY_200, lineWidth: 0.3 },
             bodyStyles: { fontSize: 9, textColor: GRAY_900, lineColor: GRAY_200, lineWidth: 0.2 },
             alternateRowStyles: { fillColor: GRAY_50 },
-            tableLineColor: BLACK, tableLineWidth: 0.3,
+            tableLineColor: HEADER_BG, tableLineWidth: 0.3,
             columnStyles: {
                 0: { cellWidth: 'auto', halign: 'left' },
                 1: { cellWidth: 30, halign: 'right' },

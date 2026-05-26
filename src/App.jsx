@@ -354,7 +354,7 @@ const BottomNavigation = ({ currentUser }) => {
       {isAdmin ? (
          <NavItem to="/menu" icon={LayoutGrid} label="Menú" active={isActive('/menu')} />
       ) : (
-         <NavItem to="/stock" icon={Package} label="Stock" active={isActive('/stock')} />
+         <NavItem to="/stock" icon={Package} label="Registro" active={isActive('/stock')} />
       )}
     </div>
   );

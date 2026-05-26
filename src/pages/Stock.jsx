@@ -71,7 +71,7 @@ export default function Stock() {
             <div className="flex items-center justify-between border-b-2 border-gray-900 pb-4 mb-5">
                 <div>
                     <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{ticketConfig?.businessName || 'Lacteos La Toba'}</p>
-                    <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mt-0.5">Stock del Día</h1>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mt-0.5">Registro del Día</h1>
                 </div>
             </div>
 
@@ -172,9 +172,9 @@ export default function Stock() {
                     {/* Encabezado */}
                     <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Producto</span>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-12">Pzas</span>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-12">Kg</span>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right w-20">Importe</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-14">Pzas</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-16">Kg</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right w-24">Importe</span>
                     </div>
 
                     {/* Filas */}
@@ -184,17 +184,17 @@ export default function Stock() {
                                 <p className="font-bold text-slate-800 dark:text-slate-100 text-sm leading-tight">{row.name}</p>
                                 <p className="text-[10px] text-slate-400 font-medium mt-0.5">{row.unit}</p>
                             </div>
-                            <div className="w-12 text-center">
+                            <div className="w-14 text-center">
                                 <span className="text-sm font-black text-blue-600 dark:text-blue-400">
                                     {row.pieces > 0 ? row.pieces : <span className="text-slate-300">—</span>}
                                 </span>
                             </div>
-                            <div className="w-12 text-center">
+                            <div className="w-16 text-center">
                                 <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
                                     {row.kg > 0 ? row.kg.toFixed(2) : <span className="text-slate-300">—</span>}
                                 </span>
                             </div>
-                            <div className="w-20 text-right">
+                            <div className="w-24 text-right">
                                 <span className="text-sm font-black text-slate-800 dark:text-slate-100">${row.money.toFixed(2)}</span>
                             </div>
                         </div>
@@ -203,13 +203,13 @@ export default function Stock() {
                     {/* Totales */}
                     <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-4 py-4 bg-slate-800 dark:bg-slate-900 rounded-b-2xl items-center">
                         <span className="text-xs font-black text-slate-300 uppercase tracking-widest">TOTALES</span>
-                        <div className="w-12 text-center">
+                        <div className="w-14 text-center">
                             <span className="text-base font-black text-blue-300">{totals.pieces}</span>
                         </div>
-                        <div className="w-12 text-center">
+                        <div className="w-16 text-center">
                             <span className="text-base font-black text-emerald-300">{totals.kg > 0 ? totals.kg.toFixed(2) : '—'}</span>
                         </div>
-                        <div className="w-20 text-right">
+                        <div className="w-24 text-right">
                             <span className="text-base font-black text-white">${totals.money.toFixed(2)}</span>
                         </div>
                     </div>
