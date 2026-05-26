@@ -257,6 +257,7 @@ export const useStore = create(
             isOnline: navigator.onLine,
             isSyncing: false,
             lastSync: null,
+            syncError: null,
 
             setOnlineStatus: (status) => set({ isOnline: status }),
 
@@ -307,6 +308,8 @@ export const useStore = create(
                             }
                         } catch (e2) {
                             console.error('Reintento de sync también falló:', e2);
+                            set({ syncError: e2?.message || 'Error al reintentar sincronización' });
+                            get().showToast(`Sin conexión al servidor: ${e2?.message || 'Error desconocido'}`, 'error');
                         }
                     }, 4000);
                 }
@@ -352,6 +355,8 @@ export const useStore = create(
                             const { error } = await supabase.from(tableName).upsert(safePayload);
                             if (error) {
                                 console.error(`Error Syncing ${tableName}:`, error.message);
+                                set({ syncError: `[${tableName}] ${error.message}` });
+                                get().showToast(`Error al subir ${tableName}: ${error.message}`, 'error');
                                 if (error.message.includes('column') && !state.cloudColumns?.[tableName]) {
                                     get().fetchFromSupabase();
                                 }
@@ -364,7 +369,7 @@ export const useStore = create(
                     }
 
                     set((s) => {
-                        const nextState = { lastSync: new Date().toISOString() };
+                        const nextState = { lastSync: new Date().toISOString(), syncError: null };
                         successTables.forEach(t => {
                             nextState[t] = s[t].map(x => ({ ...x, synced: true }));
                         });
