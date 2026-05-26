@@ -60,6 +60,18 @@ const NetworkIndicator = () => {
       document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
 
+    // ── Verificación activa de red (Capacitor Android no emite 'online' al arrancar) ──
+    const checkAndSync = () => {
+      const realOnline = navigator.onLine;
+      const s = useStore.getState();
+      if (realOnline !== s.isOnline) s.setOnlineStatus(realOnline);
+      if (realOnline) {
+        const TWO_MIN = 2 * 60 * 1000;
+        const stale = !s.lastSync || Date.now() - new Date(s.lastSync).getTime() > TWO_MIN;
+        if (stale || !s.lastSync) s.syncOnReconnect();
+      }
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('resize', updateHeight);
@@ -68,12 +80,12 @@ const NetworkIndicator = () => {
     updateHeight();
     checkForUpdates();
 
-    // Sync inicial al montar (si hay conexión)
-    if (isOnline) {
-      useStore.getState().fetchFromSupabase().then(() => {
-        useStore.getState().syncToSupabase();
-      });
-    }
+    // Sync inicial al montar — usar navigator.onLine directo, no el valor del store
+    // (el store puede tener isOnline: false guardado del localStorage)
+    setTimeout(checkAndSync, 1000);
+
+    // Re-verificar cada 30 s por si el WebView no emitió el evento 'online'
+    const intervalId = setInterval(checkAndSync, 30000);
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -81,6 +93,7 @@ const NetworkIndicator = () => {
       window.removeEventListener('resize', updateHeight);
       window.removeEventListener('focus', checkForUpdates);
       document.removeEventListener('visibilitychange', handleVisibility);
+      clearInterval(intervalId);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

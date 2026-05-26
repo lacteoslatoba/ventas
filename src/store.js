@@ -253,8 +253,8 @@ export const useStore = create(
                 }
             },
 
-            // Estado de Red / Nube
-            isOnline: navigator.onLine,
+            // Estado de Red / Nube — inicia en true; onRehydrateStorage lo corrige tras cargar localStorage
+            isOnline: true,
             isSyncing: false,
             lastSync: null,
             syncError: null,
@@ -741,7 +741,16 @@ export const useStore = create(
                     };
                 }
                 return persistedState;
-            }
+            },
+            // Al restaurar desde localStorage, siempre releer el estado de red real
+            // (Capacitor Android WebView puede guardar isOnline: false y no emitir evento 'online' al arrancar)
+            onRehydrateStorage: () => (state) => {
+                if (state) {
+                    state.isOnline = navigator.onLine;
+                    state.isSyncing = false;
+                    state.syncError = null;
+                }
+            },
         }
     )
 );
