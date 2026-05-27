@@ -14,11 +14,11 @@ const REVERSE_COLUMN_MAP = Object.fromEntries(
 );
 
 const FALLBACK_COLUMNS = {
-    products: ['id', 'name', 'code', 'price', 'unit', 'stock', 'priceA', 'priceB', 'priceC', 'orden'],
-    users: ['id', 'name', 'phone', 'pin', 'vehicle', 'priceList', 'lugar1', 'lugar2', 'lugar1activo', 'lugar2activo', 'auth_id'],
-    clients: ['id', 'name', 'phone', 'address', 'userId'],
-    sales: ['id', 'userId', 'clientId', 'total', 'items', 'date', 'paymentmethod'],
-    inventory: ['id', 'productId', 'type', 'quantity', 'notes', 'date'],
+    products: ['id', 'name', 'code', 'price', 'unit', 'stock', 'pricea', 'priceb', 'pricec', 'orden'],
+    users: ['id', 'name', 'phone', 'pin', 'vehicle', 'pricelist', 'lugar1', 'lugar2', 'lugar1activo', 'lugar2activo', 'auth_id'],
+    clients: ['id', 'name', 'phone', 'address', 'userid'],
+    sales: ['id', 'userid', 'clientid', 'total', 'items', 'date', 'paymentmethod'],
+    inventory: ['id', 'productid', 'type', 'quantity', 'notes', 'date'],
     expenses: ['id', 'userid', 'date', 'description', 'amount'],
     ticket_config: ['id', 'header', 'footer', 'doubleCopy', 'centerTotal', 'spaceBetweenItems', 'showCashAndChange']
 };
@@ -26,20 +26,11 @@ const FALLBACK_COLUMNS = {
 const mergeStateHelper = (localItems, freshItems) => {
     if (!freshItems) return localItems || [];
     const local = localItems || [];
-    const pendingLocalMap = new Map(local.filter(item => !item.synced).map(item => [item.id, item]));
-    
-    // Map fresh items and replace with local pending ones if they match
-    const merged = freshItems.map(remoteItem => {
-        const localItem = pendingLocalMap.get(remoteItem.id);
-        if (localItem) {
-            pendingLocalMap.delete(remoteItem.id);
-            return localItem;
-        }
-        return remoteItem;
-    });
-    
-    // Add locally created items that are not yet on the server
-    return [...merged, ...Array.from(pendingLocalMap.values())];
+    const serverIds = new Set(freshItems.map(item => item.id));
+    // Solo preservar items que NO existen en el servidor (creados offline, aún no subidos)
+    // Items que ya existen en servidor usan la versión del servidor como fuente de verdad
+    const localOnly = local.filter(item => !item.synced && !serverIds.has(item.id));
+    return [...freshItems.map(i => ({ ...i, synced: true })), ...localOnly];
 };
 
 export const useStore = create(
