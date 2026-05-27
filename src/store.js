@@ -674,9 +674,16 @@ export const useStore = create(
             },
             updateSale: (saleId, data) => {
                 set((s) => ({
-                    sales: s.sales.map(sale =>
-                        sale.id === saleId ? { ...sale, ...data, synced: false } : sale
-                    )
+                    sales: s.sales.map(sale => {
+                        if (sale.id !== saleId) return sale;
+                        const updated = { ...sale, ...data, synced: false };
+                        // Mantener aliases lowercase en sinc con camelCase para evitar que
+                        // el sync mande el valor viejo (el fetch guarda ambas formas)
+                        if (data.paymentMethod !== undefined) updated.paymentmethod = data.paymentMethod;
+                        if (data.userId !== undefined) updated.userid = data.userId;
+                        if (data.clientId !== undefined) updated.clientid = data.clientId;
+                        return updated;
+                    })
                 }));
                 get().syncToSupabase();
             },

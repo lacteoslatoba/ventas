@@ -479,49 +479,168 @@ export default function Reports() {
                     {activeTab === 'gastos' && renderGastosPanel()}
 
                     {/* TAB: INFORME (operador) */}
-                    {activeTab === 'informe' && (
-                        <div className="pb-24 space-y-3 animate-in fade-in duration-200">
-                            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                                <div className="px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Generar Informe</p>
-                                        <p className="text-xs font-black text-slate-800 capitalize mt-0.5">
-                                            {new Date(repDateFilter + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    {activeTab === 'informe' && (() => {
+                        if (!operatorPDFData) return null;
+                        const fechaPDF = repDateFilter || todayStr;
+                        const ventasPDF = (sales || []).filter(s =>
+                            s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
+                        );
+                        const saleRows = ventasPDF.map(sale => {
+                            const cl = clients.find(c => c.id === sale.clientId);
+                            const pieces = (sale.items || []).reduce((s, it) => s + (Number(it.pieces) || 0), 0);
+                            const kg = (sale.items || []).filter(it => (it.unit || '').toLowerCase() === 'kg').reduce((s, it) => s + (Number(it.quantity) || 0), 0);
+                            const pm = (sale.paymentMethod || sale.paymentmethod || 'efectivo') === 'transferencia' ? 'Crédito' : 'Efectivo';
+                            return { cliente: cl?.name || 'General', pieces, kg, total: Number(sale.total), pm };
+                        });
+                        const footPieces = saleRows.reduce((s, r) => s + r.pieces, 0);
+                        const footKg = saleRows.reduce((s, r) => s + r.kg, 0);
+                        const efectivoTotal = saleRows.filter(r => r.pm === 'Efectivo').reduce((s, r) => s + r.total, 0);
+                        const creditoTotal = saleRows.filter(r => r.pm === 'Crédito').reduce((s, r) => s + r.total, 0);
+                        const bizName = (ticketConfig?.businessName || 'LACTEOS LA TOBA').toUpperCase();
+                        const fechaCap = operatorPDFData.fechaLabel.charAt(0).toUpperCase() + operatorPDFData.fechaLabel.slice(1);
+
+                        const thCls = 'bg-slate-800 text-white text-[9px] font-bold uppercase tracking-wide px-2 py-1.5';
+                        const tdCls = 'text-[10px] text-slate-800 px-2 py-1.5 border-b border-slate-100';
+                        const tfCls = 'bg-slate-50 text-[10px] font-black text-slate-900 px-2 py-1.5 border-t-2 border-slate-800';
+
+                        return (
+                            <div className="pb-24 space-y-3 animate-in fade-in duration-200">
+                                {/* ── Documento digital ── */}
+                                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+
+                                    {/* Encabezado */}
+                                    <div className="px-4 pt-4 pb-3 border-b-2 border-slate-900">
+                                        <p className="text-sm font-black text-slate-900">{bizName}</p>
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Reporte de Ventas</p>
+                                        <div className="flex justify-between items-end mt-1.5">
+                                            <p className="text-[10px] text-slate-500 capitalize">{fechaCap}</p>
+                                            <p className="text-[10px] text-slate-500">{operatorPDFData.ventasCount} {operatorPDFData.ventasCount === 1 ? 'venta' : 'ventas'}</p>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500">Repartidor: {currentUser?.name || ''}</p>
+                                    </div>
+
+                                    <div className="px-4 py-3 space-y-4">
+                                        {/* DETALLE DE VENTAS */}
+                                        <div>
+                                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Detalle de Ventas</p>
+                                            <div className="rounded-lg overflow-hidden border border-slate-200">
+                                                <table className="w-full border-collapse">
+                                                    <thead>
+                                                        <tr>
+                                                            <th className={`${thCls} text-left`}>Cliente</th>
+                                                            <th className={`${thCls} text-center`}>Pzas</th>
+                                                            <th className={`${thCls} text-center`}>Kg</th>
+                                                            <th className={`${thCls} text-right`}>Importe</th>
+                                                            <th className={`${thCls} text-center`}>Pago</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {saleRows.length === 0 ? (
+                                                            <tr><td colSpan={5} className={`${tdCls} text-center text-slate-400`}>Sin ventas registradas</td></tr>
+                                                        ) : saleRows.map((r, i) => (
+                                                            <tr key={i} className={i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}>
+                                                                <td className={`${tdCls} text-left`}>{r.cliente}</td>
+                                                                <td className={`${tdCls} text-center`}>{r.pieces || '—'}</td>
+                                                                <td className={`${tdCls} text-center`}>{r.kg > 0 ? r.kg.toFixed(2) : '—'}</td>
+                                                                <td className={`${tdCls} text-right font-bold`}>${r.total.toFixed(2)}</td>
+                                                                <td className={`${tdCls} text-center`}>
+                                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${r.pm === 'Crédito' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>{r.pm}</span>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr>
+                                                            <td className={`${tfCls} text-left`}>TOTAL</td>
+                                                            <td className={`${tfCls} text-center`}>{footPieces || '—'}</td>
+                                                            <td className={`${tfCls} text-center`}>{footKg > 0 ? footKg.toFixed(2) : '—'}</td>
+                                                            <td className={`${tfCls} text-right`}>${operatorPDFData.totalMoney.toFixed(2)}</td>
+                                                            <td className={tfCls}></td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        {/* RESUMEN DE COBRO */}
+                                        <div>
+                                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Resumen de Cobro</p>
+                                            <div className="rounded-lg overflow-hidden border border-slate-200">
+                                                <table className="w-full border-collapse">
+                                                    <thead>
+                                                        <tr>
+                                                            <th className={`${thCls} text-left`}>Forma de Pago</th>
+                                                            <th className={`${thCls} text-right`}>Importe</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr className="bg-white"><td className={`${tdCls} text-left`}>Efectivo</td><td className={`${tdCls} text-right font-bold text-emerald-700`}>${efectivoTotal.toFixed(2)}</td></tr>
+                                                        <tr className="bg-slate-50"><td className={`${tdCls} text-left`}>Crédito</td><td className={`${tdCls} text-right font-bold text-indigo-700`}>${creditoTotal.toFixed(2)}</td></tr>
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr>
+                                                            <td className={`${tfCls} text-left`}>TOTAL VENTAS</td>
+                                                            <td className={`${tfCls} text-right`}>${operatorPDFData.totalMoney.toFixed(2)}</td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        {/* GASTOS */}
+                                        {operatorPDFData.expenses.length > 0 && (
+                                            <div>
+                                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Gastos del Día</p>
+                                                <div className="rounded-lg overflow-hidden border border-slate-200">
+                                                    <table className="w-full border-collapse">
+                                                        <thead>
+                                                            <tr>
+                                                                <th className={`${thCls} text-left`}>Descripción</th>
+                                                                <th className={`${thCls} text-right`}>Monto</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {operatorPDFData.expenses.map((e, i) => (
+                                                                <tr key={i} className={i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}>
+                                                                    <td className={`${tdCls} text-left`}>{e.description}</td>
+                                                                    <td className={`${tdCls} text-right font-bold text-rose-600`}>${Number(e.amount).toFixed(2)}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr>
+                                                                <td className={`${tfCls} text-left`}>Total Gastos</td>
+                                                                <td className={`${tfCls} text-right text-rose-700`}>${operatorPDFData.totalExpenses.toFixed(2)}</td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* NETO DEL DÍA */}
+                                        <div className="border-t-2 border-slate-900 pt-3 flex justify-between items-center">
+                                            <span className="text-sm font-black text-slate-900">Total Neto del Día</span>
+                                            <span className="text-lg font-black text-emerald-600">${operatorPDFData.netTotal.toFixed(2)}</span>
+                                        </div>
+
+                                        <p className="text-center text-[9px] text-slate-400 italic border-t border-slate-100 pt-2">
+                                            {ticketConfig?.footerLine1 || '¡Gracias por su trabajo!'}
                                         </p>
                                     </div>
-                                    <span className="material-symbols-outlined text-slate-400" style={{fontSize:20}}>analytics</span>
                                 </div>
 
-                                <div className="p-4 space-y-3 bg-white">
-                                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3.5 space-y-2">
-                                        <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-                                            <span>Ventas ({sortedSales.length})</span>
-                                            <span className="font-black text-indigo-700">${dayTotal.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-                                            <span>Gastos ({dayExpenses.length})</span>
-                                            <span className="font-black text-rose-600">-${totalExpenses.toFixed(2)}</span>
-                                        </div>
-                                        <div className="border-t border-slate-100 my-1" />
-                                        <div className="flex justify-between items-center text-sm font-black text-slate-800 pt-1">
-                                            <span>Neto del día</span>
-                                            <span className="text-emerald-600">${(dayTotal - totalExpenses).toFixed(2)}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-1">
-                                        <button
-                                            onClick={generatePDF}
-                                            className="w-full flex items-center justify-center gap-1.5 bg-indigo-600 text-white font-black text-xs py-2.5 rounded-xl active:scale-95 transition-all uppercase tracking-wide hover:bg-indigo-700 shadow-sm shadow-indigo-300"
-                                        >
-                                            <span className="material-symbols-outlined" style={{fontSize:14}}>picture_as_pdf</span>
-                                            Documento (PDF)
-                                        </button>
-                                    </div>
-                                </div>
+                                {/* Botón PDF */}
+                                <button
+                                    onClick={generatePDF}
+                                    className="w-full flex items-center justify-center gap-1.5 bg-indigo-600 text-white font-black text-xs py-3 rounded-xl active:scale-95 transition-all uppercase tracking-wide hover:bg-indigo-700 shadow-sm shadow-indigo-300"
+                                >
+                                    <span className="material-symbols-outlined" style={{fontSize:15}}>picture_as_pdf</span>
+                                    Exportar PDF
+                                </button>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
                 </div>
             )}
 
