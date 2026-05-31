@@ -247,8 +247,8 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
 
       {/* Modal de Debug / Estado de Sincronización */}
       {showSyncModal && (
-        <div className="fixed inset-0 z-[200] flex items-end justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-150" onClick={() => setShowSyncModal(false)}>
-          <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-4 duration-200 mb-2" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-end justify-center px-4 pt-4 pb-[80px] bg-black/40 backdrop-blur-sm animate-in fade-in duration-150" onClick={() => setShowSyncModal(false)}>
+          <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-4 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Estado de Sincronización</h3>
               <button onClick={() => setShowSyncModal(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400">✕</button>
@@ -322,8 +322,8 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
         </div>
       )}
 
-      {/* Centro: nombre usuario */}
-      <div className="flex flex-col items-center pointer-events-none">
+      {/* Centro: nombre usuario — absolute para quedar siempre centrado en pantalla sin importar el ancho de los botones laterales */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none mb-0.5">
           {isHome ? 'Bienvenido' : 'Navegación'}
         </span>
