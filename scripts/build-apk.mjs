@@ -140,7 +140,7 @@ async function main() {
   }
 
   // Find the generated APK
-  const apkPath = join(ROOT, 'android/app/build/outputs/apk/release/app-release.apk');
+  const apkPath = join(ROOT, 'android/app/build/outputs/apk/release/ventas-repartidor.apk');
   if (existsSync(apkPath)) {
     const size = (readFileSync(apkPath).length / 1024 / 1024).toFixed(1);
     console.log('\n🎉 APK generado exitosamente');

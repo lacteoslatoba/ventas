@@ -52,6 +52,12 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "ventas-repartidor.apk"
+        }
+    }
 }
 
 repositories {
