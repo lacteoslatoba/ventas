@@ -172,8 +172,9 @@ export default function Sales() {
         const now = new Date();
         const [y, m, d] = saleDate.split('-').map(Number);
         const saleDateTime = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds());
+        const saleId = (() => { try { return crypto.randomUUID(); } catch { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); }); } })();
         const sale = {
-            id: crypto.randomUUID(),
+            id: saleId,
             userId: effectiveUserId,
             clientId: selectedCartClient,
             items: cart,

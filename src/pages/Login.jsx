@@ -7,14 +7,11 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
-    const [lastSync, setLastSync] = useState(() => localStorage.getItem('lastSync') || null);
-    const { login, isOnline, isSyncing, fetchFromSupabase } = useStore();
+    const { login, isOnline, isSyncing, syncOnReconnect, lastSync } = useStore();
 
     const handleSync = async () => {
-        await fetchFromSupabase();
-        const now = new Date().toISOString();
-        localStorage.setItem('lastSync', now);
-        setLastSync(now);
+        // syncOnReconnect renueva sesión, sube pendientes y baja datos frescos
+        await syncOnReconnect();
     };
 
     const handleSubmit = async (e) => {
@@ -174,10 +171,10 @@ export default function Login() {
                                             <p className="text-[10px] text-slate-400 font-medium">
                                                 Última actualización:{' '}
                                                 <span className="font-black text-slate-500">
-                                                    {new Date(lastSync).toLocaleString('es-MX', {
+                                                    {lastSync ? new Date(lastSync).toLocaleString('es-MX', {
                                                         day: '2-digit', month: 'short', year: 'numeric',
                                                         hour: '2-digit', minute: '2-digit',
-                                                    })}
+                                                    }) : 'Nunca'}
                                                 </span>
                                             </p>
                                             <div className="mt-2 bg-emerald-500 text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
