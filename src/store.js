@@ -1,6 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabase';
+
+// Generar ID que funcione en HTTP (crypto.randomUUID requiere HTTPS-secure context)
+function generateId() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return generateId();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+}
+
+// navigator.onLine seguro (puede no existir en SSR o WebView frío)
+function isOnline() {
+    return typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean' && navigator.onLine;
+}
 
 // Mapa global lowercase→camelCase (PostgreSQL devuelve columnas en minúsculas)
 const COLUMN_MAP = {
@@ -45,6 +76,7 @@ export const useStore = create(
             cart: [],
             selectedCartClient: '', // Cambiado de selectedClient para evitar confusión
             cloudColumns: {}, // Historial de columnas conocidas en Supabase
+            pendingDeletes: {}, // { tableName: string[] } — eliminaciones hechas offline
 
             // Configuración del Ticket
             ticketConfig: {
@@ -147,7 +179,7 @@ export const useStore = create(
 
                 // ── ONLINE: intentar Supabase Auth (activa RLS) ──────────────
                 if (state.isOnline && supabase) {
-                    const slug  = cleanUsername === 'admin' ? 'administrador' : cleanUsername;
+                    const slug = cleanUsername === 'admin' ? 'administrador' : cleanUsername;
                     const email = `${slug}@lacteoslatoba.local`;
                     const { data, error } = await supabase.auth.signInWithPassword({ email, password: cleanPassword });
 
@@ -163,11 +195,13 @@ export const useStore = create(
                             .eq('auth_id', data.user.id)
                             .single();
                         if (userData) {
-                            set({ currentUser: {
-                                ...userData,
-                                priceList: userData.priceList || userData.pricelist || 'A',
-                                role: userData.role || 'repartidor'
-                            }});
+                            set({
+                                currentUser: {
+                                    ...userData,
+                                    priceList: userData.priceList || userData.pricelist || 'A',
+                                    role: userData.role || 'repartidor'
+                                }
+                            });
                             get().fetchFromSupabase();
                             return true;
                         }
@@ -183,17 +217,19 @@ export const useStore = create(
                     (u.name || '').trim().toLowerCase() === cleanUsername && u.pin === cleanPassword
                 );
                 if (user) {
-                    set({ currentUser: {
-                        ...user,
-                        priceList: user.priceList || user.pricelist || 'A',
-                        role: user.role || 'repartidor'
-                    }});
+                    set({
+                        currentUser: {
+                            ...user,
+                            priceList: user.priceList || user.pricelist || 'A',
+                            role: user.role || 'repartidor'
+                        }
+                    });
                     return true;
                 }
                 return false;
             },
             logout: async () => {
-                if (supabase) await supabase.auth.signOut().catch(() => {});
+                if (supabase) await supabase.auth.signOut().catch(() => { });
                 set({ currentUser: null, cart: [], selectedCartClient: '' });
             },
             // Restaura sesión Supabase Auth al recargar (si existe).
@@ -203,7 +239,7 @@ export const useStore = create(
 
                 // Si ya hay usuario en estado persistido y estamos offline, usarlo directamente
                 const persisted = get().currentUser;
-                if (persisted && !navigator.onLine) return;
+                if (persisted && !isOnline()) return;
 
                 let session = null;
                 try {
@@ -230,11 +266,13 @@ export const useStore = create(
                         .eq('auth_id', session.user.id)
                         .single();
                     if (userData) {
-                        set({ currentUser: {
-                            ...userData,
-                            priceList: userData.priceList || userData.pricelist || 'A',
-                            role: userData.role || 'repartidor'
-                        }});
+                        set({
+                            currentUser: {
+                                ...userData,
+                                priceList: userData.priceList || userData.pricelist || 'A',
+                                role: userData.role || 'repartidor'
+                            }
+                        });
                         get().fetchFromSupabase();
                     } else if (persisted) {
                         // Query falló pero hay usuario guardado, mantenerlo
@@ -289,7 +327,7 @@ export const useStore = create(
                     setTimeout(async () => {
                         if (!get().isOnline) return;
                         try {
-                            await supabase.auth.refreshSession().catch(() => {});
+                            await supabase.auth.refreshSession().catch(() => { });
                             await attempt();
                             if (pending > 0) {
                                 get().showToast(
@@ -325,7 +363,8 @@ export const useStore = create(
                             const payload = pendingData.map(({ synced: _synced, ...rest }) => rest);
 
                             const safePayload = payload.map(item => {
-                                const knownCols = state.cloudColumns?.[tableName] || FALLBACK_COLUMNS[tableName];
+                                    const rawCols = state.cloudColumns?.[tableName];
+                                const knownCols = (rawCols && rawCols.length > 0) ? rawCols : FALLBACK_COLUMNS[tableName];
                                 if (!knownCols) return item;
 
                                 const filtered = {};
@@ -371,11 +410,11 @@ export const useStore = create(
                         const { synced: _synced, ...payload } = state.ticketConfig;
                         const knownCols = state.cloudColumns?.['ticket_config'];
                         const dbColumns = [
-                            'id', 'header', 'footer', 'doubleCopy', 'centerTotal', 
+                            'id', 'header', 'footer', 'doubleCopy', 'centerTotal',
                             'spaceBetweenItems', 'showCashAndChange'
                         ];
                         const availableCols = knownCols && knownCols.length > 0 ? knownCols : dbColumns;
-                        
+
                         let finalPayload = { id: 'main' };
                         const extraData = {};
                         const legacyMap = {
@@ -412,6 +451,21 @@ export const useStore = create(
                         }
                     }
 
+                    // Flush de eliminaciones offline pendientes
+                    const pendingDels = get().pendingDeletes;
+                    if (pendingDels && Object.keys(pendingDels).length > 0) {
+                        for (const [table, ids] of Object.entries(pendingDels)) {
+                            for (const id of ids) {
+                                try {
+                                    await supabase.from(table).delete().eq('id', id);
+                                } catch (e) {
+                                    console.warn(`[sync] No se pudo eliminar ${table}/${id}:`, e);
+                                }
+                            }
+                        }
+                        set({ pendingDeletes: {} });
+                    }
+
                     if (notify && totalPending > 0) {
                         get().showToast(`${totalPending} cambio${totalPending !== 1 ? 's' : ''} sincronizado${totalPending !== 1 ? 's' : ''} ✓`, 'success');
                     }
@@ -426,8 +480,15 @@ export const useStore = create(
             // Descarga de datos oficiales desde Supabase
             fetchFromSupabase: async () => {
                 if (!get().isOnline || !supabase) return;
-                // Con RLS activo, las lecturas requieren sesión Auth
-                const { data: { session } } = await supabase.auth.getSession();
+
+                // getSession puede lanzar si no hay red; si falla, no bloquear isSyncing
+                let session;
+                try {
+                    const { data } = await supabase.auth.getSession();
+                    session = data?.session;
+                } catch {
+                    return;
+                }
                 if (!session) return;
                 set({ isSyncing: true });
                 try {
@@ -470,12 +531,12 @@ export const useStore = create(
 
                         return {
                             ...state,
-                            products:  mergeStateHelper(state.products,  freshData['products']),
-                            users:     mergedUsers,
-                            clients:   mergeStateHelper(state.clients,   freshData['clients']),
-                            sales:     mergeStateHelper(state.sales,     freshData['sales']),
+                            products: mergeStateHelper(state.products, freshData['products']),
+                            users: mergedUsers,
+                            clients: mergeStateHelper(state.clients, freshData['clients']),
+                            sales: mergeStateHelper(state.sales, freshData['sales']),
                             inventory: mergeStateHelper(state.inventory, freshData['inventory']),
-                            expenses:  mergeStateHelper(state.expenses,  freshData['expenses']),
+                            expenses: mergeStateHelper(state.expenses, freshData['expenses']),
                             cloudColumns: { ...state.cloudColumns, ...cloudColumns },
                             currentUser: refreshedUser,
                         };
@@ -486,7 +547,7 @@ export const useStore = create(
                         set(s => {
                             if (s.ticketConfig?.synced || !s.ticketConfig) {
                                 let finalConfig = { ...configData };
-                                
+
                                 if (configData.footer && configData.footer.startsWith('JSON_CONFIG:')) {
                                     try {
                                         const jsonStr = configData.footer.replace('JSON_CONFIG:', '');
@@ -503,8 +564,8 @@ export const useStore = create(
                                     businessName: finalConfig.header !== undefined ? finalConfig.header : finalConfig.businessName,
                                     footerLine1: finalConfig.footer !== undefined ? finalConfig.footer : finalConfig.footerLine1,
                                     printCopy: finalConfig.doubleCopy !== undefined ? finalConfig.doubleCopy :
-                                               finalConfig.doublecopy !== undefined ? finalConfig.doublecopy :
-                                               finalConfig.printCopy
+                                        finalConfig.doublecopy !== undefined ? finalConfig.doublecopy :
+                                            finalConfig.printCopy
                                 };
 
                                 // Eliminar versiones crudas para evitar conflictos en syncToSupabase
@@ -523,7 +584,7 @@ export const useStore = create(
                                 cleanData.showFooterLine2 = true;
                                 // showFooterLine1 siempre forzado a true (independiente del valor en Supabase)
 
-                                return { 
+                                return {
                                     ticketConfig: { ...s.ticketConfig, ...cleanData, synced: true },
                                     cloudColumns: { ...s.cloudColumns, ticket_config: Object.keys(configData) }
                                 };
@@ -542,14 +603,14 @@ export const useStore = create(
 
             // Productos
             addProduct: (product) => {
-                const newProduct = { 
-                    ...product, 
-                    id: crypto.randomUUID(), 
+                const newProduct = {
+                    ...product,
+                    id: generateId(),
                     synced: false,
                     priceA: Number(product.priceA) || 0,
                     priceB: Number(product.priceB) || 0,
                     priceC: Number(product.priceC) || 0,
-                    price: Number(product.priceA) || 0 
+                    price: Number(product.priceA) || 0
                 };
                 set((state) => ({ products: [...state.products, newProduct] }));
                 get().syncToSupabase();
@@ -573,7 +634,13 @@ export const useStore = create(
                 get().syncToSupabase();
             },
             deleteProduct: async (id) => {
-                set((state) => ({ products: state.products.filter(p => p.id !== id) }));
+                const wasOnServer = get().products.find(p => p.id === id)?.synced === true;
+                set((state) => ({
+                    products: state.products.filter(p => p.id !== id),
+                    ...(!get().isOnline && wasOnServer ? {
+                        pendingDeletes: { ...state.pendingDeletes, products: [...new Set([...(state.pendingDeletes?.products || []), id])] }
+                    } : {})
+                }));
                 if (get().isOnline && supabase) {
                     await supabase.from('products').delete().eq('id', id);
                 }
@@ -588,7 +655,7 @@ export const useStore = create(
             // Inventario (Entradas/Salidas)
             addInventory: (item) => {
                 set((state) => ({
-                    inventory: [...state.inventory, { ...item, id: crypto.randomUUID(), date: new Date().toISOString(), synced: false }],
+                    inventory: [...state.inventory, { ...item, id: generateId(), date: new Date().toISOString(), synced: false }],
                     products: state.products.map(p => {
                         if (p.id === item.productId) {
                             return {
@@ -607,7 +674,7 @@ export const useStore = create(
             addUser: (user) => {
                 const newUser = {
                     ...user,
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     synced: false,
                     priceList: user.priceList || 'A'
                 };
@@ -621,7 +688,13 @@ export const useStore = create(
                 get().syncToSupabase();
             },
             deleteUser: async (id) => {
-                set((state) => ({ users: state.users.filter((u) => u.id !== id) }));
+                const wasOnServer = get().users.find(u => u.id === id)?.synced === true;
+                set((state) => ({
+                    users: state.users.filter((u) => u.id !== id),
+                    ...(!get().isOnline && wasOnServer ? {
+                        pendingDeletes: { ...state.pendingDeletes, users: [...new Set([...(state.pendingDeletes?.users || []), id])] }
+                    } : {})
+                }));
                 if (get().isOnline && supabase) {
                     await supabase.from('users').delete().eq('id', id);
                 }
@@ -629,7 +702,7 @@ export const useStore = create(
 
             // Clientes
             addClient: (client) => {
-                set((state) => ({ clients: [...state.clients, { ...client, id: crypto.randomUUID(), synced: false }] }));
+                set((state) => ({ clients: [...state.clients, { ...client, id: generateId(), synced: false }] }));
                 get().syncToSupabase();
             },
             updateClient: (id, client) => {
@@ -637,7 +710,13 @@ export const useStore = create(
                 get().syncToSupabase();
             },
             deleteClient: async (id) => {
-                set((state) => ({ clients: state.clients.filter(c => c.id !== id) }));
+                const wasOnServer = get().clients.find(c => c.id === id)?.synced === true;
+                set((state) => ({
+                    clients: state.clients.filter(c => c.id !== id),
+                    ...(!get().isOnline && wasOnServer ? {
+                        pendingDeletes: { ...state.pendingDeletes, clients: [...new Set([...(state.pendingDeletes?.clients || []), id])] }
+                    } : {})
+                }));
                 if (get().isOnline && supabase) {
                     await supabase.from('clients').delete().eq('id', id);
                 }
@@ -646,7 +725,7 @@ export const useStore = create(
             // Ventas
             addSale: (sale) => {
                 set((state) => {
-                    const newSale = { id: crypto.randomUUID(), date: new Date().toISOString(), ...sale, synced: false };
+                    const newSale = { id: generateId(), date: new Date().toISOString(), ...sale, synced: false };
 
                     const updatedProducts = state.products.map(p => {
                         const saleItem = sale.items.find(i => i.productId === p.id);
@@ -682,6 +761,7 @@ export const useStore = create(
                 const state = get();
                 const saleToDelete = state.sales.find(s => s.id === saleId);
                 if (!saleToDelete) return;
+                const wasOnServer = saleToDelete.synced === true;
 
                 set((s) => ({
                     sales: s.sales.filter(s => s.id !== saleId),
@@ -691,7 +771,10 @@ export const useStore = create(
                             return { ...p, stock: (p.stock || 0) + Number(item.quantity), synced: false };
                         }
                         return p;
-                    })
+                    }),
+                    ...(!state.isOnline && wasOnServer ? {
+                        pendingDeletes: { ...s.pendingDeletes, sales: [...new Set([...(s.pendingDeletes?.sales || []), saleId])] }
+                    } : {})
                 }));
 
                 if (state.isOnline && supabase) {
@@ -706,14 +789,19 @@ export const useStore = create(
 
             // Gastos operativos
             addExpense: (expense) => {
-                const newExpense = { ...expense, id: crypto.randomUUID(), synced: false };
+                const newExpense = { ...expense, id: generateId(), synced: false };
                 set(state => ({ expenses: [...state.expenses, newExpense] }));
                 get().syncToSupabase();
             },
             deleteExpense: async (id) => {
-                set(state => ({ expenses: state.expenses.filter(e => e.id !== id) }));
-                const state = get();
-                if (state.isOnline && supabase) {
+                const wasOnServer = get().expenses.find(e => e.id === id)?.synced === true;
+                set(state => ({
+                    expenses: state.expenses.filter(e => e.id !== id),
+                    ...(!get().isOnline && wasOnServer ? {
+                        pendingDeletes: { ...state.pendingDeletes, expenses: [...new Set([...(state.pendingDeletes?.expenses || []), id])] }
+                    } : {})
+                }));
+                if (get().isOnline && supabase) {
                     await supabase.from('expenses').delete().eq('id', id);
                 }
             },
@@ -735,14 +823,14 @@ export const useStore = create(
             version: 3,
             migrate: (persistedState, version) => {
                 if (version <= 2) {
-                    // Restablecer campos booleanos de pie de página que pudieron quedar en false por error
+                    // Corregir campos booleanos que pudieron quedar en false — sin marcar synced:false
+                    // para no bloquear fetchFromSupabase y no sobreescribir config más nueva del servidor
                     return {
                         ...persistedState,
                         ticketConfig: {
-                            ...persistedState.ticketConfig,
+                            ...(persistedState.ticketConfig || {}),
                             showFooterLine1: true,
                             showFooterLine2: persistedState.ticketConfig?.showFooterLine2 ?? true,
-                            synced: false, // Forzar re-sincronización para actualizar Supabase con valores corregidos
                         }
                     };
                 }
@@ -750,9 +838,13 @@ export const useStore = create(
             },
             // Al restaurar desde localStorage, siempre releer el estado de red real
             // (Capacitor Android WebView puede guardar isOnline: false y no emitir evento 'online' al arrancar)
-            onRehydrateStorage: () => (state) => {
+            onRehydrateStorage: () => (state, error) => {
+                if (error) {
+                    console.error('[store] Error al restaurar estado persistido:', error);
+                    return;
+                }
                 if (state) {
-                    state.isOnline = navigator.onLine;
+                    state.isOnline = isOnline();
                     state.isSyncing = false;
                     state.syncError = null;
                 }

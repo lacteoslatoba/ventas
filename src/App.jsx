@@ -5,7 +5,6 @@ import { useStore } from './store';
 import { useBTPrinter } from './lib/useBTPrinter';
 import { getSavedPrinterName } from './lib/bluetoothPrinter';
 
-import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Inventory from './pages/Inventory';
 import UsersPage from './pages/Users';
@@ -618,9 +617,9 @@ const AdminRoute = ({ children, currentUser }) => {
 };
 
 function App() {
-  const { currentUser, isSyncing, initAuth } = useStore();
+  const { currentUser, isSyncing } = useStore();
 
-  useEffect(() => { initAuth(); }, [initAuth]);
+  useEffect(() => { useStore.getState().initAuth(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ya no se fuerza Fullscreen porque el usuario prefiere su barra de navegación y para evitar bugs de teclado en Android.
 
