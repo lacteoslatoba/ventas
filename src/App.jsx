@@ -247,8 +247,8 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
 
       {/* Modal de Debug / Estado de Sincronización */}
       {showSyncModal && (
-        <div className="fixed inset-0 z-[200] flex items-end justify-center px-4 pt-4 pb-[80px] bg-black/40 backdrop-blur-sm animate-in fade-in duration-150" onClick={() => setShowSyncModal(false)}>
-          <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-4 duration-200" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-150" onClick={() => setShowSyncModal(false)}>
+          <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Estado de Sincronización</h3>
               <button onClick={() => setShowSyncModal(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400">✕</button>
