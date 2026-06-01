@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Lock, LogIn, CloudOff, Eye, EyeOff } from 'lucide-react';
+import { Lock, LogIn, CloudOff, Eye, EyeOff, RefreshCw } from 'lucide-react';
 
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
-    const { login, isOnline, lastSync } = useStore();
+    const { login, isOnline, isSyncing, lastSync } = useStore();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
