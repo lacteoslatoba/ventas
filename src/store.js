@@ -710,7 +710,7 @@ export const useStore = create(
             // Ventas
             addSale: (sale) => {
                 set((state) => {
-                    const newSale = { id: generateId(), date: new Date().toISOString(), ...sale, synced: false };
+                    const newSale = { ...sale, id: sale.id ?? generateId(), date: sale.date ?? new Date().toISOString(), synced: false };
 
                     const updatedProducts = state.products.map(p => {
                         const saleItem = sale.items.find(i => i.productId === p.id);

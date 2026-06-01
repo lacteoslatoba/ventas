@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Lock, LogIn, CloudOff, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { Lock, LogIn, CloudOff, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
-    const { login, isOnline, isSyncing, syncOnReconnect, lastSync } = useStore();
-
-    const handleSync = async () => {
-        // syncOnReconnect renueva sesión, sube pendientes y baja datos frescos
-        await syncOnReconnect();
-    };
+    const { login, isOnline, lastSync } = useStore();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -156,33 +151,20 @@ export default function Login() {
                                 Iniciar Sesión
                             </button>
 
-                            {isOnline && (
-                                <div className="flex flex-col items-center gap-1">
-                                    <button
-                                        type="button"
-                                        onClick={handleSync}
-                                        disabled={isSyncing}
-                                        className="w-full flex justify-center gap-2 items-center py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl border border-slate-100 text-xs font-bold transition-all disabled:opacity-50"
-                                    >
-                                        <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
-                                        {isSyncing ? "Actualizando Base de Datos..." : "Actualizar Datos Online"}
-                                    </button>
-                                        <div className="flex flex-col items-center">
-                                            <p className="text-[10px] text-slate-400 font-medium">
-                                                Última actualización:{' '}
-                                                <span className="font-black text-slate-500">
-                                                    {lastSync ? new Date(lastSync).toLocaleString('es-MX', {
-                                                        day: '2-digit', month: 'short', year: 'numeric',
-                                                        hour: '2-digit', minute: '2-digit',
-                                                    }) : 'Nunca'}
-                                                </span>
-                                            </p>
-                                            <div className="mt-2 bg-emerald-500 text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
-                                                v{__PKG_VERSION__}
-                                            </div>
-                                        </div>
+                            <div className="flex flex-col items-center gap-1 mt-1">
+                                <p className="text-[10px] text-slate-400 font-medium">
+                                    Última sync:{' '}
+                                    <span className="font-black text-slate-500">
+                                        {lastSync ? new Date(lastSync).toLocaleString('es-MX', {
+                                            day: '2-digit', month: 'short', year: 'numeric',
+                                            hour: '2-digit', minute: '2-digit',
+                                        }) : 'Nunca'}
+                                    </span>
+                                </p>
+                                <div className="mt-1 bg-emerald-500 text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
+                                    v{__PKG_VERSION__}
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </form>
                 </div>
