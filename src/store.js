@@ -1,26 +1,11 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabase';
 
-// Generar ID que funcione en HTTP (crypto.randomUUID requiere HTTPS-secure context)
+// UUID seguro en contextos HTTP (crypto.randomUUID requiere HTTPS/secure context)
 function generateId() {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-        return generateId();
+        try { return crypto.randomUUID(); } catch { /* HTTP context */ }
     }
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
         const r = Math.random() * 16 | 0;
@@ -363,7 +348,7 @@ export const useStore = create(
                             const payload = pendingData.map(({ synced: _synced, ...rest }) => rest);
 
                             const safePayload = payload.map(item => {
-                                    const rawCols = state.cloudColumns?.[tableName];
+                                const rawCols = state.cloudColumns?.[tableName];
                                 const knownCols = (rawCols && rawCols.length > 0) ? rawCols : FALLBACK_COLUMNS[tableName];
                                 if (!knownCols) return item;
 
