@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Lock, LogIn, CloudOff, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { LogIn, CloudOff, Eye, EyeOff, RefreshCw } from 'lucide-react';
 
 export default function Login() {
     const [username, setUsername] = useState('');
