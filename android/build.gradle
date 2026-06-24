@@ -26,11 +26,11 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-// Fix: force Kotlin JVM target to 17 across all subprojects (bluetooth-le sets 21)
+// Fix: alinear Kotlin JVM target a 21 para que coincida con Java en todos los subproyectos
 subprojects {
     afterEvaluate {
         tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-            kotlinOptions.jvmTarget = "17"
+            kotlinOptions.jvmTarget = "21"
         }
     }
 }
