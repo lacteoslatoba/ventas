@@ -283,6 +283,7 @@ export const useStore = create(
             syncOnReconnect: async () => {
                 const state = get();
                 if (!state.isOnline || !supabase) return;
+                if (state.isSyncing) return; // ya hay un sync en curso, no apilar otro
 
                 // Renovar token antes de cualquier llamada (evita 401 tras offline largo)
                 try { await supabase.auth.refreshSession(); } catch (_) { /* ignore token refresh failure */ }
@@ -476,6 +477,13 @@ export const useStore = create(
                 }
                 if (!session) return;
                 set({ isSyncing: true });
+                // Timeout de seguridad: si Supabase no responde en 25 s, liberar el spinner
+                const safetyTimer = setTimeout(() => {
+                    if (get().isSyncing) {
+                        console.warn('[sync] Timeout: forzando isSyncing = false');
+                        set({ isSyncing: false });
+                    }
+                }, 25000);
                 try {
                     const tablesToPull = ['products', 'users', 'clients', 'sales', 'inventory', 'expenses'];
                     const freshData = {};
@@ -581,6 +589,7 @@ export const useStore = create(
                 } catch (error) {
                     console.error('Error descargando desde Supabase:', error);
                 } finally {
+                    clearTimeout(safetyTimer);
                     set({ isSyncing: false });
                 }
             },
