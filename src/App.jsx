@@ -156,6 +156,14 @@ const MobileHeader = ({ currentUser, isSyncing, location, navigate }) => {
         async () => {
           showToast('Subiendo datos a la nube…', 'success');
           await useStore.getState().syncOnReconnect();
+          // Verificar si quedaron items sin subir después del sync
+          const after = useStore.getState();
+          const stillPending = ['products','users','clients','sales','inventory','expenses']
+            .reduce((acc, t) => acc + (after[t] || []).filter(i => !i.synced).length, 0);
+          if (stillPending > 0) {
+            showToast(`No se pudieron subir ${stillPending} registro${stillPending !== 1 ? 's' : ''}. Revisa tu conexión e intenta de nuevo.`, 'error');
+            return; // NO recargar si hay datos sin subir
+          }
           setTimeout(doRefresh, 1500);
         }
       );
