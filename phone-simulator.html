@@ -53,21 +53,25 @@
   /* ── TELÉFONO ── */
   .phone-wrap {
     position: relative;
-    filter: drop-shadow(0 40px 80px rgba(0,0,0,.7)) drop-shadow(0 0 1px rgba(255,255,255,.08));
     transform-origin: center center;
     transition: transform .25s cubic-bezier(.4,0,.2,1);
+    will-change: transform;
   }
 
   .phone {
     position: relative;
-    width: 320px;
-    height: 680px;
+    width: 393px;
+    height: 851px;
     background: linear-gradient(160deg, #1c1c1e 0%, #111 60%, #0a0a0a 100%);
-    border-radius: 48px;
+    border-radius: 50px;
     padding: 10px;
     border: 1.5px solid rgba(255,255,255,.12);
     overflow: visible;
     transition: width .25s, height .25s, border-radius .25s;
+    box-shadow:
+      0 40px 80px rgba(0,0,0,.75),
+      0 0 0 1px rgba(255,255,255,.07),
+      0 0 0 8px rgba(0,0,0,.4);
   }
 
   .phone::before {
@@ -194,7 +198,9 @@
     border: none;
     display: block;
     transform-origin: top left;
-    /* JS controla width, height y transform */
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
 
   /* Nav bar */
@@ -465,7 +471,7 @@
         <button class="size-btn" onclick="setPhoneSize('xl')">XL</button>
       </div>
       <div id="sizeLabel" style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;font-weight:700;">
-        320 × 680 px
+        393 × 851 px
       </div>
     </div>
 
@@ -536,10 +542,10 @@
 
   // ── ESTADO ──
   const SIZES = {
-    xs: { w: 240, h: 510, r: 36, label: '240 × 510 px' },
-    s:  { w: 280, h: 595, r: 42, label: '280 × 595 px' },
-    m:  { w: 320, h: 680, r: 48, label: '320 × 680 px' },
-    l:  { w: 390, h: 844, r: 54, label: '390 × 844 px' },
+    xs: { w: 300, h: 650, r: 40, label: '300 × 650 px' },
+    s:  { w: 360, h: 780, r: 46, label: '360 × 780 px' },
+    m:  { w: 393, h: 851, r: 50, label: '393 × 851 px' },
+    l:  { w: 412, h: 915, r: 54, label: '412 × 915 px' },
     xl: { w: 430, h: 932, r: 58, label: '430 × 932 px' },
   };
 
