@@ -11,6 +11,14 @@ export default function SaleDetailModal({
     setSelectedSale,
     showConfirm
 }) {
+    const [editPm, setEditPm] = React.useState('efectivo');
+
+    React.useEffect(() => {
+        if (selectedSale) {
+            setEditPm(selectedSale.paymentMethod || selectedSale.paymentmethod || 'efectivo');
+        }
+    }, [selectedSale]);
+
     if (!selectedSale) return null;
 
     const client = clients.find(c => c.id === selectedSale.clientId);
@@ -18,9 +26,6 @@ export default function SaleDetailModal({
     const dateObj = new Date(selectedSale.date);
     const fecha = dateObj.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
     const hora = dateObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-    const originalPm = selectedSale.paymentMethod || selectedSale.paymentmethod || 'efectivo';
-
-    const [editPm, setEditPm] = React.useState(originalPm);
 
     function changePm(pm) {
         setEditPm(pm);

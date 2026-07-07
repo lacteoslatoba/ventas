@@ -19,7 +19,7 @@ import Sidebar from './components/Sidebar';
 import MenuPage from './pages/Menu';
 
 const NetworkIndicator = () => {
-  const { isOnline, setOnlineStatus } = useStore();
+  const { setOnlineStatus } = useStore();
 
   useEffect(() => {
     // ── Al recuperar conexión: renovar sesión + subir pendientes + bajar frescos ──

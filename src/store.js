@@ -18,6 +18,16 @@ function isOnline() {
     return typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean' && navigator.onLine;
 }
 
+// Evita que una llamada a Supabase quede colgada para siempre en redes de ruta con señal intermitente
+// (el request nunca resuelve ni rechaza, dejando isSyncing atascado en true)
+function withTimeout(promise, ms = 15000, label = 'request') {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`Tiempo de espera agotado (${label})`)), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 // Mapa global lowercase→camelCase (PostgreSQL devuelve columnas en minúsculas)
 const COLUMN_MAP = {
     userid: 'userId', clientid: 'clientId', paymentmethod: 'paymentMethod',
@@ -336,6 +346,14 @@ export const useStore = create(
                 if (!state.isOnline || !supabase) return;
 
                 set({ isSyncing: true });
+                // Red de seguridad: aunque cada llamada individual ya tiene su propio timeout,
+                // esto garantiza que isSyncing nunca quede atascado en true por un caso no previsto.
+                const safetyTimer = setTimeout(() => {
+                    if (get().isSyncing) {
+                        console.warn('[sync] Timeout global: forzando isSyncing = false (upload)');
+                        set({ isSyncing: false });
+                    }
+                }, 120000);
 
                 try {
                     const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses'];
@@ -368,16 +386,26 @@ export const useStore = create(
                                 return filtered;
                             });
 
-                            const { error } = await supabase.from(tableName).upsert(safePayload);
-                            if (error) {
-                                console.error(`Error Syncing ${tableName}:`, error.message);
-                                set({ syncError: `[${tableName}] ${error.message}` });
-                                get().showToast(`Error al subir ${tableName}: ${error.message}`, 'error');
-                                if (error.message.includes('column') && !state.cloudColumns?.[tableName]) {
-                                    get().fetchFromSupabase();
+                            try {
+                                const { error } = await withTimeout(
+                                    supabase.from(tableName).upsert(safePayload),
+                                    15000,
+                                    tableName
+                                );
+                                if (error) {
+                                    console.error(`Error Syncing ${tableName}:`, error.message);
+                                    set({ syncError: `[${tableName}] ${error.message}` });
+                                    get().showToast(`Error al subir ${tableName}: ${error.message}`, 'error');
+                                    if (error.message.includes('column') && !state.cloudColumns?.[tableName]) {
+                                        get().fetchFromSupabase();
+                                    }
+                                } else {
+                                    successTables.push(tableName);
                                 }
-                            } else {
-                                successTables.push(tableName);
+                            } catch (timeoutErr) {
+                                console.error(`Timeout sincronizando ${tableName}:`, timeoutErr.message);
+                                set({ syncError: `[${tableName}] ${timeoutErr.message}` });
+                                get().showToast(`Sin respuesta del servidor al subir ${tableName}, se reintentará`, 'error');
                             }
                         } else {
                             successTables.push(tableName);
@@ -429,11 +457,19 @@ export const useStore = create(
                             finalPayload.footer = `JSON_CONFIG:${JSON.stringify({ ...extraData, _realFooter: currentFooter })}`;
                         }
 
-                        const { error } = await supabase.from('ticket_config').upsert(finalPayload);
-                        if (!error) {
-                            set(s => ({ ticketConfig: { ...s.ticketConfig, synced: true } }));
-                        } else {
-                            console.error(`Error Syncing ticket_config:`, error.message);
+                        try {
+                            const { error } = await withTimeout(
+                                supabase.from('ticket_config').upsert(finalPayload),
+                                15000,
+                                'ticket_config'
+                            );
+                            if (!error) {
+                                set(s => ({ ticketConfig: { ...s.ticketConfig, synced: true } }));
+                            } else {
+                                console.error(`Error Syncing ticket_config:`, error.message);
+                            }
+                        } catch (timeoutErr) {
+                            console.error('Timeout sincronizando ticket_config:', timeoutErr.message);
                         }
                     }
 
@@ -443,7 +479,7 @@ export const useStore = create(
                         for (const [table, ids] of Object.entries(pendingDels)) {
                             for (const id of ids) {
                                 try {
-                                    await supabase.from(table).delete().eq('id', id);
+                                    await withTimeout(supabase.from(table).delete().eq('id', id), 15000, `delete ${table}`);
                                 } catch (e) {
                                     console.warn(`[sync] No se pudo eliminar ${table}/${id}:`, e);
                                 }
@@ -459,6 +495,7 @@ export const useStore = create(
                 } catch (error) {
                     console.error('Error sincronizando con la nube:', error);
                 } finally {
+                    clearTimeout(safetyTimer);
                     set({ isSyncing: false });
                 }
             },

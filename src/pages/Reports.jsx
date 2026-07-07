@@ -126,7 +126,7 @@ export default function Reports() {
         };
     }, [isAdmin, repDateFilter, sales, clients, currentUser, expenses]);
 
-    const generateImage = async () => {
+    const _generateImage = async () => {
         await generateReportImage({
             operatorPDFData, sales, clients, currentUser, repDateFilter, todayStr, ticketConfig
         });
