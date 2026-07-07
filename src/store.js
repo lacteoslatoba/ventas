@@ -360,6 +360,7 @@ export const useStore = create(
                     const totalPending = tablesToSync.reduce((acc, t) => acc + (state[t]?.filter(i => !i.synced).length || 0), 0)
                         + (state.ticketConfig && !state.ticketConfig.synced ? 1 : 0);
                     const successTables = [];
+                    let hadError = false;
 
                     for (const tableName of tablesToSync) {
                         const pendingData = state[tableName].filter(item => !item.synced);
@@ -395,6 +396,7 @@ export const useStore = create(
                                 if (error) {
                                     console.error(`Error Syncing ${tableName}:`, error.message);
                                     set({ syncError: `[${tableName}] ${error.message}` });
+                                    hadError = true;
                                     get().showToast(`Error al subir ${tableName}: ${error.message}`, 'error');
                                     if (error.message.includes('column') && !state.cloudColumns?.[tableName]) {
                                         get().fetchFromSupabase();
@@ -405,6 +407,7 @@ export const useStore = create(
                             } catch (timeoutErr) {
                                 console.error(`Timeout sincronizando ${tableName}:`, timeoutErr.message);
                                 set({ syncError: `[${tableName}] ${timeoutErr.message}` });
+                                hadError = true;
                                 get().showToast(`Sin respuesta del servidor al subir ${tableName}, se reintentará`, 'error');
                             }
                         } else {
@@ -413,7 +416,11 @@ export const useStore = create(
                     }
 
                     set((s) => {
-                        const nextState = { lastSync: new Date().toISOString(), syncError: null };
+                        // No pisar syncError con null si alguna tabla falló en este ciclo —
+                        // antes esto ocultaba errores persistentes (ej. registros que nunca
+                        // logran subir), mostrando "todo bien" en el modal de diagnóstico.
+                        const nextState = { lastSync: new Date().toISOString() };
+                        if (!hadError) nextState.syncError = null;
                         successTables.forEach(t => {
                             nextState[t] = s[t].map(x => ({ ...x, synced: true }));
                         });
