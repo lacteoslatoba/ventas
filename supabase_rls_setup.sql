@@ -66,10 +66,17 @@ DROP POLICY IF EXISTS "clients_insert" ON public.clients;
 DROP POLICY IF EXISTS "clients_update" ON public.clients;
 DROP POLICY IF EXISTS "clients_delete" ON public.clients;
 
+-- clients_read usa USING (true): el filtrado por repartidor se hace en el frontend.
+-- insert/update/delete deben permitir al repartidor operar sobre SUS PROPIOS clientes
+-- igual que sales/inventory/expenses — antes estaba limitado a is_admin() únicamente,
+-- lo cual bloqueaba para siempre la sincronización de clientes creados por un
+-- repartidor (violación de RLS que además rompía sales_clientId_fkey).
+-- OJO: a diferencia de las demás tablas, la columna en "clients" quedó creada como
+-- "userId" (con comillas/mayúscula), no "userid" — por eso va entre comillas dobles aquí.
 CREATE POLICY "clients_read"   ON public.clients FOR SELECT TO authenticated USING (true);
-CREATE POLICY "clients_insert" ON public.clients FOR INSERT TO authenticated WITH CHECK (is_admin());
-CREATE POLICY "clients_update" ON public.clients FOR UPDATE TO authenticated USING (is_admin());
-CREATE POLICY "clients_delete" ON public.clients FOR DELETE TO authenticated USING (is_admin());
+CREATE POLICY "clients_insert" ON public.clients FOR INSERT TO authenticated WITH CHECK ("userId" = my_user_id() OR is_admin());
+CREATE POLICY "clients_update" ON public.clients FOR UPDATE TO authenticated USING ("userId" = my_user_id() OR is_admin());
+CREATE POLICY "clients_delete" ON public.clients FOR DELETE TO authenticated USING ("userId" = my_user_id() OR is_admin());
 
 -- ── 8. SALES ─────────────────────────────────────────────────
 --    Columna en Supabase se llama "userid" (minúsculas)
