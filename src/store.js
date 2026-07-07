@@ -504,23 +504,24 @@ export const useStore = create(
             fetchFromSupabase: async () => {
                 if (!get().isOnline || !supabase) return;
 
-                // getSession puede lanzar si no hay red; si falla, no bloquear isSyncing
+                // getSession puede lanzar si no hay red; si falla o cuelga, no bloquear isSyncing
                 let session;
                 try {
-                    const { data } = await supabase.auth.getSession();
+                    const { data } = await withTimeout(supabase.auth.getSession(), 10000, 'getSession');
                     session = data?.session;
                 } catch {
                     return;
                 }
                 if (!session) return;
                 set({ isSyncing: true });
-                // Timeout de seguridad: si Supabase no responde en 25 s, liberar el spinner
+                // Red de seguridad: cada llamada de red ya tiene su propio timeout (withTimeout),
+                // esto solo cubre un caso no previsto para que isSyncing nunca quede atascado
                 const safetyTimer = setTimeout(() => {
                     if (get().isSyncing) {
-                        console.warn('[sync] Timeout: forzando isSyncing = false');
+                        console.warn('[sync] Timeout global: forzando isSyncing = false (download)');
                         set({ isSyncing: false });
                     }
-                }, 25000);
+                }, 120000);
                 try {
                     const tablesToPull = ['products', 'users', 'clients', 'sales', 'inventory', 'expenses'];
                     const freshData = {};
@@ -536,10 +537,18 @@ export const useStore = create(
                     };
 
                     for (const tableName of tablesToPull) {
-                        const { data, error } = await supabase.from(tableName).select('*');
-                        if (!error && data) {
-                            freshData[tableName] = data.map(item => ({ ...normalizeRow(tableName, item), synced: true }));
-                            if (data.length > 0) cloudColumns[tableName] = Object.keys(data[0]);
+                        try {
+                            const { data, error } = await withTimeout(
+                                supabase.from(tableName).select('*'),
+                                15000,
+                                tableName
+                            );
+                            if (!error && data) {
+                                freshData[tableName] = data.map(item => ({ ...normalizeRow(tableName, item), synced: true }));
+                                if (data.length > 0) cloudColumns[tableName] = Object.keys(data[0]);
+                            }
+                        } catch (timeoutErr) {
+                            console.error(`Timeout descargando ${tableName}:`, timeoutErr.message);
                         }
                     }
 
@@ -572,7 +581,18 @@ export const useStore = create(
                         };
                     });
 
-                    const { data: configData, error: configError } = await supabase.from('ticket_config').select('*').eq('id', 'main').single();
+                    let configData, configError;
+                    try {
+                        const res = await withTimeout(
+                            supabase.from('ticket_config').select('*').eq('id', 'main').single(),
+                            15000,
+                            'ticket_config'
+                        );
+                        configData = res.data;
+                        configError = res.error;
+                    } catch (timeoutErr) {
+                        console.error('Timeout descargando ticket_config:', timeoutErr.message);
+                    }
                     if (!configError && configData) {
                         set(s => {
                             if (s.ticketConfig?.synced || !s.ticketConfig) {
