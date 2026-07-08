@@ -44,9 +44,20 @@ DROP POLICY IF EXISTS "products_insert" ON public.products;
 DROP POLICY IF EXISTS "products_update" ON public.products;
 DROP POLICY IF EXISTS "products_delete" ON public.products;
 
+-- products_update permite a cualquier repartidor autenticado (no solo admin) porque
+-- addSale() en el frontend descuenta el stock del producto vendido y lo sube via el
+-- mismo mecanismo de sync genérico — con is_admin() únicamente, ese descuento de stock
+-- era rechazado (403) en cada venta de un repartidor, y encima se perdía en silencio en
+-- el siguiente fetchFromSupabase (mergeStateHelper descarta el cambio local no
+-- sincronizado porque el producto ya existe en el servidor). insert/delete siguen
+-- admin-only: solo Products.jsx (ruta AdminRoute) los usa.
+-- NOTA: esto también le permitiría en teoría a un repartidor cambiar priceA/B/C via una
+-- llamada directa a la API (no por la UI normal). Si eso se vuelve un problema, la forma
+-- correcta es mover el descuento de stock a un trigger en el servidor en vez de confiar
+-- en el valor que manda el cliente.
 CREATE POLICY "products_read"   ON public.products FOR SELECT TO authenticated USING (true);
 CREATE POLICY "products_insert" ON public.products FOR INSERT TO authenticated WITH CHECK (is_admin());
-CREATE POLICY "products_update" ON public.products FOR UPDATE TO authenticated USING (is_admin());
+CREATE POLICY "products_update" ON public.products FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "products_delete" ON public.products FOR DELETE TO authenticated USING (is_admin());
 
 -- ── 6. USERS ─────────────────────────────────────────────────

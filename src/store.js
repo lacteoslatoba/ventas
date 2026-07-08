@@ -52,11 +52,17 @@ const FALLBACK_COLUMNS = {
 const mergeStateHelper = (localItems, freshItems) => {
     if (!freshItems) return localItems || [];
     const local = localItems || [];
-    const serverIds = new Set(freshItems.map(item => item.id));
-    // Solo preservar items que NO existen en el servidor (creados offline, aún no subidos)
-    // Items que ya existen en servidor usan la versión del servidor como fuente de verdad
-    const localOnly = local.filter(item => !item.synced && !serverIds.has(item.id));
-    return [...freshItems.map(i => ({ ...i, synced: true })), ...localOnly];
+    // Un item local no sincronizado siempre gana sobre la versión remota del mismo id
+    // (editado offline, o el upload aún no terminó) — sin importar si ese id ya existe
+    // en el servidor. Antes solo se preservaban items enteramente nuevos (creados
+    // offline), así que una edición local sobre un registro YA existente en el servidor
+    // (ej. descuento de stock de una venta) se perdía en silencio en el próximo fetch.
+    const localUnsynced = local.filter(item => !item.synced);
+    const unsyncedIds = new Set(localUnsynced.map(item => item.id));
+    const serverKept = freshItems
+        .filter(item => !unsyncedIds.has(item.id))
+        .map(i => ({ ...i, synced: true }));
+    return [...serverKept, ...localUnsynced];
 };
 
 export const useStore = create(
