@@ -16,7 +16,7 @@ LANGUAGE sql
 SECURITY DEFINER
 STABLE
 AS $$
-  SELECT auth.jwt() ->> 'email' = 'admin@lacteoslatoba.local';
+  SELECT auth.jwt() ->> 'email' = 'administrador@lacteoslatoba.local';
 $$;
 
 -- ── 3. Función: id de la tabla users del usuario actual ─────

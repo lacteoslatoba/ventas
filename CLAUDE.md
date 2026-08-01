@@ -58,7 +58,7 @@ Column aliases: `header` ↔ `businessName`, `footer` ↔ `footerLine1`, `double
 ### RLS (Row Level Security)
 
 Policies are defined in `supabase_rls_setup.sql`. Key helpers:
-- `is_admin()` — checks `auth.jwt() ->> 'email' = 'admin@lacteoslatoba.local'`
+- `is_admin()` — checks `auth.jwt() ->> 'email' = 'administrador@lacteoslatoba.local'`
 - `my_user_id()` — returns `id` from `public.users` where `auth_id = auth.uid()`
 
 Client/data filtering by repartidor is done **in the frontend** (not RLS), because `clients_read` uses `USING (true)`. The UI applies `c.userId === currentUser?.id` in `Clients.jsx` and `Sales.jsx`.
