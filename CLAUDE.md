@@ -9,9 +9,12 @@ npm run dev       # Dev server (Vite)
 npm run build     # Production build + PWA service worker generation
 npm run preview   # Preview production build locally
 npm run lint      # ESLint
+npm test          # Run Vitest tests (unit tests for pure logic)
+npm run test:watch # Run Vitest in watch mode
 ```
 
-No test suite exists in this project.
+Tests live in `src/**/*.test.js` and cover the pure logic in `src/lib/syncLogic.js` (merge, column mapping, payload building, pending counting). Run `npm install` first to install `vitest`.
+
 
 After `npm run build`, deploy by pushing to `origin/main` — the remote is https://github.com/lacteoslatoba/ventas.git.
 
@@ -31,7 +34,7 @@ All application state lives in one Zustand store with `persist` middleware (loca
 
 ### Supabase Column Naming — Critical Pattern
 
-PostgreSQL returns all column names in **lowercase**. The app uses **camelCase** internally. The `normalizeRow` function inside `fetchFromSupabase` maps them on read:
+PostgreSQL returns all column names in **lowercase**. The app uses **camelCase** internally. The mapping logic lives in **`src/lib/syncLogic.js`** (single source of truth):
 
 | Table | Supabase column | App field |
 |-------|----------------|-----------|
@@ -41,7 +44,11 @@ PostgreSQL returns all column names in **lowercase**. The app uses **camelCase**
 | `clients` | `userid` | `userId` |
 | `expenses` | `userid` | `userId` |
 
-`syncToSupabase` does the reverse: maps camelCase → lowercase before upsert, filtered by `cloudColumns` (the actual columns known from the last fetch). **Any new camelCase field added to a table must be added to both `normalizeRow` (read) and the safePayload mapping (write).**
+- **Read:** `normalizeRow()` (in `syncLogic.js`) adds camelCase aliases from lowercase columns.
+- **Write:** `buildSafePayload()` (in `syncLogic.js`) maps camelCase → lowercase before upsert, filtered by `cloudColumns` (the actual columns known from the last fetch).
+
+**Any new camelCase field added to a table must be added to `COLUMN_MAP` (read) and `REVERSE_COLUMN_MAP` (write) in `syncLogic.js`, plus `FALLBACK_COLUMNS` if the column may not exist yet in the cloud.** The unit tests in `src/lib/syncLogic.test.js` verify the maps stay consistent.
+
 
 ### Data Sync Flow
 

@@ -1,6 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabase';
+import {
+    mergeStateHelper,
+    normalizeRow,
+    buildSafePayload,
+    countPending,
+} from './lib/syncLogic';
+
+
+
 
 // UUID seguro en contextos HTTP (crypto.randomUUID requiere HTTPS/secure context)
 function generateId() {
@@ -28,44 +37,8 @@ function withTimeout(promise, ms = 15000, label = 'request') {
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-// Mapa global lowercase→camelCase (PostgreSQL devuelve columnas en minúsculas)
-const COLUMN_MAP = {
-    userid: 'userId', clientid: 'clientId', paymentmethod: 'paymentMethod',
-    pricelist: 'priceList', pricea: 'priceA', priceb: 'priceB', pricec: 'priceC',
-    lugar1activo: 'lugar1Activo', lugar2activo: 'lugar2Activo',
-};
-// Inverso: camelCase local → columna lowercase en Supabase
-const REVERSE_COLUMN_MAP = Object.fromEntries(
-    Object.entries(COLUMN_MAP).map(([lower, camel]) => [camel, lower])
-);
-
-const FALLBACK_COLUMNS = {
-    products: ['id', 'name', 'code', 'price', 'unit', 'stock', 'pricea', 'priceb', 'pricec', 'orden'],
-    users: ['id', 'name', 'phone', 'pin', 'vehicle', 'pricelist', 'lugar1', 'lugar2', 'lugar1activo', 'lugar2activo', 'auth_id'],
-    clients: ['id', 'name', 'phone', 'address', 'userid'],
-    sales: ['id', 'userid', 'clientid', 'total', 'items', 'date', 'paymentmethod'],
-    inventory: ['id', 'productid', 'type', 'quantity', 'notes', 'date'],
-    expenses: ['id', 'userid', 'date', 'description', 'amount'],
-    ticket_config: ['id', 'header', 'footer', 'doubleCopy', 'centerTotal', 'spaceBetweenItems', 'showCashAndChange']
-};
-
-const mergeStateHelper = (localItems, freshItems) => {
-    if (!freshItems) return localItems || [];
-    const local = localItems || [];
-    // Un item local no sincronizado siempre gana sobre la versión remota del mismo id
-    // (editado offline, o el upload aún no terminó) — sin importar si ese id ya existe
-    // en el servidor. Antes solo se preservaban items enteramente nuevos (creados
-    // offline), así que una edición local sobre un registro YA existente en el servidor
-    // (ej. descuento de stock de una venta) se perdía en silencio en el próximo fetch.
-    const localUnsynced = local.filter(item => !item.synced);
-    const unsyncedIds = new Set(localUnsynced.map(item => item.id));
-    const serverKept = freshItems
-        .filter(item => !unsyncedIds.has(item.id))
-        .map(i => ({ ...i, synced: true }));
-    return [...serverKept, ...localUnsynced];
-};
-
 export const useStore = create(
+
     persist(
         (set, get) => ({
             products: [],
@@ -363,8 +336,7 @@ export const useStore = create(
 
                 try {
                     const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses'];
-                    const totalPending = tablesToSync.reduce((acc, t) => acc + (state[t]?.filter(i => !i.synced).length || 0), 0)
-                        + (state.ticketConfig && !state.ticketConfig.synced ? 1 : 0);
+                    const totalPending = countPending(state, state.ticketConfig);
                     const successTables = [];
                     let hadError = false;
 
@@ -373,25 +345,10 @@ export const useStore = create(
                         if (pendingData.length > 0) {
                             const payload = pendingData.map(({ synced: _synced, ...rest }) => rest);
 
-                            const safePayload = payload.map(item => {
-                                const rawCols = state.cloudColumns?.[tableName];
-                                const knownCols = (rawCols && rawCols.length > 0) ? rawCols : FALLBACK_COLUMNS[tableName];
-                                if (!knownCols) return item;
+                            const safePayload = payload.map(item =>
+                                buildSafePayload(item, tableName, state.cloudColumns)
+                            );
 
-                                const filtered = {};
-                                knownCols.forEach(col => {
-                                    if (item[col] !== undefined) filtered[col] = item[col];
-                                });
-
-                                // Mapear campos camelCase locales a columnas lowercase de Supabase
-                                Object.entries(REVERSE_COLUMN_MAP).forEach(([camel, lower]) => {
-                                    if (knownCols.includes(lower) && item[camel] !== undefined && filtered[lower] === undefined) {
-                                        filtered[lower] = item[camel];
-                                    }
-                                });
-
-                                return filtered;
-                            });
 
                             try {
                                 const { error } = await withTimeout(
@@ -540,16 +497,8 @@ export const useStore = create(
                     const freshData = {};
                     const cloudColumns = {};
 
-                    const normalizeRow = (_tableName, item) => {
-                        const n = { ...item };
-                        Object.keys(n).forEach(col => {
-                            const camel = COLUMN_MAP[col];
-                            if (camel && n[camel] === undefined) n[camel] = n[col];
-                        });
-                        return n;
-                    };
-
                     for (const tableName of tablesToPull) {
+
                         try {
                             const { data, error } = await withTimeout(
                                 supabase.from(tableName).select('*'),
