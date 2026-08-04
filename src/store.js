@@ -259,6 +259,7 @@ export const useStore = create(
             // Estado de Red / Nube — inicia en true; onRehydrateStorage lo corrige tras cargar localStorage
             isOnline: true,
             isSyncing: false,
+            syncQueued: false, // otra sync se pidió mientras una ya estaba en curso
             lastSync: null,
             syncError: null,
 
@@ -312,8 +313,14 @@ export const useStore = create(
                             }
                         } catch (e2) {
                             console.error('Reintento de sync también falló:', e2);
-                            set({ syncError: e2?.message || 'Error al reintentar sincronización' });
-                            get().showToast(`Sin conexión al servidor: ${e2?.message || 'Error desconocido'}`, 'error');
+                            const errMsg = e2?.message || 'Error al reintentar sincronización';
+                            const isRepeatError = get().syncError === errMsg;
+                            set({ syncError: errMsg });
+                            // El chequeo periódico de NetworkIndicator reintentará solo mientras
+                            // haya pendientes — evitar repetir el mismo toast cada 30s.
+                            if (!isRepeatError) {
+                                get().showToast(`Sin conexión al servidor: ${errMsg}`, 'error');
+                            }
                         }
                     }, 4000);
                 }
@@ -324,7 +331,14 @@ export const useStore = create(
                 const state = get();
                 if (!state.isOnline || !supabase) return;
 
-                set({ isSyncing: true });
+                // Ya hay una sync en curso: no apilar una segunda en paralelo (evita carreras
+                // sobre el mismo `set()`), solo marcar que se pida otra pasada al terminar.
+                if (state.isSyncing) {
+                    set({ syncQueued: true });
+                    return;
+                }
+
+                set({ isSyncing: true, syncQueued: false });
                 // Red de seguridad: aunque cada llamada individual ya tiene su propio timeout,
                 // esto garantiza que isSyncing nunca quede atascado en true por un caso no previsto.
                 const safetyTimer = setTimeout(() => {
@@ -358,9 +372,15 @@ export const useStore = create(
                                 );
                                 if (error) {
                                     console.error(`Error Syncing ${tableName}:`, error.message);
-                                    set({ syncError: `[${tableName}] ${error.message}` });
+                                    const errMsg = `[${tableName}] ${error.message}`;
+                                    const isRepeatError = get().syncError === errMsg;
+                                    set({ syncError: errMsg });
                                     hadError = true;
-                                    get().showToast(`Error al subir ${tableName}: ${error.message}`, 'error');
+                                    // No repetir el mismo toast en cada reintento automático (cada 30s) —
+                                    // solo avisar la primera vez que aparece este error específico.
+                                    if (!isRepeatError) {
+                                        get().showToast(`Error al subir ${tableName}: ${error.message}`, 'error');
+                                    }
                                     if (error.message.includes('column') && !state.cloudColumns?.[tableName]) {
                                         get().fetchFromSupabase();
                                     }
@@ -369,9 +389,13 @@ export const useStore = create(
                                 }
                             } catch (timeoutErr) {
                                 console.error(`Timeout sincronizando ${tableName}:`, timeoutErr.message);
-                                set({ syncError: `[${tableName}] ${timeoutErr.message}` });
+                                const errMsg = `[${tableName}] ${timeoutErr.message}`;
+                                const isRepeatError = get().syncError === errMsg;
+                                set({ syncError: errMsg });
                                 hadError = true;
-                                get().showToast(`Sin respuesta del servidor al subir ${tableName}, se reintentará`, 'error');
+                                if (!isRepeatError) {
+                                    get().showToast(`Sin respuesta del servidor al subir ${tableName}, se reintentará`, 'error');
+                                }
                             }
                         } else {
                             successTables.push(tableName);
@@ -382,8 +406,17 @@ export const useStore = create(
                         // No pisar syncError con null si alguna tabla falló en este ciclo —
                         // antes esto ocultaba errores persistentes (ej. registros que nunca
                         // logran subir), mostrando "todo bien" en el modal de diagnóstico.
-                        const nextState = { lastSync: new Date().toISOString() };
-                        if (!hadError) nextState.syncError = null;
+                        // Tampoco actualizar "Última sync" si hubo error: antes se marcaba como
+                        // recién sincronizado aunque quedaran cambios sin subir, lo que además
+                        // ocultaba el problema al bloqueador de reintento automático (ver
+                        // NetworkIndicator, que ahora reintenta por pendientes, no solo por
+                        // antigüedad de lastSync — pero mantener esto correcto igual importa
+                        // para el texto "Última sync" que ve el usuario).
+                        const nextState = {};
+                        if (!hadError) {
+                            nextState.lastSync = new Date().toISOString();
+                            nextState.syncError = null;
+                        }
                         successTables.forEach(t => {
                             nextState[t] = s[t].map(x => ({ ...x, synced: true }));
                         });
@@ -467,6 +500,12 @@ export const useStore = create(
                 } finally {
                     clearTimeout(safetyTimer);
                     set({ isSyncing: false });
+                    // Llegaron cambios nuevos (u otra llamada) mientras esta pasada corría —
+                    // encadenar una pasada más en vez de perderlos hasta el próximo trigger.
+                    if (get().syncQueued) {
+                        set({ syncQueued: false });
+                        get().syncToSupabase(notify);
+                    }
                 }
             },
 

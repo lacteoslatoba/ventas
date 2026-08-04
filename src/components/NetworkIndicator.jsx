@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useStore } from '../store';
+import { countPending } from '../lib/syncLogic';
 
 // Indicador de red + sincronización automática al reconectar.
 // Se monta una sola vez en App.jsx.
@@ -23,10 +24,13 @@ const NetworkIndicator = () => {
             // Si el navegador sabe que hay red pero el store dice offline, corregirlo
             if (navigator.onLine && !s.isOnline) s.setOnlineStatus(true);
             if (!navigator.onLine || !s.isOnline) return;
-            // Sincronizar si el último sync fue hace más de 2 minutos
+            // Reintentar SIEMPRE que haya cambios sin subir (sin importar cuándo fue el
+            // último intento — un intento fallido no debe bloquear el reintento por 2 min),
+            // y también si los datos ya llevan un rato sin refrescarse aunque no haya pendientes.
             const TWO_MIN = 2 * 60 * 1000;
             const stale = !s.lastSync || Date.now() - new Date(s.lastSync).getTime() > TWO_MIN;
-            if (stale) setTimeout(() => useStore.getState().syncOnReconnect(), 800);
+            const hasPending = countPending(s, s.ticketConfig) > 0;
+            if (stale || hasPending) setTimeout(() => useStore.getState().syncOnReconnect(), 800);
         };
 
         // ── Actualización automática de PWA ──
@@ -45,6 +49,9 @@ const NetworkIndicator = () => {
         };
 
         // ── Verificación activa de red (Capacitor Android no emite 'online' al arrancar) ──
+        // También sirve de red de reintento: si el intento inmediato tras una venta/edición
+        // falló (señal intermitente en ruta), este tick de 30s lo vuelve a intentar mientras
+        // haya cambios pendientes, en vez de esperar a que "lastSync" cumpla 2 minutos.
         const checkAndSync = () => {
             const realOnline = navigator.onLine;
             const s = useStore.getState();
@@ -52,7 +59,8 @@ const NetworkIndicator = () => {
             if (realOnline) {
                 const TWO_MIN = 2 * 60 * 1000;
                 const stale = !s.lastSync || Date.now() - new Date(s.lastSync).getTime() > TWO_MIN;
-                if (stale || !s.lastSync) s.syncOnReconnect();
+                const hasPending = countPending(s, s.ticketConfig) > 0;
+                if (stale || hasPending) s.syncOnReconnect();
             }
         };
 
