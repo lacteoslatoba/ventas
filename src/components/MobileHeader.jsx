@@ -1,12 +1,13 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { RefreshCw, ArrowLeft, LayoutGrid, LogOut, Settings, Users, Menu } from 'lucide-react';
 import { useStore } from '../store';
 import { useBTPrinter } from '../lib/useBTPrinter';
 import { getSavedPrinterName } from '../lib/bluetoothPrinter';
 
-const MobileHeader = ({ currentUser, isSyncing, location }) => {
+const MobileHeader = ({ currentUser, isSyncing }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const isAdmin = currentUser?.role === 'admin';
     const isHome = location.pathname === '/' || (!isAdmin && location.pathname === '/ventas');
     const [showSettings, setShowSettings] = React.useState(false);
