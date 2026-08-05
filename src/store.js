@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from './lib/supabase';
+import { supabase, provisionRepartidorAuth } from './lib/supabase';
 import {
     mergeStateHelper,
     normalizeRow,
@@ -198,6 +198,26 @@ export const useStore = create(
                             role: user.role || 'repartidor'
                         }
                     });
+                    // Login local exitoso pero sin sesion de Supabase Auth (el intento online
+                    // de arriba fallo o no se hizo por estar offline). Si hay red, autorreparar
+                    // en segundo plano: crear/vincular su cuenta de Auth y reintentar el login
+                    // online para esta sesion — sin esto, cada sync de este repartidor se
+                    // seguiria rechazando por RLS aunque el PIN local sea correcto.
+                    if (state.isOnline && supabase) {
+                        (async () => {
+                            const { authId, error } = await provisionRepartidorAuth(cleanUsername, cleanPassword);
+                            if (authId) {
+                                set((s) => ({
+                                    users: s.users.map(u2 => u2.id === user.id ? { ...u2, auth_id: authId, synced: false } : u2)
+                                }));
+                                const email = `${cleanUsername}@lacteoslatoba.local`;
+                                const { error: retryError } = await supabase.auth.signInWithPassword({ email, password: cleanPassword });
+                                if (!retryError) get().syncToSupabase();
+                            } else if (error) {
+                                console.warn('[login] No se pudo autorreparar la cuenta de Auth de', cleanUsername, ':', error);
+                            }
+                        })();
+                    }
                     return true;
                 }
                 return false;
@@ -224,7 +244,30 @@ export const useStore = create(
                     if (persisted) return;
                     return;
                 }
-                if (!session) return;
+                if (!session) {
+                    // Hay un usuario local persistido pero ninguna sesion real de Supabase
+                    // Auth (típico de repartidores creados antes de que existiera el
+                    // aprovisionamiento automático — ver provisionRepartidorAuth). Mientras
+                    // tanto el login local ya lo dejó entrar, pero cada sync se rechazaría
+                    // por RLS. Autorreparar en segundo plano para que no dependa de que
+                    // cierre sesión y vuelva a entrar manualmente.
+                    if (persisted && persisted.role !== 'admin' && persisted.pin && isOnline()) {
+                        const cleanUsername = (persisted.name || '').trim().toLowerCase();
+                        provisionRepartidorAuth(persisted.name, persisted.pin).then(async ({ authId, error }) => {
+                            if (authId) {
+                                set((s) => ({
+                                    users: s.users.map(u => u.id === persisted.id ? { ...u, auth_id: authId, synced: false } : u)
+                                }));
+                                const email = `${cleanUsername}@lacteoslatoba.local`;
+                                const { error: retryError } = await supabase.auth.signInWithPassword({ email, password: persisted.pin });
+                                if (!retryError) get().syncToSupabase();
+                            } else if (error) {
+                                console.warn('[initAuth] No se pudo autorreparar la cuenta de Auth de', cleanUsername, ':', error);
+                            }
+                        });
+                    }
+                    return;
+                }
 
                 const username = (session.user.email || '').split('@')[0];
                 if (username === 'administrador') {
@@ -732,12 +775,51 @@ export const useStore = create(
                 };
                 set((state) => ({ users: [...state.users, newUser] }));
                 get().syncToSupabase();
+
+                // Aprovisionar la cuenta de Supabase Auth en segundo plano (requiere red).
+                // Sin esto, este repartidor nunca podria autenticarse online: login() cae
+                // en silencio al modo PIN offline, y CADA sync suyo se rechaza por RLS
+                // ("new row violates row-level security policy") sin importar la señal ni
+                // los reintentos — ver provisionRepartidorAuth en lib/supabase.js.
+                if (get().isOnline && newUser.pin) {
+                    provisionRepartidorAuth(newUser.name, newUser.pin).then(({ authId, error }) => {
+                        if (authId) {
+                            set((state) => ({
+                                users: state.users.map(u => u.id === newUser.id ? { ...u, auth_id: authId, synced: false } : u)
+                            }));
+                            get().syncToSupabase();
+                        } else if (error) {
+                            console.error('[provisionRepartidorAuth] addUser:', error);
+                            get().showToast(`Repartidor guardado, pero no se pudo crear su acceso a la nube: ${error}`, 'error');
+                        }
+                    });
+                }
             },
             updateUser: (id, data) => {
+                const prevUser = get().users.find(u => u.id === id);
                 set((state) => ({
                     users: state.users.map((u) => (u.id === id ? { ...u, ...data, synced: false } : u)),
                 }));
                 get().syncToSupabase();
+
+                // Si cambio el PIN, o el repartidor aun no tenia cuenta de Auth vinculada,
+                // reintentar aprovisionarla — ver nota en addUser.
+                const pinChanged = data.pin !== undefined && data.pin !== prevUser?.pin;
+                const nameForAuth = data.name !== undefined ? data.name : prevUser?.name;
+                const pinForAuth = data.pin !== undefined ? data.pin : prevUser?.pin;
+                if (get().isOnline && (pinChanged || !prevUser?.auth_id) && pinForAuth) {
+                    provisionRepartidorAuth(nameForAuth, pinForAuth).then(({ authId, error }) => {
+                        if (authId) {
+                            set((state) => ({
+                                users: state.users.map(u => u.id === id ? { ...u, auth_id: authId, synced: false } : u)
+                            }));
+                            get().syncToSupabase();
+                        } else if (error) {
+                            console.error('[provisionRepartidorAuth] updateUser:', error);
+                            get().showToast(`Repartidor actualizado, pero su acceso a la nube no se pudo vincular: ${error}`, 'error');
+                        }
+                    });
+                }
             },
             deleteUser: async (id) => {
                 const wasOnServer = get().users.find(u => u.id === id)?.synced === true;
