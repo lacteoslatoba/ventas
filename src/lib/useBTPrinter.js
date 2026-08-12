@@ -2,6 +2,13 @@
  * useBTPrinter.js
  * Hook compartido para acceder a la instancia global de impresora Bluetooth.
  * Auto-reconecta al iniciar sesión con reintentos cada 5s por ~1 minuto.
+ *
+ * El hook se monta en varios lugares a la vez (PrinterAutoConnect global,
+ * PrinterSettings, MobileHeader...). El bucle de reintentos vive a nivel de
+ * MÓDULO (no por instancia de hook) para que sea un único bucle real: así,
+ * cancelarlo desde cualquier pantalla lo detiene de verdad en todos lados,
+ * en vez de solo silenciar la bandera de una instancia mientras otra sigue
+ * reintentando en segundo plano contra un dispositivo que ya no existe.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { autoConnectPrinter, getSavedPrinterName } from './bluetoothPrinter';
@@ -12,128 +19,126 @@ function setGlobalPrinter(p) { window.__btPrinter = p; }
 const MAX_RETRIES = 12;   // 12 intentos × 5s = ~1 minuto
 const RETRY_DELAY = 5000;
 
+// --- Estado singleton del bucle de reintentos (compartido por todas las instancias) ---
+let retryTimer = null;
+let retryCount = 0;
+let retryGeneration = 0; // se incrementa al cancelar, para invalidar callbacks en vuelo
+
+function stopRetryGlobal() {
+    clearTimeout(retryTimer);
+    retryTimer = null;
+    retryGeneration += 1;
+    window.__isBTReconnecting = false;
+}
+
+// Detiene el bucle de reintentos por completo (llamable desde cualquier pantalla).
+export function cancelAutoConnect() {
+    retryCount = MAX_RETRIES;
+    stopRetryGlobal();
+}
+
+function scheduleRetryGlobal(connectFn) {
+    clearTimeout(retryTimer);
+    if (retryCount >= MAX_RETRIES) {
+        stopRetryGlobal();
+        return;
+    }
+    window.__isBTReconnecting = true;
+    const myGeneration = retryGeneration;
+
+    retryTimer = setTimeout(async () => {
+        if (myGeneration !== retryGeneration) return; // se canceló mientras esperábamos
+        retryCount += 1;
+        try {
+            const handleDisconnect = () => {
+                if (myGeneration !== retryGeneration) return;
+                const curr = getGlobalPrinter();
+                if (curr) curr.isConnected = false;
+                setGlobalPrinter(null);
+                retryCount = 0;
+                scheduleRetryGlobal(connectFn);
+            };
+
+            const result = await connectFn(handleDisconnect);
+            if (myGeneration !== retryGeneration) return; // se canceló durante el connect()
+            if (result) {
+                setGlobalPrinter(result);
+                stopRetryGlobal();
+            } else {
+                scheduleRetryGlobal(connectFn);
+            }
+        } catch {
+            if (myGeneration !== retryGeneration) return;
+            scheduleRetryGlobal(connectFn);
+        }
+    }, RETRY_DELAY);
+}
+
+function startAutoConnectGlobal() {
+    const savedDeviceId = getSavedPrinterName();
+    if (!savedDeviceId) return;
+    if (getGlobalPrinter()?.isConnected) return;
+    if (window.__isBTReconnecting) return;
+
+    retryCount = 0;
+    window.__isBTReconnecting = true;
+    const myGeneration = retryGeneration;
+
+    const connectFn = (onDisc) => autoConnectPrinter(savedDeviceId, onDisc || handleDisconnect);
+
+    const handleDisconnect = () => {
+        if (myGeneration !== retryGeneration) return;
+        const curr = getGlobalPrinter();
+        if (curr) curr.isConnected = false;
+        setGlobalPrinter(null);
+        retryCount = 0;
+        scheduleRetryGlobal(connectFn);
+    };
+
+    connectFn().then(result => {
+        if (myGeneration !== retryGeneration) return;
+        if (result) {
+            setGlobalPrinter(result);
+            stopRetryGlobal();
+        } else {
+            scheduleRetryGlobal(connectFn);
+        }
+    }).catch(() => {
+        if (myGeneration !== retryGeneration) return;
+        scheduleRetryGlobal(connectFn);
+    });
+}
+
 export function useBTPrinter() {
     const [printer, setPrinterState] = useState(getGlobalPrinter);
     const [reconnecting, setReconnecting] = useState(false);
-    const retryTimerRef = useRef(null);
-    const retryCountRef = useRef(0);
     const mountedRef = useRef(true);
-    const scheduleRetryRef = useRef(null);
 
     const setPrinter = useCallback((p) => {
         setGlobalPrinter(p);
         setPrinterState(p);
     }, []);
 
-    const stopRetry = useCallback(() => {
-        clearTimeout(retryTimerRef.current);
-        window.__isBTReconnecting = false;
-        if (mountedRef.current) setReconnecting(false);
-    }, []);
-
-    const scheduleRetry = useCallback((connectFn) => {
-        clearTimeout(retryTimerRef.current);
-        if (retryCountRef.current >= MAX_RETRIES) {
-            stopRetry();
-            return;
-        }
-        window.__isBTReconnecting = true;
-        if (mountedRef.current) setReconnecting(true);
-
-        retryTimerRef.current = setTimeout(async () => {
-            if (!mountedRef.current) return;
-            retryCountRef.current += 1;
-            try {
-                const handleDisconnect = () => {
-                    const curr = getGlobalPrinter();
-                    if (curr) curr.isConnected = false;
-                    setGlobalPrinter(null);
-                    if (mountedRef.current) setPrinterState(null);
-                    // Reiniciar loop al desconectarse inesperadamente
-                    retryCountRef.current = 0;
-                    scheduleRetryRef.current(connectFn);
-                };
-
-                // Pasamos la callback de desconexión directamente
-                const result = await connectFn(handleDisconnect);
-                if (result && mountedRef.current) {
-                    setGlobalPrinter(result);
-                    setPrinterState(result);
-                    stopRetry();
-                } else {
-                    scheduleRetryRef.current(connectFn);
-                }
-            } catch {
-                scheduleRetryRef.current(connectFn);
-            }
-        }, RETRY_DELAY);
-    }, [stopRetry]);
-
-    // Sincronizar la referencia en un efecto para evitar la actualización en fase de renderizado
-    useEffect(() => {
-        scheduleRetryRef.current = scheduleRetry;
-    }, [scheduleRetry]);
-
     const startAutoConnect = useCallback(() => {
-        const savedDeviceId = getSavedPrinterName();
-        if (!savedDeviceId) return;
-        if (getGlobalPrinter()?.isConnected) return;
-        if (window.__isBTReconnecting) return;
-
-        retryCountRef.current = 0;
-        window.__isBTReconnecting = true;
-        if (mountedRef.current) setReconnecting(true);
-
-        // connectFn debe definirse ANTES de handleDisconnect para evitar referencia antes de declaración
-        const connectFn = (onDisc) => autoConnectPrinter(savedDeviceId, onDisc || handleDisconnect);
-
-        const handleDisconnect = () => {
-            const curr = getGlobalPrinter();
-            if (curr) curr.isConnected = false;
-            setGlobalPrinter(null);
-            if (mountedRef.current) setPrinterState(null);
-            retryCountRef.current = 0;
-            scheduleRetryRef.current(connectFn);
-        };
-        
-        connectFn().then(result => {
-            if (!mountedRef.current) return;
-            if (result) {
-                setGlobalPrinter(result);
-                setPrinterState(result);
-                stopRetry();
-            } else {
-                scheduleRetryRef.current(connectFn);
-            }
-        }).catch(() => {
-            if (mountedRef.current) scheduleRetryRef.current(connectFn);
-        });
-    }, [stopRetry]);
+        startAutoConnectGlobal();
+    }, []);
 
     useEffect(() => {
         mountedRef.current = true;
 
         // Auto-conectar al montar (inicio de sesión)
         setTimeout(() => {
-            if (mountedRef.current) {
-                startAutoConnect();
-            }
+            if (mountedRef.current) startAutoConnect();
         }, 0);
 
         // Reconectar cuando el usuario vuelve a la app
         const handleVisible = () => {
-            if (document.visibilityState === 'visible') {
-                if (!getGlobalPrinter()?.isConnected) {
-                    retryCountRef.current = 0;
-                    startAutoConnect();
-                }
+            if (document.visibilityState === 'visible' && !getGlobalPrinter()?.isConnected) {
+                startAutoConnect();
             }
         };
         const handleFocus = () => {
-            if (!getGlobalPrinter()?.isConnected) {
-                retryCountRef.current = 0;
-                startAutoConnect();
-            }
+            if (!getGlobalPrinter()?.isConnected) startAutoConnect();
         };
 
         document.addEventListener('visibilitychange', handleVisible);
@@ -143,7 +148,6 @@ export function useBTPrinter() {
             mountedRef.current = false;
             document.removeEventListener('visibilitychange', handleVisible);
             window.removeEventListener('focus', handleFocus);
-            clearTimeout(retryTimerRef.current);
         };
     }, [startAutoConnect]);
 
@@ -159,5 +163,5 @@ export function useBTPrinter() {
         return () => clearInterval(interval);
     }, [printer, reconnecting]);
 
-    return { printer, setPrinter, isReconnecting: reconnecting, startAutoConnect };
+    return { printer, setPrinter, isReconnecting: reconnecting, startAutoConnect, cancelAutoConnect };
 }

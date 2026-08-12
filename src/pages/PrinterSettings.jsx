@@ -14,7 +14,7 @@ import { Capacitor } from '@capacitor/core';
 import { useBTPrinter } from '../lib/useBTPrinter';
 
 export default function PrinterSettings() {
-    const { printer, setPrinter, isReconnecting } = useBTPrinter();
+    const { printer, setPrinter, isReconnecting, cancelAutoConnect } = useBTPrinter();
     const { ticketConfig } = useStore();
     const [status, setStatus] = useState('idle'); // idle | connecting | connected | error | disconnected
     const [statusMsg, setStatusMsg] = useState('');
@@ -47,6 +47,10 @@ export default function PrinterSettings() {
     }, [printer, isReconnecting, status]);
 
     const handleConnect = async () => {
+        // Corta cualquier auto-reconexión en curso a un dispositivo guardado
+        // (puede estar atascada reintentando una impresora vieja/desconectada
+        // y bloquear el radio BLE para la búsqueda manual).
+        cancelAutoConnect();
         setFoundDevices([]);
         setStatus('connecting');
         setStatusMsg('Buscando impresoras Bluetooth...');
@@ -357,6 +361,12 @@ export default function PrinterSettings() {
                         className="text-xs bg-white border border-slate-200 hover:border-primary hover:text-primary text-slate-500 font-bold px-3 py-2 rounded-xl transition-all"
                     >
                         Reconectar
+                    </button>
+                    <button
+                        onClick={() => { cancelAutoConnect(); clearSavedPrinter(); setStatus('idle'); setStatusMsg(''); }}
+                        className="text-xs bg-white border border-slate-200 hover:border-red-400 hover:text-red-600 text-slate-400 font-bold px-3 py-2 rounded-xl transition-all"
+                    >
+                        Olvidar
                     </button>
                 </div>
             )}
