@@ -5,7 +5,7 @@ import { Plus, Trash2, User, CheckCircle, AlertTriangle, ChevronRight, ArrowLeft
 export default function Clients() {
     const { clients, currentUser, addClient, deleteClient, updateClient } = useStore();
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [formData, setFormData] = useState({ name: '', phone: '', address: '', userId: currentUser?.role !== 'admin' ? currentUser?.id : '' });
+    const [formData, setFormData] = useState({ name: '', phone: '', address: '', paymentMethod: 'efectivo', userId: currentUser?.role !== 'admin' ? currentUser?.id : '' });
     const [editId, setEditId] = useState(null);
     const [toast, setToast] = useState(null); // { message, type: 'success'|'error' }
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -26,7 +26,7 @@ export default function Clients() {
             if (editId) updateClient(editId, finalData);
             else addClient(finalData);
 
-            setFormData({ name: '', phone: '', address: '', userId: currentUser?.role !== 'admin' ? currentUser?.id : '' });
+            setFormData({ name: '', phone: '', address: '', paymentMethod: 'efectivo', userId: currentUser?.role !== 'admin' ? currentUser?.id : '' });
             setEditId(null);
             setIsFormOpen(false);
             showToast('Guardado correctamente en el sistema.');
@@ -49,14 +49,20 @@ export default function Clients() {
     };
 
     const openEditForm = (client) => {
-        setFormData({ name: client.name, phone: client.phone || '', address: client.address || '', userId: client.userId || '' });
+        setFormData({
+            name: client.name,
+            phone: client.phone || '',
+            address: client.address || '',
+            paymentMethod: client.paymentMethod || client.paymentmethod || 'efectivo',
+            userId: client.userId || '',
+        });
         setEditId(client.id);
         setIsFormOpen(true);
     };
 
     const openNewForm = () => {
         setEditId(null);
-        setFormData({ name: '', phone: '', address: '', userId: currentUser?.role !== 'admin' ? currentUser?.id : '' });
+        setFormData({ name: '', phone: '', address: '', paymentMethod: 'efectivo', userId: currentUser?.role !== 'admin' ? currentUser?.id : '' });
         setIsFormOpen(true);
     };
 
@@ -140,6 +146,33 @@ export default function Clients() {
                                                 placeholder="Lugar del cliente..."
                                             />
                                         )}
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Forma de Pago</label>
+                                        <div className="flex gap-2">
+                                            {[
+                                                { value: 'efectivo',      label: 'Efectivo', activeClass: 'border-emerald-500 bg-emerald-50 text-emerald-700' },
+                                                { value: 'transferencia', label: 'Crédito',  activeClass: 'border-blue-500 bg-blue-50 text-blue-700' },
+                                            ].map(opt => (
+                                                <label
+                                                    key={opt.value}
+                                                    className={`flex-1 flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl cursor-pointer transition-all border-2 select-none font-black uppercase text-xs tracking-wide ${
+                                                        formData.paymentMethod === opt.value ? opt.activeClass : 'border-slate-200 bg-slate-50 text-slate-500'
+                                                    }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="clientPaymentMethod"
+                                                        value={opt.value}
+                                                        checked={formData.paymentMethod === opt.value}
+                                                        onChange={() => setFormData({ ...formData, paymentMethod: opt.value })}
+                                                        className="hidden"
+                                                    />
+                                                    {opt.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 font-medium mt-1.5 ml-1">Se usará como forma de pago por defecto al vender a este cliente.</p>
                                     </div>
                                 </>
                             )}

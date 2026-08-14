@@ -27,7 +27,7 @@ export const REVERSE_COLUMN_MAP = Object.fromEntries(
 export const FALLBACK_COLUMNS = {
     products: ['id', 'name', 'code', 'price', 'unit', 'stock', 'pricea', 'priceb', 'pricec', 'orden'],
     users: ['id', 'name', 'phone', 'pin', 'vehicle', 'pricelist', 'lugar1', 'lugar2', 'lugar1activo', 'lugar2activo', 'auth_id'],
-    clients: ['id', 'name', 'phone', 'address', 'userid'],
+    clients: ['id', 'name', 'phone', 'address', 'userid', 'paymentmethod'],
     sales: ['id', 'userid', 'clientid', 'total', 'items', 'date', 'paymentmethod'],
     inventory: ['id', 'productid', 'type', 'quantity', 'notes', 'date'],
     expenses: ['id', 'userid', 'date', 'description', 'amount'],

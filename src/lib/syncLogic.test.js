@@ -163,5 +163,6 @@ describe('Mapas de columnas', () => {
         expect(FALLBACK_COLUMNS.products).toContain('pricea');
         expect(FALLBACK_COLUMNS.sales).toContain('userid');
         expect(FALLBACK_COLUMNS.users).toContain('pricelist');
+        expect(FALLBACK_COLUMNS.clients).toContain('paymentmethod');
     });
 });

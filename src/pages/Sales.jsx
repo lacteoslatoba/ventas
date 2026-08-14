@@ -114,6 +114,15 @@ export default function Sales() {
     const [generatedTicket, setGeneratedTicket] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState('efectivo');
 
+    // Al elegir cliente, precargamos su forma de pago configurada (si tiene) —
+    // el repartidor puede seguir cambiándola manualmente antes de generar el recibo.
+    const handleSelectClient = (clientId) => {
+        updateSelectedCartClient(clientId);
+        const client = clients.find(c => c.id === clientId);
+        const clientPM = client?.paymentMethod || client?.paymentmethod;
+        setPaymentMethod(clientPM === 'transferencia' ? 'transferencia' : 'efectivo');
+    };
+
     // Mobile Cart State
     const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
@@ -211,7 +220,7 @@ export default function Sales() {
         );
     }
 
-    const cartPanelProps = { cart, clients, currentUser, selectedCartClient, updateSelectedCartClient, paymentMethod, setPaymentMethod, clearCart, removeFromCart, total, processSale };
+    const cartPanelProps = { cart, clients, currentUser, selectedCartClient, updateSelectedCartClient: handleSelectClient, paymentMethod, setPaymentMethod, clearCart, removeFromCart, total, processSale };
 
     return (
         <div className="p-4 md:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 h-full min-h-0 relative">
