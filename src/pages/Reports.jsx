@@ -34,6 +34,12 @@ export default function Reports() {
 
     const activeDate = isAdmin ? selectedDate : (repDateFilter || todayStr);
 
+    // Repartidor cuyo informe se muestra en la pestaña "Informe": el propio
+    // usuario si es repartidor, o el filtrado con las pills si es admin.
+    const informeUserName = isAdmin
+        ? (filterUser ? users.find(u => u.id === filterUser)?.name : 'Todos los repartidores')
+        : currentUser?.name;
+
     const userSales = useMemo(() => {
         return effectiveFilterUser
             ? (sales || []).filter(s => s?.userId === effectiveFilterUser)
@@ -87,10 +93,9 @@ export default function Reports() {
     [dayExpenses]);
 
     const operatorPDFData = useMemo(() => {
-        if (isAdmin) return null;
-        const fechaPDF = repDateFilter || todayStr;
+        const fechaPDF = activeDate;
         const ventasPDF = (sales || []).filter(s =>
-            s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
+            (effectiveFilterUser ? s?.userId === effectiveFilterUser : true) && toLocalDate(s.date) === fechaPDF
         );
         const fechaLabel = new Date(fechaPDF + 'T12:00:00').toLocaleDateString('es-MX', {
             weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
@@ -109,7 +114,7 @@ export default function Reports() {
         });
         const clientRows = Object.values(clientMap).sort((a, b) => b.money - a.money);
         const expensesForDay = (expenses || []).filter(e =>
-            (e.userId || e.userid) === currentUser?.id && toLocalDate(e.date) === fechaPDF
+            (effectiveFilterUser ? (e.userId || e.userid) === effectiveFilterUser : true) && toLocalDate(e.date) === fechaPDF
         );
         const totalMoney    = clientRows.reduce((s, r) => s + r.money, 0);
         const expTotal      = expensesForDay.reduce((s, e) => s + (Number(e.amount) || 0), 0);
@@ -124,17 +129,19 @@ export default function Reports() {
             totalExpenses:  expTotal,
             netTotal:       totalMoney - expTotal,
         };
-    }, [isAdmin, repDateFilter, sales, clients, currentUser, expenses]);
+    }, [activeDate, sales, clients, expenses, effectiveFilterUser]);
 
     const _generateImage = async () => {
         await generateReportImage({
-            operatorPDFData, sales, clients, currentUser, repDateFilter, todayStr, ticketConfig
+            operatorPDFData, sales, clients, currentUser, repDateFilter: activeDate, todayStr, ticketConfig,
+            reportUserId: effectiveFilterUser, reportUserName: informeUserName,
         });
     };
 
     const generatePDF = async () => {
         await generateReportPDF({
-            operatorPDFData, sales, clients, currentUser, repDateFilter, todayStr, ticketConfig
+            operatorPDFData, sales, clients, currentUser, repDateFilter: activeDate, todayStr, ticketConfig,
+            reportUserId: effectiveFilterUser, reportUserName: informeUserName,
         });
     };
 
@@ -228,19 +235,17 @@ export default function Reports() {
                 <span className="material-symbols-outlined" style={{fontSize:14}}>receipt_long</span>
                 Gastos
             </button>
-            {!isAdmin && (
-                <button
-                    onClick={() => setActiveTab('informe')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                        activeTab === 'informe'
-                            ? 'bg-white text-indigo-700 shadow-sm'
-                            : 'text-slate-400 hover:text-slate-600'
-                    }`}
-                >
-                    <span className="material-symbols-outlined" style={{fontSize:14}}>analytics</span>
-                    Informe
-                </button>
-            )}
+            <button
+                onClick={() => setActiveTab('informe')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                    activeTab === 'informe'
+                        ? 'bg-white text-indigo-700 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+                <span className="material-symbols-outlined" style={{fontSize:14}}>analytics</span>
+                Informe
+            </button>
         </div>
     );
 
@@ -315,6 +320,170 @@ export default function Reports() {
             </div>
         </div>
     );
+
+    /* ── Panel de Informe (compartido: admin ve el del repartidor filtrado, operador ve el suyo) ── */
+    const renderInformePanel = () => {
+        if (!operatorPDFData) return null;
+        const fechaPDF = activeDate;
+        const ventasPDF = (sales || []).filter(s =>
+            (effectiveFilterUser ? s?.userId === effectiveFilterUser : true) && toLocalDate(s.date) === fechaPDF
+        );
+        const saleRows = ventasPDF.map(sale => {
+            const cl = clients.find(c => c.id === sale.clientId);
+            const pieces = (sale.items || []).reduce((s, it) => s + (Number(it.pieces) || 0), 0);
+            const kg = (sale.items || []).filter(it => (it.unit || '').toLowerCase() === 'kg').reduce((s, it) => s + (Number(it.quantity) || 0), 0);
+            const pm = (sale.paymentMethod || sale.paymentmethod || 'efectivo') === 'transferencia' ? 'Crédito' : 'Efectivo';
+            return { cliente: cl?.name || 'General', pieces, kg, total: Number(sale.total), pm };
+        });
+        const footPieces = saleRows.reduce((s, r) => s + r.pieces, 0);
+        const footKg = saleRows.reduce((s, r) => s + r.kg, 0);
+        const efectivoTotal = saleRows.filter(r => r.pm === 'Efectivo').reduce((s, r) => s + r.total, 0);
+        const creditoTotal = saleRows.filter(r => r.pm === 'Crédito').reduce((s, r) => s + r.total, 0);
+        const bizName = (ticketConfig?.businessName || 'LACTEOS LA TOBA').toUpperCase();
+        const fechaCap = operatorPDFData.fechaLabel.charAt(0).toUpperCase() + operatorPDFData.fechaLabel.slice(1);
+
+        const thCls = 'bg-slate-800 text-white text-[9px] font-bold uppercase tracking-wide px-2 py-1.5';
+        const tdCls = 'text-[10px] text-slate-800 px-2 py-1.5 border-b border-slate-100';
+        const tfCls = 'bg-slate-50 text-[10px] font-black text-slate-900 px-2 py-1.5 border-t-2 border-slate-800';
+
+        return (
+            <div className="pb-24 space-y-3 animate-in fade-in duration-200">
+                {/* ── Documento digital ── */}
+                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+
+                    {/* Encabezado */}
+                    <div className="px-4 pt-4 pb-3 border-b-2 border-slate-900">
+                        <p className="text-sm font-black text-slate-900">{bizName}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Reporte de Ventas</p>
+                        <div className="flex justify-between items-end mt-1.5">
+                            <p className="text-[10px] text-slate-500 capitalize">{fechaCap}</p>
+                            <p className="text-[10px] text-slate-500">{operatorPDFData.ventasCount} {operatorPDFData.ventasCount === 1 ? 'venta' : 'ventas'}</p>
+                        </div>
+                        <p className="text-[10px] text-slate-500">Repartidor: {informeUserName || ''}</p>
+                    </div>
+
+                    <div className="px-4 py-3 space-y-4">
+                        {/* DETALLE DE VENTAS */}
+                        <div>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Detalle de Ventas</p>
+                            <div className="rounded-lg overflow-hidden border border-slate-200">
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr>
+                                            <th className={`${thCls} text-left`}>Cliente</th>
+                                            <th className={`${thCls} text-center`}>Pzas</th>
+                                            <th className={`${thCls} text-center`}>Kg</th>
+                                            <th className={`${thCls} text-right`}>Importe</th>
+                                            <th className={`${thCls} text-center`}>Pago</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {saleRows.length === 0 ? (
+                                            <tr><td colSpan={5} className={`${tdCls} text-center text-slate-400`}>Sin ventas registradas</td></tr>
+                                        ) : saleRows.map((r, i) => (
+                                            <tr key={i} className={i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}>
+                                                <td className={`${tdCls} text-left`}>{r.cliente}</td>
+                                                <td className={`${tdCls} text-center`}>{r.pieces || '—'}</td>
+                                                <td className={`${tdCls} text-center`}>{r.kg > 0 ? r.kg.toFixed(2) : '—'}</td>
+                                                <td className={`${tdCls} text-right font-bold`}>${r.total.toFixed(2)}</td>
+                                                <td className={`${tdCls} text-center`}>
+                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${r.pm === 'Crédito' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>{r.pm}</span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td className={`${tfCls} text-left`}>TOTAL</td>
+                                            <td className={`${tfCls} text-center`}>{footPieces || '—'}</td>
+                                            <td className={`${tfCls} text-center`}>{footKg > 0 ? footKg.toFixed(2) : '—'}</td>
+                                            <td className={`${tfCls} text-right`}>${operatorPDFData.totalMoney.toFixed(2)}</td>
+                                            <td className={tfCls}></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* RESUMEN DE COBRO */}
+                        <div>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Resumen de Cobro</p>
+                            <div className="rounded-lg overflow-hidden border border-slate-200">
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr>
+                                            <th className={`${thCls} text-left`}>Forma de Pago</th>
+                                            <th className={`${thCls} text-right`}>Importe</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="bg-white"><td className={`${tdCls} text-left`}>Efectivo</td><td className={`${tdCls} text-right font-bold text-emerald-700`}>${efectivoTotal.toFixed(2)}</td></tr>
+                                        <tr className="bg-slate-50"><td className={`${tdCls} text-left`}>Crédito</td><td className={`${tdCls} text-right font-bold text-indigo-700`}>${creditoTotal.toFixed(2)}</td></tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td className={`${tfCls} text-left`}>TOTAL VENTAS</td>
+                                            <td className={`${tfCls} text-right`}>${operatorPDFData.totalMoney.toFixed(2)}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* GASTOS */}
+                        {operatorPDFData.expenses.length > 0 && (
+                            <div>
+                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Gastos del Día</p>
+                                <div className="rounded-lg overflow-hidden border border-slate-200">
+                                    <table className="w-full border-collapse">
+                                        <thead>
+                                            <tr>
+                                                <th className={`${thCls} text-left`}>Descripción</th>
+                                                <th className={`${thCls} text-right`}>Monto</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {operatorPDFData.expenses.map((e, i) => (
+                                                <tr key={i} className={i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}>
+                                                    <td className={`${tdCls} text-left`}>{e.description}</td>
+                                                    <td className={`${tdCls} text-right font-bold text-rose-600`}>${Number(e.amount).toFixed(2)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td className={`${tfCls} text-left`}>Total Gastos</td>
+                                                <td className={`${tfCls} text-right text-rose-700`}>${operatorPDFData.totalExpenses.toFixed(2)}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* NETO DEL DÍA */}
+                        <div className="border-t-2 border-slate-900 pt-3 flex justify-between items-center">
+                            <span className="text-sm font-black text-slate-900">Total Neto del Día</span>
+                            <span className="text-lg font-black text-emerald-600">${operatorPDFData.netTotal.toFixed(2)}</span>
+                        </div>
+
+                        <p className="text-center text-[9px] text-slate-400 italic border-t border-slate-100 pt-2">
+                            {ticketConfig?.footerLine1 || '¡Gracias por su trabajo!'}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Botón PDF */}
+                <button
+                    onClick={generatePDF}
+                    className="w-full flex items-center justify-center gap-1.5 bg-indigo-600 text-white font-black text-xs py-3 rounded-xl active:scale-95 transition-all uppercase tracking-wide hover:bg-indigo-700 shadow-sm shadow-indigo-300"
+                >
+                    <span className="material-symbols-outlined" style={{fontSize:15}}>picture_as_pdf</span>
+                    Exportar PDF
+                </button>
+            </div>
+        );
+    };
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -446,6 +615,9 @@ export default function Reports() {
                     {/* TAB: GASTOS (admin) */}
                     {activeTab === 'gastos' && renderGastosPanel()}
 
+                    {/* TAB: INFORME (admin) */}
+                    {activeTab === 'informe' && renderInformePanel()}
+
                 </div>
             )}
 
@@ -479,168 +651,7 @@ export default function Reports() {
                     {activeTab === 'gastos' && renderGastosPanel()}
 
                     {/* TAB: INFORME (operador) */}
-                    {activeTab === 'informe' && (() => {
-                        if (!operatorPDFData) return null;
-                        const fechaPDF = repDateFilter || todayStr;
-                        const ventasPDF = (sales || []).filter(s =>
-                            s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
-                        );
-                        const saleRows = ventasPDF.map(sale => {
-                            const cl = clients.find(c => c.id === sale.clientId);
-                            const pieces = (sale.items || []).reduce((s, it) => s + (Number(it.pieces) || 0), 0);
-                            const kg = (sale.items || []).filter(it => (it.unit || '').toLowerCase() === 'kg').reduce((s, it) => s + (Number(it.quantity) || 0), 0);
-                            const pm = (sale.paymentMethod || sale.paymentmethod || 'efectivo') === 'transferencia' ? 'Crédito' : 'Efectivo';
-                            return { cliente: cl?.name || 'General', pieces, kg, total: Number(sale.total), pm };
-                        });
-                        const footPieces = saleRows.reduce((s, r) => s + r.pieces, 0);
-                        const footKg = saleRows.reduce((s, r) => s + r.kg, 0);
-                        const efectivoTotal = saleRows.filter(r => r.pm === 'Efectivo').reduce((s, r) => s + r.total, 0);
-                        const creditoTotal = saleRows.filter(r => r.pm === 'Crédito').reduce((s, r) => s + r.total, 0);
-                        const bizName = (ticketConfig?.businessName || 'LACTEOS LA TOBA').toUpperCase();
-                        const fechaCap = operatorPDFData.fechaLabel.charAt(0).toUpperCase() + operatorPDFData.fechaLabel.slice(1);
-
-                        const thCls = 'bg-slate-800 text-white text-[9px] font-bold uppercase tracking-wide px-2 py-1.5';
-                        const tdCls = 'text-[10px] text-slate-800 px-2 py-1.5 border-b border-slate-100';
-                        const tfCls = 'bg-slate-50 text-[10px] font-black text-slate-900 px-2 py-1.5 border-t-2 border-slate-800';
-
-                        return (
-                            <div className="pb-24 space-y-3 animate-in fade-in duration-200">
-                                {/* ── Documento digital ── */}
-                                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-
-                                    {/* Encabezado */}
-                                    <div className="px-4 pt-4 pb-3 border-b-2 border-slate-900">
-                                        <p className="text-sm font-black text-slate-900">{bizName}</p>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Reporte de Ventas</p>
-                                        <div className="flex justify-between items-end mt-1.5">
-                                            <p className="text-[10px] text-slate-500 capitalize">{fechaCap}</p>
-                                            <p className="text-[10px] text-slate-500">{operatorPDFData.ventasCount} {operatorPDFData.ventasCount === 1 ? 'venta' : 'ventas'}</p>
-                                        </div>
-                                        <p className="text-[10px] text-slate-500">Repartidor: {currentUser?.name || ''}</p>
-                                    </div>
-
-                                    <div className="px-4 py-3 space-y-4">
-                                        {/* DETALLE DE VENTAS */}
-                                        <div>
-                                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Detalle de Ventas</p>
-                                            <div className="rounded-lg overflow-hidden border border-slate-200">
-                                                <table className="w-full border-collapse">
-                                                    <thead>
-                                                        <tr>
-                                                            <th className={`${thCls} text-left`}>Cliente</th>
-                                                            <th className={`${thCls} text-center`}>Pzas</th>
-                                                            <th className={`${thCls} text-center`}>Kg</th>
-                                                            <th className={`${thCls} text-right`}>Importe</th>
-                                                            <th className={`${thCls} text-center`}>Pago</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {saleRows.length === 0 ? (
-                                                            <tr><td colSpan={5} className={`${tdCls} text-center text-slate-400`}>Sin ventas registradas</td></tr>
-                                                        ) : saleRows.map((r, i) => (
-                                                            <tr key={i} className={i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}>
-                                                                <td className={`${tdCls} text-left`}>{r.cliente}</td>
-                                                                <td className={`${tdCls} text-center`}>{r.pieces || '—'}</td>
-                                                                <td className={`${tdCls} text-center`}>{r.kg > 0 ? r.kg.toFixed(2) : '—'}</td>
-                                                                <td className={`${tdCls} text-right font-bold`}>${r.total.toFixed(2)}</td>
-                                                                <td className={`${tdCls} text-center`}>
-                                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${r.pm === 'Crédito' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>{r.pm}</span>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                    <tfoot>
-                                                        <tr>
-                                                            <td className={`${tfCls} text-left`}>TOTAL</td>
-                                                            <td className={`${tfCls} text-center`}>{footPieces || '—'}</td>
-                                                            <td className={`${tfCls} text-center`}>{footKg > 0 ? footKg.toFixed(2) : '—'}</td>
-                                                            <td className={`${tfCls} text-right`}>${operatorPDFData.totalMoney.toFixed(2)}</td>
-                                                            <td className={tfCls}></td>
-                                                        </tr>
-                                                    </tfoot>
-                                                </table>
-                                            </div>
-                                        </div>
-
-                                        {/* RESUMEN DE COBRO */}
-                                        <div>
-                                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Resumen de Cobro</p>
-                                            <div className="rounded-lg overflow-hidden border border-slate-200">
-                                                <table className="w-full border-collapse">
-                                                    <thead>
-                                                        <tr>
-                                                            <th className={`${thCls} text-left`}>Forma de Pago</th>
-                                                            <th className={`${thCls} text-right`}>Importe</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr className="bg-white"><td className={`${tdCls} text-left`}>Efectivo</td><td className={`${tdCls} text-right font-bold text-emerald-700`}>${efectivoTotal.toFixed(2)}</td></tr>
-                                                        <tr className="bg-slate-50"><td className={`${tdCls} text-left`}>Crédito</td><td className={`${tdCls} text-right font-bold text-indigo-700`}>${creditoTotal.toFixed(2)}</td></tr>
-                                                    </tbody>
-                                                    <tfoot>
-                                                        <tr>
-                                                            <td className={`${tfCls} text-left`}>TOTAL VENTAS</td>
-                                                            <td className={`${tfCls} text-right`}>${operatorPDFData.totalMoney.toFixed(2)}</td>
-                                                        </tr>
-                                                    </tfoot>
-                                                </table>
-                                            </div>
-                                        </div>
-
-                                        {/* GASTOS */}
-                                        {operatorPDFData.expenses.length > 0 && (
-                                            <div>
-                                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Gastos del Día</p>
-                                                <div className="rounded-lg overflow-hidden border border-slate-200">
-                                                    <table className="w-full border-collapse">
-                                                        <thead>
-                                                            <tr>
-                                                                <th className={`${thCls} text-left`}>Descripción</th>
-                                                                <th className={`${thCls} text-right`}>Monto</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {operatorPDFData.expenses.map((e, i) => (
-                                                                <tr key={i} className={i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}>
-                                                                    <td className={`${tdCls} text-left`}>{e.description}</td>
-                                                                    <td className={`${tdCls} text-right font-bold text-rose-600`}>${Number(e.amount).toFixed(2)}</td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                        <tfoot>
-                                                            <tr>
-                                                                <td className={`${tfCls} text-left`}>Total Gastos</td>
-                                                                <td className={`${tfCls} text-right text-rose-700`}>${operatorPDFData.totalExpenses.toFixed(2)}</td>
-                                                            </tr>
-                                                        </tfoot>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* NETO DEL DÍA */}
-                                        <div className="border-t-2 border-slate-900 pt-3 flex justify-between items-center">
-                                            <span className="text-sm font-black text-slate-900">Total Neto del Día</span>
-                                            <span className="text-lg font-black text-emerald-600">${operatorPDFData.netTotal.toFixed(2)}</span>
-                                        </div>
-
-                                        <p className="text-center text-[9px] text-slate-400 italic border-t border-slate-100 pt-2">
-                                            {ticketConfig?.footerLine1 || '¡Gracias por su trabajo!'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Botón PDF */}
-                                <button
-                                    onClick={generatePDF}
-                                    className="w-full flex items-center justify-center gap-1.5 bg-indigo-600 text-white font-black text-xs py-3 rounded-xl active:scale-95 transition-all uppercase tracking-wide hover:bg-indigo-700 shadow-sm shadow-indigo-300"
-                                >
-                                    <span className="material-symbols-outlined" style={{fontSize:15}}>picture_as_pdf</span>
-                                    Exportar PDF
-                                </button>
-                            </div>
-                        );
-                    })()}
+                    {activeTab === 'informe' && renderInformePanel()}
                 </div>
             )}
 

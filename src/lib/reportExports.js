@@ -12,15 +12,20 @@ export const generateReportImage = async ({
     currentUser,
     repDateFilter,
     todayStr,
-    ticketConfig
+    ticketConfig,
+    reportUserId,
+    reportUserName,
 }) => {
     if (!operatorPDFData) return;
+
+    const userId = reportUserId !== undefined ? reportUserId : currentUser?.id;
+    const userName = reportUserName !== undefined ? reportUserName : currentUser?.name;
 
     const { default: html2canvas } = await import('html2canvas');
 
     const fechaPDF = repDateFilter || todayStr;
     const ventasPDF = (sales || []).filter(s =>
-        s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
+        (userId ? s?.userId === userId : true) && toLocalDate(s.date) === fechaPDF
     );
 
     const saleRows = ventasPDF.map(sale => {
@@ -60,7 +65,7 @@ export const generateReportImage = async ({
             </div>
             <div style="text-align:right;font-size:10px;color:#787878;line-height:1.8">
                 <div>${esc(fechaCap)}</div>
-                <div>Repartidor: ${esc(currentUser?.name || '')}</div>
+                <div>Repartidor: ${esc(userName || '')}</div>
                 <div>${operatorPDFData.ventasCount} venta${operatorPDFData.ventasCount !== 1 ? 's' : ''}</div>
             </div>
         </div>
@@ -110,7 +115,7 @@ export const generateReportImage = async ({
             scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 794,
         });
         canvas.toBlob(async blob => {
-            const fileName = `Reporte_${(currentUser?.name || 'Repartidor').replace(/\s+/g, '_')}_${repDateFilter || todayStr}.png`;
+            const fileName = `Reporte_${(userName || 'Repartidor').replace(/\s+/g, '_')}_${repDateFilter || todayStr}.png`;
             try {
                 await saveAndOpenFile(blob, fileName, 'image/png');
             } catch (err) {
@@ -129,9 +134,14 @@ export const generateReportPDF = async ({
     currentUser,
     repDateFilter,
     todayStr,
-    ticketConfig
+    ticketConfig,
+    reportUserId,
+    reportUserName,
 }) => {
     if (!operatorPDFData) return;
+
+    const userId = reportUserId !== undefined ? reportUserId : currentUser?.id;
+    const userName = reportUserName !== undefined ? reportUserName : currentUser?.name;
     const { default: jsPDF } = await import('jspdf');
     const { default: autoTable } = await import('jspdf-autotable');
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -162,7 +172,7 @@ export const generateReportPDF = async ({
     const fechaCap = operatorPDFData.fechaLabel.charAt(0).toUpperCase() + operatorPDFData.fechaLabel.slice(1);
     doc.setFontSize(8); doc.setTextColor(...GRAY_400);
     doc.text(fechaCap, pageWidth - 14, 22, { align: 'right' });
-    doc.text(`Repartidor: ${currentUser?.name || ''}`, pageWidth - 14, 28, { align: 'right' });
+    doc.text(`Repartidor: ${userName || ''}`, pageWidth - 14, 28, { align: 'right' });
     doc.text(`${operatorPDFData.ventasCount} venta${operatorPDFData.ventasCount !== 1 ? 's' : ''}`, pageWidth - 14, 34, { align: 'right' });
 
     doc.setDrawColor(...BLACK); doc.setLineWidth(0.5);
@@ -171,7 +181,7 @@ export const generateReportPDF = async ({
     // ── Filas por venta ───────────────────────────────────────────────
     const fechaPDF = repDateFilter || todayStr;
     const ventasPDF = (sales || []).filter(s =>
-        s?.userId === currentUser?.id && toLocalDate(s.date) === fechaPDF
+        (userId ? s?.userId === userId : true) && toLocalDate(s.date) === fechaPDF
     );
 
     const saleRows = ventasPDF.map(sale => {
@@ -319,7 +329,7 @@ export const generateReportPDF = async ({
     doc.setTextColor(...GRAY_400);
     doc.text(ticketConfig?.footerLine1 || '¡Gracias por su trabajo!', pageWidth / 2, netY + 20, { align: 'center' });
 
-    const fileName = `Reporte_${(currentUser?.name || 'Repartidor').replace(/\s+/g, '_')}_${repDateFilter || todayStr}.pdf`;
+    const fileName = `Reporte_${(userName || 'Repartidor').replace(/\s+/g, '_')}_${repDateFilter || todayStr}.pdf`;
     
     // For native, we get the blob instead of calling save()
     const blob = doc.output('blob');
