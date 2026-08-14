@@ -7,6 +7,14 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
 export default defineConfig({
   base: './',
+  // Puerto fijo en 5174: el 5173 lo suele tener ocupado otro proyecto local
+  // ("Mar de Hielo"), y scripts/dev-apk.mjs ya asume 5174 por defecto para
+  // el live-reload del APK. strictPort:false permite fallback si igual
+  // está ocupado, pero evita el sondeo de 5173 en el caso común.
+  server: {
+    port: 5174,
+    strictPort: false,
+  },
   define: {
     __PKG_VERSION__: JSON.stringify(pkg.version),
     __BUILD_TIME__: JSON.stringify(new Date().toLocaleString('es-MX', {
