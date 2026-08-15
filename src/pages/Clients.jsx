@@ -100,82 +100,79 @@ export default function Clients() {
                                 />
                             </div>
 
-                            {currentUser?.role !== 'admin' && (
-                                <>
-                                    <div>
-                                        <label className="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Teléfono (Opcional)</label>
-                                        <input
-                                            type="tel"
-                                            value={formData.phone}
-                                            onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                            className="w-full bg-slate-50 border-2 border-slate-200 focus:border-blue-500 focus:ring-0 rounded-xl py-3 px-4 outline-none transition-colors font-medium text-slate-700 text-base"
-                                            placeholder="555-000-0000"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Lugar</label>
-                                        {currentUser?.name?.toLowerCase() === 'beto' ? (
-                                            <select
-                                                required
-                                                value={formData.address}
-                                                onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                                className="w-full bg-slate-50 border-2 border-slate-200 focus:border-blue-500 focus:ring-0 rounded-xl py-3 px-4 outline-none transition-colors font-medium text-slate-700 text-base appearance-none"
-                                            >
-                                                <option value="">Selecciona Lugar...</option>
-                                                <option value="Constitucion">Constitucion</option>
-                                                <option value="La toba">La toba</option>
-                                            </select>
-                                        ) : currentUser?.name?.toLowerCase() === 'juan' ? (
-                                            <select
-                                                required
-                                                value={formData.address}
-                                                onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                                className="w-full bg-slate-50 border-2 border-slate-200 focus:border-blue-500 focus:ring-0 rounded-xl py-3 px-4 outline-none transition-colors font-medium text-slate-700 text-base appearance-none"
-                                            >
-                                                <option value="">Selecciona Lugar...</option>
-                                                <option value="Ruta Sur">Ruta Sur</option>
-                                                <option value="La Paz">La Paz</option>
-                                            </select>
-                                        ) : (
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Teléfono (Opcional)</label>
+                                <input
+                                    type="tel"
+                                    value={formData.phone}
+                                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                    className="w-full bg-slate-50 border-2 border-slate-200 focus:border-blue-500 focus:ring-0 rounded-xl py-3 px-4 outline-none transition-colors font-medium text-slate-700 text-base"
+                                    placeholder="555-000-0000"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Lugar</label>
+                                {currentUser?.name?.toLowerCase() === 'beto' ? (
+                                    <select
+                                        required
+                                        value={formData.address}
+                                        onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                        className="w-full bg-slate-50 border-2 border-slate-200 focus:border-blue-500 focus:ring-0 rounded-xl py-3 px-4 outline-none transition-colors font-medium text-slate-700 text-base appearance-none"
+                                    >
+                                        <option value="">Selecciona Lugar...</option>
+                                        <option value="Constitucion">Constitucion</option>
+                                        <option value="La toba">La toba</option>
+                                    </select>
+                                ) : currentUser?.name?.toLowerCase() === 'juan' ? (
+                                    <select
+                                        required
+                                        value={formData.address}
+                                        onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                        className="w-full bg-slate-50 border-2 border-slate-200 focus:border-blue-500 focus:ring-0 rounded-xl py-3 px-4 outline-none transition-colors font-medium text-slate-700 text-base appearance-none"
+                                    >
+                                        <option value="">Selecciona Lugar...</option>
+                                        <option value="Ruta Sur">Ruta Sur</option>
+                                        <option value="La Paz">La Paz</option>
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.address}
+                                        onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                        className="w-full bg-slate-50 border-2 border-slate-200 focus:border-blue-500 focus:ring-0 rounded-xl py-3 px-4 outline-none transition-colors font-medium text-slate-700 text-base"
+                                        placeholder="Lugar del cliente..."
+                                    />
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Forma de Pago</label>
+                                <div className="flex gap-2">
+                                    {[
+                                        { value: 'efectivo',      label: 'Efectivo', activeClass: 'border-emerald-500 bg-emerald-50 text-emerald-700' },
+                                        { value: 'transferencia', label: 'Crédito',  activeClass: 'border-blue-500 bg-blue-50 text-blue-700' },
+                                    ].map(opt => (
+                                        <label
+                                            key={opt.value}
+                                            className={`flex-1 flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl cursor-pointer transition-all border-2 select-none font-black uppercase text-xs tracking-wide ${
+                                                formData.paymentMethod === opt.value ? opt.activeClass : 'border-slate-200 bg-slate-50 text-slate-500'
+                                            }`}
+                                        >
                                             <input
-                                                type="text"
-                                                required
-                                                value={formData.address}
-                                                onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                                className="w-full bg-slate-50 border-2 border-slate-200 focus:border-blue-500 focus:ring-0 rounded-xl py-3 px-4 outline-none transition-colors font-medium text-slate-700 text-base"
-                                                placeholder="Lugar del cliente..."
+                                                type="radio"
+                                                name="clientPaymentMethod"
+                                                value={opt.value}
+                                                checked={formData.paymentMethod === opt.value}
+                                                onChange={() => setFormData({ ...formData, paymentMethod: opt.value })}
+                                                className="hidden"
                                             />
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Forma de Pago</label>
-                                        <div className="flex gap-2">
-                                            {[
-                                                { value: 'efectivo',      label: 'Efectivo', activeClass: 'border-emerald-500 bg-emerald-50 text-emerald-700' },
-                                                { value: 'transferencia', label: 'Crédito',  activeClass: 'border-blue-500 bg-blue-50 text-blue-700' },
-                                            ].map(opt => (
-                                                <label
-                                                    key={opt.value}
-                                                    className={`flex-1 flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl cursor-pointer transition-all border-2 select-none font-black uppercase text-xs tracking-wide ${
-                                                        formData.paymentMethod === opt.value ? opt.activeClass : 'border-slate-200 bg-slate-50 text-slate-500'
-                                                    }`}
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name="clientPaymentMethod"
-                                                        value={opt.value}
-                                                        checked={formData.paymentMethod === opt.value}
-                                                        onChange={() => setFormData({ ...formData, paymentMethod: opt.value })}
-                                                        className="hidden"
-                                                    />
-                                                    {opt.label}
-                                                </label>
-                                            ))}
-                                        </div>
-                                        <p className="text-[10px] text-slate-400 font-medium mt-1.5 ml-1">Se usará como forma de pago por defecto al vender a este cliente.</p>
-                                    </div>
-                                </>
-                            )}
+                                            {opt.label}
+                                        </label>
+                                    ))}
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-medium mt-1.5 ml-1">Se usará como forma de pago por defecto al vender a este cliente.</p>
+                            </div>
                             
                             <div className="pt-6 flex flex-col gap-3">
                                 <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all text-base flex justify-center items-center gap-2">

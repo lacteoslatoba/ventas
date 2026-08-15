@@ -86,15 +86,22 @@ export function buildSafePayload(item, tableName, cloudColumns) {
     if (!knownCols) return item;
 
     const filtered = {};
-    knownCols.forEach(col => {
-        if (item[col] !== undefined) filtered[col] = item[col];
-    });
 
-    // Mapear campos camelCase locales a columnas lowercase de Supabase
+    // Mapear primero camelCase local → columna lowercase: es la fuente de verdad de la
+    // app (lo que acaba de editar el usuario). Va ANTES del paso siguiente a propósito:
+    // un item normalizado desde Supabase (normalizeRow) trae también la columna lowercase
+    // original como mirror (ej. paymentmethod) además del alias camelCase (paymentMethod).
+    // Si luego se edita solo el campo camelCase, ese mirror lowercase queda con el valor
+    // viejo — copiarlo primero pisaría silenciosamente la edición nueva.
     Object.entries(REVERSE_COLUMN_MAP).forEach(([camel, lower]) => {
-        if (knownCols.includes(lower) && item[camel] !== undefined && filtered[lower] === undefined) {
+        if (knownCols.includes(lower) && item[camel] !== undefined) {
             filtered[lower] = item[camel];
         }
+    });
+
+    // Columnas conocidas tal cual, sin pisar lo que ya vino del mapeo camelCase de arriba.
+    knownCols.forEach(col => {
+        if (item[col] !== undefined && filtered[col] === undefined) filtered[col] = item[col];
     });
 
     return filtered;

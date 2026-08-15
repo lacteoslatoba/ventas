@@ -117,6 +117,17 @@ describe('buildSafePayload', () => {
         const result = buildSafePayload(item, 'tabla_desconocida', {});
         expect(result).toEqual(item);
     });
+
+    it('el camelCase editado gana sobre un mirror lowercase desactualizado', () => {
+        // Reproduce normalizeRow() (trae paymentmethod original) + una edición local que
+        // solo toca el alias camelCase (updateClient hace {...clienteViejo, ...cambios}) —
+        // el objeto queda con ambas claves y valores distintos. La subida debe respetar
+        // la editada (camelCase), no la vieja (lowercase).
+        const item = { id: '1', name: 'Cliente', paymentmethod: 'efectivo', paymentMethod: 'transferencia' };
+        const cloudColumns = { clients: ['id', 'name', 'paymentmethod'] };
+        const result = buildSafePayload(item, 'clients', cloudColumns);
+        expect(result.paymentmethod).toBe('transferencia');
+    });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
