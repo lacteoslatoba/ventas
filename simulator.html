@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Android · Ventas Lácteos La Toba</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:radial-gradient(ellipse at top,#1a1a2e 0%,#0d0d0d 100%);
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  font-family:'Segoe UI',system-ui,sans-serif;
+  gap:16px;padding:20px;
+}
+.bar{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;padding:8px 14px;
+  flex-wrap:wrap;justify-content:center;
+  backdrop-filter:blur(12px);
+}
+.bar-label{color:#888;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
+.bar-sep{width:1px;height:22px;background:rgba(255,255,255,.1);margin:0 4px}
+.sz{
+  background:transparent;border:1.5px solid rgba(255,255,255,.15);color:#888;
+  font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;
+  padding:5px 13px;border-radius:10px;cursor:pointer;transition:all .15s;
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+}
+.sz small{font-size:8.5px;font-weight:600;color:#555;letter-spacing:.03em}
+.sz:hover{border-color:rgba(255,255,255,.3);color:#ccc}
+.sz.on{background:#4CAF50;border-color:#4CAF50;color:#fff}
+.sz.on small{color:rgba(255,255,255,.7)}
+.btn-font{
+  background:transparent;border:1.5px solid rgba(255,255,255,.15);color:#888;
+  font-size:11px;font-weight:700;
+  padding:6px 12px;border-radius:10px;cursor:pointer;transition:all .15s;
+}
+.btn-font:hover{border-color:rgba(255,255,255,.3);color:#ccc}
+.btn-font.on{background:#2196F3;border-color:#2196F3;color:#fff}
+.url-wrap{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(0,0,0,.4);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:4px 10px;
+}
+#urlInput{background:transparent;border:none;outline:none;color:#aaa;font-size:11px;width:220px}
+#urlInput::placeholder{color:#555}
+.ico{
+  background:transparent;border:1.5px solid rgba(255,255,255,.15);color:#888;
+  width:30px;height:30px;border-radius:10px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s;
+}
+.ico:hover{border-color:rgba(255,255,255,.3);color:#ccc}
+#statusDot{width:8px;height:8px;border-radius:50%;background:#555;transition:background .3s;flex-shrink:0}
+#statusDot.up{background:#4CAF50;box-shadow:0 0 6px #4CAF5088}
+#statusDot.down{background:#f44336;box-shadow:0 0 6px #f4433688}
+#statusDot.checking{background:#FFC107;animation:pulse .8s infinite alternate}
+@keyframes pulse{from{opacity:.4}to{opacity:1}}
+.stage{display:flex;flex-direction:column;align-items:center;gap:6px;transform-origin:top center;perspective:1000px}
+.dname{color:#666;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.15em}
+.dim{color:#444;font-size:10px;font-weight:700;letter-spacing:.05em;margin-top:2px}
+.phone{
+  background:linear-gradient(160deg,#1c1c1c 0%,#111 50%,#0a0a0a 100%);
+  border-radius:52px;border:1px solid #2a2a2a;
+  box-shadow:0 0 0 1px #050505,0 0 0 9px #141414,0 0 0 10px #1a1a1a,inset 0 0 0 1px #2e2e2e,0 80px 140px rgba(0,0,0,.98),0 0 60px rgba(76,175,80,.04);
+  position:relative;padding:16px 12px 14px;transition:all .35s cubic-bezier(.4,0,.2,1);
+}
+.btn-vol{position:absolute;left:-4px;top:120px;display:flex;flex-direction:column;gap:10px}
+.btn-vol div{width:4px;background:#1e1e1e;border-radius:2px 0 0 2px;border:1px solid #2a2a2a;border-right:none}
+.btn-pwr{position:absolute;right:-4px;top:150px;width:4px;height:68px;background:#1e1e1e;border-radius:0 2px 2px 0;border:1px solid #2a2a2a;border-left:none}
+.screen{background:#000;border-radius:40px;overflow:hidden;position:relative;transition:all .35s cubic-bezier(.4,0,.2,1)}
+.sbar{position:absolute;top:0;left:0;right:0;height:32px;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent);pointer-events:none}
+.sbar-time{color:#fff;font-size:12px;font-weight:600;letter-spacing:.03em}
+.sbar-r{display:flex;align-items:center;gap:4px}
+.punch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:13px;height:13px;background:#000;border-radius:50%;z-index:25;box-shadow:0 0 0 1.5px #111}
+.navbar{position:absolute;bottom:0;left:0;right:0;height:44px;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:space-around;z-index:20;padding:0 30px 6px;border-top:1px solid rgba(255,255,255,.04)}
+.nav-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;cursor:pointer;opacity:.7;transition:opacity .15s;border-radius:50%}
+.nav-btn:hover{opacity:1;background:rgba(255,255,255,.08)}
+.nav-btn svg{fill:#fff}
+iframe{display:block;border:none;background:#fff}
+.overlay{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;border-radius:40px;pointer-events:all}
+#loadingOverlay{background:rgba(0,0,0,.85);display:flex}
+#loadingOverlay .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.1);border-top-color:#4CAF50;border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loadingOverlay .l-msg{color:#888;font-size:11px}
+#errOverlay{background:rgba(0,0,0,.93);display:none}
+.e-icon{font-size:34px;margin-bottom:4px}
+.e-title{color:#ff5252;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.1em}
+.e-msg{color:#888;font-size:11px;line-height:1.6;max-width:260px}
+.e-cmd{background:#111;border:1px solid #333;color:#4CAF50;font-family:monospace;font-size:11px;padding:6px 14px;border-radius:8px}
+.e-retry{margin-top:4px;background:#4CAF50;border:none;color:#fff;font-size:11px;font-weight:700;padding:7px 20px;border-radius:9px;cursor:pointer;text-transform:uppercase;letter-spacing:.08em;transition:opacity .15s}
+.e-retry:hover{opacity:.85}
+.e-counter{color:#555;font-size:10px;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="bar-label">Pantalla</span>
+  <button class="sz" data-s="s">S<small>360x800</small></button>
+  <button class="sz on" data-s="m">M<small>393x851</small></button>
+  <button class="sz" data-s="l">L<small>412x915</small></button>
+  <div class="bar-sep"></div>
+  <span class="bar-label">Fuente</span>
+  <button class="btn-font" data-f="14px">A-</button>
+  <button class="btn-font on" data-f="16px">A</button>
+  <button class="btn-font" data-f="20px">A+</button>
+  <div class="bar-sep"></div>
+  <div class="url-wrap">
+    <div id="statusDot" title="Estado del servidor"></div>
+    <input id="urlInput" value="/" placeholder="URL o ?port=5174"/>
+  </div>
+  <button class="ico" id="btnReload" title="Recargar">R</button>
+  <button class="ico" id="btnTab" title="Abrir en pestana nueva">T</button>
+</div>
+<div class="stage" id="stage">
+  <div class="dname" id="dname">Android M - Estandar</div>
+  <div class="phone" id="phone">
+    <div class="btn-vol"><div style="height:36px"></div><div style="height:56px"></div></div>
+    <div class="btn-pwr"></div>
+    <div class="screen" id="screen">
+      <div class="sbar">
+        <span class="sbar-time" id="clk">9:41</span>
+        <div class="sbar-r">
+          <svg width="16" height="12" viewBox="0 0 16 12"><rect x="0" y="7" width="2.5" height="5" rx=".8" fill="white" opacity=".4"/><rect x="4" y="5" width="2.5" height="7" rx=".8" fill="white" opacity=".6"/><rect x="8" y="2.5" width="2.5" height="9.5" rx=".8" fill="white" opacity=".8"/><rect x="12" y="0" width="2.5" height="12" rx=".8" fill="white"/></svg>
+          <svg width="15" height="12" viewBox="0 0 15 12"><circle cx="7.5" cy="11" r="1.4" fill="white"/><path d="M4.5 8C5.4 7.1 6.4 6.6 7.5 6.6s2.1.5 3 1.4" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".7"/><path d="M2 5.3C3.6 3.7 5.5 2.8 7.5 2.8s3.9.9 5.5 2.5" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".4"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12"><rect x=".5" y=".5" width="20" height="11" rx="2.5" stroke="rgba(255,255,255,.4)" stroke-width="1" fill="none"/><rect x="21" y="3.5" width="2.5" height="5" rx="1.2" fill="rgba(255,255,255,.4)"/><rect x="2" y="2" width="15" height="8" rx="1.5" fill="white"/></svg>
+        </div>
+      </div>
+      <div class="punch"></div>
+      <iframe id="fr" src="about:blank" allow="bluetooth; camera; microphone; autoplay"></iframe>
+      <div class="overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="l-msg">Conectando con el servidor...</div>
+      </div>
+      <div class="overlay" id="errOverlay">
+        <div class="e-icon">X</div>
+        <div class="e-title">Servidor apagado</div>
+        <div class="e-msg">Abre una terminal en la carpeta del proyecto y ejecuta:</div>
+        <div class="e-cmd">npm run dev</div>
+        <div class="e-msg" style="margin-top:6px">El simulador se reconectara automaticamente.</div>
+        <button class="e-retry" id="btnRetry">Reintentar ahora</button>
+        <div class="e-counter" id="counter"></div>
+      </div>
+      <div class="navbar">
+        <div class="nav-btn" id="btnBack" title="Atras"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></div>
+        <div class="nav-btn" id="btnHome" title="Inicio"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>
+        <div class="nav-btn" title="Recientes"><svg width="18" height="18" viewBox="0 0 24 24"><rect x="4" y="7" width="11" height="14" rx="1.5" stroke="white" stroke-width="1.6" fill="none"/><rect x="7" y="4" width="11" height="14" rx="1.5" stroke="white" stroke-width="1.6" fill="none" opacity=".5"/></svg></div>
+      </div>
+    </div>
+  </div>
+  <div class="dim" id="dim">393 x 851 px</div>
+</div>
+<script>
+var SIZES={s:{w:360,h:800,name:'S - Compacto'},m:{w:393,h:851,name:'M - Estandar'},l:{w:412,h:915,name:'L - Grande'}};
+var STATUS_H=32,NAV_H=44,POLL_MS=2500;
+var baseUrl='',pollTimer=null,cdTimer=null,cd=0;
+var fr=document.getElementById('fr'),urlInput=document.getElementById('urlInput');
+var loadingOverlay=document.getElementById('loadingOverlay'),errOverlay=document.getElementById('errOverlay');
+var statusDot=document.getElementById('statusDot'),counterEl=document.getElementById('counter');
+
+function applySize(k){
+  var s=SIZES[k],sc=document.getElementById('screen');
+  sc.style.width=s.w+'px';sc.style.height=s.h+'px';
+  fr.style.width=s.w+'px';fr.style.height=(s.h-STATUS_H-NAV_H)+'px';fr.style.marginTop=STATUS_H+'px';
+  document.getElementById('dname').textContent='Android '+s.name;
+  document.getElementById('dim').textContent=s.w+' x '+s.h+' px';
+  document.querySelectorAll('.sz').forEach(function(b){b.classList.toggle('on',b.dataset.s===k)});
+  var stage=document.getElementById('stage'),avail=window.innerHeight-160,need=s.h+60;
+  stage.style.transform='scale('+(need>avail?(avail/need).toFixed(4):'1')+') translate3d(0,0,0)';
+}
+function applyFont(size,btn){
+  document.querySelectorAll('.btn-font').forEach(function(b){b.classList.remove('on')});
+  if(btn)btn.classList.add('on');
+  try{if(fr.contentDocument)fr.contentDocument.documentElement.style.fontSize=size}catch(e){}
+}
+fr.addEventListener('load',function(){var on=document.querySelector('.btn-font.on');if(on)applyFont(on.dataset.f,null);if(fr.src&&fr.src!=='about:blank'){hideAll();setStatus('up')}});
+function checkServer(cb){setStatus('checking');fetch(baseUrl,{mode:'no-cors',cache:'no-store'}).then(function(){cb(true)}).catch(function(){cb(false)})}
+function setStatus(s){statusDot.className=s}
+function showLoading(){loadingOverlay.style.display='flex';errOverlay.style.display='none';stopCD()}
+function showError(){loadingOverlay.style.display='none';errOverlay.style.display='flex';startCD()}
+function hideAll(){loadingOverlay.style.display='none';errOverlay.style.display='none';stopCD()}
+function startCD(){stopCD();cd=Math.round(POLL_MS/1000);counterEl.textContent='Reintentando en '+cd+'s...';cdTimer=setInterval(function(){cd--;counterEl.textContent=cd<=0?'Comprobando...':'Reintentando en '+cd+'s...'},1000)}
+function stopCD(){clearInterval(cdTimer);cdTimer=null;counterEl.textContent=''}
+function startPolling(){stopPolling();pollTimer=setInterval(function(){checkServer(function(up){if(up){stopPolling();loadApp()}else startCD()})},POLL_MS)}
+function stopPolling(){clearInterval(pollTimer);pollTimer=null}
+function loadApp(){showLoading();setStatus('checking');checkServer(function(up){if(up){setStatus('up');fr.src=baseUrl}else{setStatus('down');showError();startPolling()}})}
+(function init(){var q=new URLSearchParams(location.search),app=q.get('app'),port=q.get('port');if(app)baseUrl=app.replace(/\/?$/,'/');else if(port&&/^\d{2,5}$/.test(port))baseUrl='http://localhost:'+port+'/';else if(location.protocol==='file:')baseUrl='http://localhost:5174/';else baseUrl=location.origin+'/';urlInput.value=baseUrl;loadApp()})();
+document.getElementById('btnReload').addEventListener('click',function(){loadApp()});
+document.getElementById('btnTab').addEventListener('click',function(){window.open(baseUrl,'_blank')});
+document.getElementById('btnRetry').addEventListener('click',function(){stopPolling();loadApp()});
+document.getElementById('btnBack').addEventListener('click',function(){try{fr.contentWindow.history.back()}catch(e){}});
+document.getElementById('btnHome').addEventListener('click',function(){loadApp()});
+urlInput.addEventListener('keydown',function(e){if(e.key==='Enter'){baseUrl=urlInput.value;loadApp()}});
+urlInput.addEventListener('change',function(){baseUrl=urlInput.value;loadApp()});
+document.querySelectorAll('.sz').forEach(function(b){b.addEventListener('click',function(){applySize(b.dataset.s)})});
+document.querySelectorAll('.btn-font').forEach(function(b){b.addEventListener('click',function(){applyFont(b.dataset.f,b)})});
+(function tick(){var n=new Date();document.getElementById('clk').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');setTimeout(tick,10000)})();
+window.addEventListener('resize',function(){var on=document.querySelector('.sz.on');if(on)applySize(on.dataset.s)});
+applySize('m');
+</script>
+</body>
+</html>

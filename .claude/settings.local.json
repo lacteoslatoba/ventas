@@ -1,8 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(winget --version)",
-      "PowerShell(winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements --silent)"
+      "Bash(*)",
+      "PowerShell(*)",
+      "Bash(node __verify_restore.mjs)",
+      "Bash(rm -f __verify_restore.mjs)"
     ]
   }
 }
