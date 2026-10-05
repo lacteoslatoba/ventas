@@ -584,6 +584,9 @@
     document.getElementById('zoomLabel').textContent = z === 1 ? 'Sin zoom' : (z * 100).toFixed(0) + '%';
   }
 
+  const appParam = new URLSearchParams(location.search).get('app');
+  if (appParam) document.getElementById('appFrame').src = appParam;
+
   function applyZoom() {
     const phone    = document.getElementById('phone');
     const frameWrap = document.getElementById('frameWrap');
