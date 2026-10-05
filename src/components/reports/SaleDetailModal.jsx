@@ -87,7 +87,7 @@ export default function SaleDetailModal({
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 font-black text-xs transition-all active:scale-95 ${editPm === 'transferencia' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-400 hover:border-gray-400'}`}
                             >
                                 <span className="material-symbols-outlined" style={{ fontSize: 14 }}>credit_card</span>
-                                Crédito
+                                Transferencia
                             </button>
                         </div>
                     </div>

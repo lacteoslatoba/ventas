@@ -332,13 +332,13 @@ export default function Reports() {
             const cl = clients.find(c => c.id === sale.clientId);
             const pieces = (sale.items || []).reduce((s, it) => s + (Number(it.pieces) || 0), 0);
             const kg = (sale.items || []).filter(it => (it.unit || '').toLowerCase() === 'kg').reduce((s, it) => s + (Number(it.quantity) || 0), 0);
-            const pm = (sale.paymentMethod || sale.paymentmethod || 'efectivo') === 'transferencia' ? 'Crédito' : 'Efectivo';
+            const pm = (sale.paymentMethod || sale.paymentmethod || 'efectivo') === 'transferencia' ? 'Transferencia' : 'Efectivo';
             return { cliente: cl?.name || 'General', pieces, kg, total: Number(sale.total), pm };
         });
         const footPieces = saleRows.reduce((s, r) => s + r.pieces, 0);
         const footKg = saleRows.reduce((s, r) => s + r.kg, 0);
         const efectivoTotal = saleRows.filter(r => r.pm === 'Efectivo').reduce((s, r) => s + r.total, 0);
-        const creditoTotal = saleRows.filter(r => r.pm === 'Crédito').reduce((s, r) => s + r.total, 0);
+        const creditoTotal = saleRows.filter(r => r.pm === 'Transferencia').reduce((s, r) => s + r.total, 0);
         const bizName = (ticketConfig?.businessName || 'LACTEOS LA TOBA').toUpperCase();
         const fechaCap = operatorPDFData.fechaLabel.charAt(0).toUpperCase() + operatorPDFData.fechaLabel.slice(1);
 
@@ -387,7 +387,7 @@ export default function Reports() {
                                                 <td className={`${tdCls} text-center`}>{r.kg > 0 ? r.kg.toFixed(2) : '—'}</td>
                                                 <td className={`${tdCls} text-right font-bold`}>${r.total.toFixed(2)}</td>
                                                 <td className={`${tdCls} text-center`}>
-                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${r.pm === 'Crédito' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>{r.pm}</span>
+                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${r.pm === 'Transferencia' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>{r.pm}</span>
                                                 </td>
                                             </tr>
                                         ))}
@@ -418,7 +418,7 @@ export default function Reports() {
                                     </thead>
                                     <tbody>
                                         <tr className="bg-white"><td className={`${tdCls} text-left`}>Efectivo</td><td className={`${tdCls} text-right font-bold text-emerald-700`}>${efectivoTotal.toFixed(2)}</td></tr>
-                                        <tr className="bg-slate-50"><td className={`${tdCls} text-left`}>Crédito</td><td className={`${tdCls} text-right font-bold text-indigo-700`}>${creditoTotal.toFixed(2)}</td></tr>
+                                        <tr className="bg-slate-50"><td className={`${tdCls} text-left`}>Transferencia</td><td className={`${tdCls} text-right font-bold text-indigo-700`}>${creditoTotal.toFixed(2)}</td></tr>
                                     </tbody>
                                     <tfoot>
                                         <tr>
@@ -717,7 +717,7 @@ export default function Reports() {
                                                 : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                         }`}>
                                             <span className="material-symbols-outlined" style={{fontSize:9}}>{isTransfer ? 'credit_card' : 'payments'}</span>
-                                            {isTransfer ? 'Crédito' : 'Efectivo'}
+                                            {isTransfer ? 'Transferencia' : 'Efectivo'}
                                         </span>
                                     </div>
                                     <div className="text-right shrink-0 px-2 py-3 border-l border-slate-100">

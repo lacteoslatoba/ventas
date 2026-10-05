@@ -35,7 +35,7 @@ export const generateReportImage = async ({
             .filter(it => (it.unit || '').toLowerCase() === 'kg')
             .reduce((s, it) => s + (Number(it.quantity) || 0), 0);
         const pm = (sale.paymentMethod || sale.paymentmethod || 'efectivo') === 'transferencia'
-            ? 'Crédito' : 'Efectivo';
+            ? 'Transferencia' : 'Efectivo';
         return [client?.name || 'General', pieces > 0 ? pieces : '—', kg > 0 ? kg.toFixed(2) : '—', `$${Number(sale.total).toFixed(2)}`, pm];
     });
 
@@ -82,7 +82,7 @@ export const generateReportImage = async ({
         <div style="font-size:10px;font-weight:700;color:#787878;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">RESUMEN DE COBRO</div>
         ${tableHTML(
             ['Forma de Pago', 'Importe'],
-            [['Efectivo', `$${efectivoImg.toFixed(2)}`], ['Crédito', `$${transferImg.toFixed(2)}`]],
+            [['Efectivo', `$${efectivoImg.toFixed(2)}`], ['Transferencia', `$${transferImg.toFixed(2)}`]],
             ['TOTAL VENTAS', `$${operatorPDFData.totalMoney.toFixed(2)}`],
             ['left', 'right']
         )}
@@ -191,7 +191,7 @@ export const generateReportPDF = async ({
             .filter(it => (it.unit || '').toLowerCase() === 'kg')
             .reduce((s, it) => s + (Number(it.quantity) || 0), 0);
         const pm = (sale.paymentMethod || sale.paymentmethod || 'efectivo') === 'transferencia'
-            ? 'Crédito' : 'Efectivo';
+            ? 'Transferencia' : 'Efectivo';
         return [
             client?.name || 'General',
             pieces > 0 ? String(pieces) : '—',
@@ -266,7 +266,7 @@ export const generateReportPDF = async ({
         head: [['Forma de Pago', 'Importe']],
         body: [
             ['Efectivo', `$${efectivoTotal.toFixed(2)}`],
-            ['Crédito', `$${transferenciaTotal.toFixed(2)}`],
+            ['Transferencia', `$${transferenciaTotal.toFixed(2)}`],
         ],
         foot: [['TOTAL VENTAS', `$${operatorPDFData.totalMoney.toFixed(2)}`]],
         headStyles: { fillColor: HEADER_BG, textColor: WHITE, fontStyle: 'bold', fontSize: 9, lineColor: HEADER_BG, lineWidth: 0.3 },

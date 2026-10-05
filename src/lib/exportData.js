@@ -62,7 +62,7 @@ export function exportSales(sales, clients, users, filename = 'ventas') {
       Repartidor: user?.name || 'Admin',
       Cliente: client?.name || 'General',
       Total: Number(sale.total).toFixed(2),
-      Pago: sale.paymentMethod === 'transferencia' ? 'Crédito' : 'Efectivo',
+      Pago: sale.paymentMethod === 'transferencia' ? 'Transferencia' : 'Efectivo',
       Productos: sale.items?.map(i => `${i.name} x${i.quantity}`).join(' | ') || '',
     };
   });
@@ -116,7 +116,7 @@ export function exportDailyReport({ sales, clients, users, expenses, date, curre
           Piezas: item.pieces || 0,
           'Precio Unit.': Number(item.price).toFixed(2),
           Importe: (Number(item.quantity) * Number(item.price)).toFixed(2),
-          'Forma Pago': sale.paymentMethod === 'transferencia' ? 'Crédito' : 'Efectivo',
+          'Forma Pago': sale.paymentMethod === 'transferencia' ? 'Transferencia' : 'Efectivo',
         });
       });
     }

@@ -151,7 +151,7 @@ export default function Clients() {
                                 <div className="flex gap-2">
                                     {[
                                         { value: 'efectivo',      label: 'Efectivo', activeClass: 'border-emerald-500 bg-emerald-50 text-emerald-700' },
-                                        { value: 'transferencia', label: 'Crédito',  activeClass: 'border-blue-500 bg-blue-50 text-blue-700' },
+                                        { value: 'transferencia', label: 'Transferencia',  activeClass: 'border-blue-500 bg-blue-50 text-blue-700' },
                                     ].map(opt => (
                                         <label
                                             key={opt.value}

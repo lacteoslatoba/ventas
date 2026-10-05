@@ -34,7 +34,7 @@ function CartPanel({ cart, clients, currentUser, selectedCartClient, updateSelec
                     <div className="flex gap-2">
                         {[
                             { value: 'efectivo',       label: 'Efectivo',       icon: 'payments',         activeClass: 'border-emerald-500 bg-emerald-50', dotClass: 'border-emerald-500 bg-emerald-500', textClass: 'text-emerald-700' },
-                            { value: 'transferencia',  label: 'Crédito',        icon: 'credit_card',      activeClass: 'border-blue-500 bg-blue-50',        dotClass: 'border-blue-500 bg-blue-500',        textClass: 'text-blue-700'    },
+                            { value: 'transferencia',  label: 'Transferencia',        icon: 'credit_card',      activeClass: 'border-blue-500 bg-blue-50',        dotClass: 'border-blue-500 bg-blue-500',        textClass: 'text-blue-700'    },
                         ].map(opt => (
                             <label
                                 key={opt.value}

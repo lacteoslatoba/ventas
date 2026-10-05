@@ -274,7 +274,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
             add(formatMetaLine(showLabels ? 'Repartidor' : '', sName));
         }
         if (showPaymentMethod) {
-            const pm = ticket.paymentMethod === 'transferencia' ? 'CRÉDITO' : 'EFECTIVO';
+            const pm = ticket.paymentMethod === 'transferencia' ? 'TRANSFERENCIA' : 'EFECTIVO';
             add(formatMetaLine(showLabels ? 'Pago' : '', pm));
         }
 
@@ -414,7 +414,7 @@ export async function buildTicketBuffer({ ticket, user, client, config = {} }) {
         if (showSeller) add(formatMetaLine(showLabels ? 'Repartidor' : '', user?.name || 'Vendedor'));
         if (showCustomer) add(formatMetaLine(showLabels ? 'Cliente' : '', client?.name || 'General'));
         if (showPaymentMethod) {
-            const pm = ticket.paymentMethod === 'transferencia' ? 'CRÉDITO' : 'EFECTIVO';
+            const pm = ticket.paymentMethod === 'transferencia' ? 'TRANSFERENCIA' : 'EFECTIVO';
             add(formatMetaLine(showLabels ? 'Pago' : '', pm));
         }
 
