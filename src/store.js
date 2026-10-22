@@ -6,6 +6,8 @@ import {
     normalizeRow,
     buildSafePayload,
     countPending,
+    preserveReferencedClients,
+    uploadRows,
 } from './lib/syncLogic';
 
 
@@ -406,51 +408,28 @@ export const useStore = create(
                         tableName
                     );
 
+                    const rescuedClients = []; // clientes subidos para rescatar ventas huérfanas
+
                     for (const tableName of tablesToSync) {
                         const pendingData = state[tableName].filter(item => !item.synced);
                         uploadedIds[tableName] = new Set();
-                        if (pendingData.length === 0) continue;
 
                         try {
-                            const { error } = await upsertRows(tableName, pendingData);
-                            if (!error) {
-                                pendingData.forEach(i => uploadedIds[tableName].add(i.id));
-                                continue;
-                            }
-                            console.error(`Error Syncing ${tableName}:`, error.message);
-                            if (error.message.includes('column') && !state.cloudColumns?.[tableName]) {
-                                get().fetchFromSupabase();
-                            }
-
-                            // El upsert en lote es todo-o-nada: un solo registro malo (ej. una venta
-                            // hecha offline a un cliente que ya no existe en la nube) bloqueaba TODOS
-                            // los demás. Reintentar fila por fila para subir los que sí son válidos.
-                            let firstRowError = null;
-                            for (const row of pendingData) {
-                                let { error: rowError } = await upsertRows(tableName, [row]);
-
-                                // Venta cuyo cliente no está en la nube (borrado desde otro equipo, o
-                                // nunca subió): si el teléfono aún lo tiene, re-subirlo y reintentar.
-                                const clientId = row.clientId ?? row.clientid;
-                                if (rowError && tableName === 'sales' && /foreign key/i.test(rowError.message) && clientId) {
-                                    const localClient = get().clients.find(c => c.id === clientId);
-                                    if (localClient) {
-                                        const { error: clientError } = await upsertRows('clients', [localClient]);
-                                        if (clientError) {
-                                            rowError = { message: `cliente "${localClient.name}" no se pudo subir: ${clientError.message}` };
-                                        } else {
-                                            uploadedIds.clients.add(localClient.id);
-                                            ({ error: rowError } = await upsertRows(tableName, [row]));
-                                        }
-                                    } else {
-                                        rowError = { message: `venta de $${row.total} del ${new Date(row.date).toLocaleDateString('es-MX')} apunta a un cliente que ya no existe` };
-                                    }
+                            const result = await uploadRows({
+                                tableName,
+                                rows: pendingData,
+                                upsert: upsertRows,
+                                findClient: (id) => get().clients.find(c => c.id === id),
+                            });
+                            uploadedIds[tableName] = result.uploadedIds;
+                            rescuedClients.push(...result.uploadedClients);
+                            if (result.error) {
+                                console.error(`Error Syncing ${tableName}:`, result.error);
+                                errors.push(`[${tableName}] ${result.error}`);
+                                if (result.error.includes('column') && !state.cloudColumns?.[tableName]) {
+                                    get().fetchFromSupabase();
                                 }
-
-                                if (rowError) firstRowError = firstRowError || rowError;
-                                else uploadedIds[tableName].add(row.id);
                             }
-                            errors.push(`[${tableName}] ${(firstRowError || error).message}`);
                         } catch (timeoutErr) {
                             console.error(`Timeout sincronizando ${tableName}:`, timeoutErr.message);
                             errors.push(`[${tableName}] ${timeoutErr.message}`);
@@ -482,6 +461,12 @@ export const useStore = create(
                         Object.entries(uploadedIds).forEach(([t, ids]) => {
                             if (ids.size > 0) nextState[t] = s[t].map(x => ids.has(x.id) ? { ...x, synced: true } : x);
                         });
+                        if (rescuedClients.length > 0) {
+                            const rescuedIds = new Set(rescuedClients.map(c => c.id));
+                            const clients = (nextState.clients || s.clients).map(c => rescuedIds.has(c.id) ? { ...c, synced: true } : c);
+                            const missing = rescuedClients.filter(r => !clients.some(c => c.id === r.id));
+                            nextState.clients = [...clients, ...missing.map(c => ({ ...c, synced: true }))];
+                        }
                         return nextState;
                     });
 
@@ -631,12 +616,16 @@ export const useStore = create(
                             }
                         }
 
+                        const mergedSales = mergeStateHelper(state.sales, freshData['sales']);
+
                         return {
                             ...state,
                             products: mergeStateHelper(state.products, freshData['products']),
                             users: mergedUsers,
-                            clients: mergeStateHelper(state.clients, freshData['clients']),
-                            sales: mergeStateHelper(state.sales, freshData['sales']),
+                            clients: preserveReferencedClients(
+                                mergeStateHelper(state.clients, freshData['clients']), state.clients, mergedSales
+                            ),
+                            sales: mergedSales,
                             inventory: mergeStateHelper(state.inventory, freshData['inventory']),
                             expenses: mergeStateHelper(state.expenses, freshData['expenses']),
                             cloudColumns: { ...state.cloudColumns, ...cloudColumns },

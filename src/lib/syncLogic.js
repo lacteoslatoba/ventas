@@ -107,6 +107,105 @@ export function buildSafePayload(item, tableName, cloudColumns) {
     return filtered;
 }
 
+const getClientId = (sale) => sale.clientId ?? sale.clientid;
+
+/**
+ * Tras un fetch, el merge descarta los clientes que ya no están en la nube (ej. borrados
+ * desde otro equipo). Si una venta hecha offline todavía apunta a uno de ellos, perderlo
+ * dejaría esa venta sin forma de subir nunca (sales_clientId_fkey). Este paso los conserva
+ * y los marca synced: false para que se vuelvan a subir antes que la venta.
+ *
+ * @param {Array} mergedClients  Resultado de mergeStateHelper para clients
+ * @param {Array} localClients   Clientes locales antes del merge
+ * @param {Array} sales          Ventas ya fusionadas (las pendientes son las que importan)
+ * @returns {Array} Clientes con los referenciados por ventas pendientes garantizados
+ */
+export function preserveReferencedClients(mergedClients, localClients, sales) {
+    const present = new Set(mergedClients.map(c => c.id));
+    const needed = new Set(
+        (sales || []).filter(s => !s.synced).map(getClientId).filter(id => id && !present.has(id))
+    );
+    if (needed.size === 0) return mergedClients;
+    const rescued = (localClients || [])
+        .filter(c => needed.has(c.id))
+        .map(c => ({ ...c, synced: false }));
+    return [...mergedClients, ...rescued];
+}
+
+/**
+ * Cliente de respaldo para una venta cuyo cliente no existe ni en la nube ni en el
+ * teléfono. Conserva el id original para que la venta suba tal cual; el admin puede
+ * renombrarlo después.
+ */
+export function placeholderClientFor(sale) {
+    return {
+        id: getClientId(sale),
+        name: 'Cliente recuperado',
+        phone: '',
+        address: '',
+        userId: sale.userId ?? sale.userid,
+        paymentMethod: sale.paymentMethod ?? sale.paymentmethod ?? 'efectivo',
+    };
+}
+
+const isForeignKeyError = (error) => /foreign key/i.test(error?.message || '');
+
+/**
+ * Sube los registros pendientes de una tabla sin que uno malo bloquee a los demás.
+ *
+ * El upsert en lote de Supabase es todo-o-nada: una sola venta offline con un cliente
+ * inexistente bloqueaba TODA la tabla de ventas indefinidamente. Si el lote falla, se
+ * reintenta fila por fila; y si una venta falla por la llave foránea del cliente, se sube
+ * primero ese cliente (el local, o uno de respaldo si ya no existe en ningún lado).
+ *
+ * @param {Object}   opts
+ * @param {string}   opts.tableName
+ * @param {Array}    opts.rows        Registros pendientes (sin filtrar columnas)
+ * @param {Function} opts.upsert      async (tableName, rows) => ({ error }) — puede lanzar (timeout)
+ * @param {Function} [opts.findClient] (id) => cliente local o undefined
+ * @returns {Promise<{uploadedIds: Set, uploadedClients: Array, error: string|null}>}
+ *   uploadedClients: clientes que se subieron para rescatar ventas (incluye los de respaldo).
+ */
+export async function uploadRows({ tableName, rows, upsert, findClient = () => undefined }) {
+    const uploadedIds = new Set();
+    const uploadedClients = [];
+    if (rows.length === 0) return { uploadedIds, uploadedClients, error: null };
+
+    // Un throw aquí (timeout) se propaga: sin red no tiene caso reintentar fila por fila.
+    const { error: batchError } = await upsert(tableName, rows);
+    if (!batchError) {
+        rows.forEach(r => uploadedIds.add(r.id));
+        return { uploadedIds, uploadedClients, error: null };
+    }
+
+    let firstError = null;
+    for (const row of rows) {
+        let rowError;
+        try {
+            ({ error: rowError } = await upsert(tableName, [row]));
+
+            const clientId = getClientId(row);
+            if (rowError && tableName === 'sales' && clientId && isForeignKeyError(rowError)) {
+                const client = findClient(clientId) || placeholderClientFor(row);
+                const { error: clientError } = await upsert('clients', [client]);
+                if (clientError) {
+                    rowError = { message: `cliente "${client.name}" no se pudo subir: ${clientError.message}` };
+                } else {
+                    uploadedClients.push(client);
+                    ({ error: rowError } = await upsert(tableName, [row]));
+                }
+            }
+        } catch (e) {
+            // Se cayó la red a media pasada: lo que falte queda pendiente para el próximo ciclo.
+            firstError = firstError || e.message;
+            break;
+        }
+        if (rowError) firstError = firstError || rowError.message;
+        else uploadedIds.add(row.id);
+    }
+    return { uploadedIds, uploadedClients, error: firstError };
+}
+
 /**
  * Cuenta cuántos items están sin sincronizar en un conjunto de tablas.
  *

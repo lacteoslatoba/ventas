@@ -13,7 +13,7 @@ npm test          # Run Vitest tests (unit tests for pure logic)
 npm run test:watch # Run Vitest in watch mode
 ```
 
-Tests live in `src/**/*.test.js` and cover the pure logic in `src/lib/syncLogic.js` (merge, column mapping, payload building, pending counting). Run `npm install` first to install `vitest`.
+Tests live in `src/**/*.test.js` and cover the pure logic in `src/lib/syncLogic.js` (merge, column mapping, payload building, pending counting). `offlineSync.test.js` simulates Supabase (batch upsert + `sales_clientId_fkey`) to guard the offline-route upload: `uploadRows` (row-by-row fallback, client rescue, "Cliente recuperado" placeholder) and `preserveReferencedClients`. Run `npm install` first to install `vitest`.
 
 
 After `npm run build`, deploy by pushing to `origin/main` — the remote is https://github.com/lacteoslatoba/ventas.git.
