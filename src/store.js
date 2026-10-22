@@ -394,55 +394,74 @@ export const useStore = create(
                 try {
                     const tablesToSync = ['products', 'users', 'clients', 'inventory', 'sales', 'expenses'];
                     const totalPending = countPending(state, state.ticketConfig);
-                    const successTables = [];
-                    let hadError = false;
+                    const uploadedIds = {}; // { tableName: Set<id> } — solo lo que la nube aceptó
+                    const errors = [];      // en orden de tabla: el primero suele ser la causa raíz
+
+                    const upsertRows = (tableName, rows) => withTimeout(
+                        supabase.from(tableName).upsert(rows.map(item => {
+                            const { synced: _synced, ...rest } = item;
+                            return buildSafePayload(rest, tableName, state.cloudColumns);
+                        })),
+                        15000,
+                        tableName
+                    );
 
                     for (const tableName of tablesToSync) {
                         const pendingData = state[tableName].filter(item => !item.synced);
-                        if (pendingData.length > 0) {
-                            const payload = pendingData.map(({ synced: _synced, ...rest }) => rest);
+                        uploadedIds[tableName] = new Set();
+                        if (pendingData.length === 0) continue;
 
-                            const safePayload = payload.map(item =>
-                                buildSafePayload(item, tableName, state.cloudColumns)
-                            );
-
-
-                            try {
-                                const { error } = await withTimeout(
-                                    supabase.from(tableName).upsert(safePayload),
-                                    15000,
-                                    tableName
-                                );
-                                if (error) {
-                                    console.error(`Error Syncing ${tableName}:`, error.message);
-                                    const errMsg = `[${tableName}] ${error.message}`;
-                                    const isRepeatError = get().syncError === errMsg;
-                                    set({ syncError: errMsg });
-                                    hadError = true;
-                                    // No repetir el mismo toast en cada reintento automático (cada 30s) —
-                                    // solo avisar la primera vez que aparece este error específico.
-                                    if (!isRepeatError) {
-                                        get().showToast(`Error al subir ${tableName}: ${error.message}`, 'error');
-                                    }
-                                    if (error.message.includes('column') && !state.cloudColumns?.[tableName]) {
-                                        get().fetchFromSupabase();
-                                    }
-                                } else {
-                                    successTables.push(tableName);
-                                }
-                            } catch (timeoutErr) {
-                                console.error(`Timeout sincronizando ${tableName}:`, timeoutErr.message);
-                                const errMsg = `[${tableName}] ${timeoutErr.message}`;
-                                const isRepeatError = get().syncError === errMsg;
-                                set({ syncError: errMsg });
-                                hadError = true;
-                                if (!isRepeatError) {
-                                    get().showToast(`Sin respuesta del servidor al subir ${tableName}, se reintentará`, 'error');
-                                }
+                        try {
+                            const { error } = await upsertRows(tableName, pendingData);
+                            if (!error) {
+                                pendingData.forEach(i => uploadedIds[tableName].add(i.id));
+                                continue;
                             }
-                        } else {
-                            successTables.push(tableName);
+                            console.error(`Error Syncing ${tableName}:`, error.message);
+                            if (error.message.includes('column') && !state.cloudColumns?.[tableName]) {
+                                get().fetchFromSupabase();
+                            }
+
+                            // El upsert en lote es todo-o-nada: un solo registro malo (ej. una venta
+                            // hecha offline a un cliente que ya no existe en la nube) bloqueaba TODOS
+                            // los demás. Reintentar fila por fila para subir los que sí son válidos.
+                            let firstRowError = null;
+                            for (const row of pendingData) {
+                                let { error: rowError } = await upsertRows(tableName, [row]);
+
+                                // Venta cuyo cliente no está en la nube (borrado desde otro equipo, o
+                                // nunca subió): si el teléfono aún lo tiene, re-subirlo y reintentar.
+                                const clientId = row.clientId ?? row.clientid;
+                                if (rowError && tableName === 'sales' && /foreign key/i.test(rowError.message) && clientId) {
+                                    const localClient = get().clients.find(c => c.id === clientId);
+                                    if (localClient) {
+                                        const { error: clientError } = await upsertRows('clients', [localClient]);
+                                        if (clientError) {
+                                            rowError = { message: `cliente "${localClient.name}" no se pudo subir: ${clientError.message}` };
+                                        } else {
+                                            uploadedIds.clients.add(localClient.id);
+                                            ({ error: rowError } = await upsertRows(tableName, [row]));
+                                        }
+                                    } else {
+                                        rowError = { message: `venta de $${row.total} del ${new Date(row.date).toLocaleDateString('es-MX')} apunta a un cliente que ya no existe` };
+                                    }
+                                }
+
+                                if (rowError) firstRowError = firstRowError || rowError;
+                                else uploadedIds[tableName].add(row.id);
+                            }
+                            errors.push(`[${tableName}] ${(firstRowError || error).message}`);
+                        } catch (timeoutErr) {
+                            console.error(`Timeout sincronizando ${tableName}:`, timeoutErr.message);
+                            errors.push(`[${tableName}] ${timeoutErr.message}`);
                         }
+                    }
+
+                    if (errors.length > 0) {
+                        const errMsg = errors[0];
+                        // No repetir el mismo toast en cada reintento automático (cada 30s) —
+                        // solo avisar la primera vez que aparece este error específico.
+                        if (get().syncError !== errMsg) get().showToast(`Error al subir ${errMsg}`, 'error');
                     }
 
                     set((s) => {
@@ -455,13 +474,13 @@ export const useStore = create(
                         // NetworkIndicator, que ahora reintenta por pendientes, no solo por
                         // antigüedad de lastSync — pero mantener esto correcto igual importa
                         // para el texto "Última sync" que ve el usuario).
-                        const nextState = {};
-                        if (!hadError) {
-                            nextState.lastSync = new Date().toISOString();
-                            nextState.syncError = null;
-                        }
-                        successTables.forEach(t => {
-                            nextState[t] = s[t].map(x => ({ ...x, synced: true }));
+                        const nextState = errors.length > 0
+                            ? { syncError: errors[0] }
+                            : { lastSync: new Date().toISOString(), syncError: null };
+                        // Marcar como synced solo los ids que la nube aceptó (no la tabla completa:
+                        // eso también marcaba registros creados mientras esta pasada corría).
+                        Object.entries(uploadedIds).forEach(([t, ids]) => {
+                            if (ids.size > 0) nextState[t] = s[t].map(x => ids.has(x.id) ? { ...x, synced: true } : x);
                         });
                         return nextState;
                     });
@@ -844,6 +863,12 @@ export const useStore = create(
                 get().syncToSupabase();
             },
             deleteClient: async (id) => {
+                // Borrar un cliente con ventas deja esas ventas huérfanas: las que aún no suben
+                // fallan para siempre con sales_clientId_fkey.
+                if (get().sales.some(s => (s.clientId ?? s.clientid) === id)) {
+                    get().showToast('No se puede eliminar: el cliente tiene ventas registradas', 'warning');
+                    return false;
+                }
                 const wasOnServer = get().clients.find(c => c.id === id)?.synced === true;
                 set((state) => ({
                     clients: state.clients.filter(c => c.id !== id),

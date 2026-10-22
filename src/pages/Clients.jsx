@@ -41,10 +41,13 @@ export default function Clients() {
 
     const confirmDeleteAction = () => {
         if (confirmDeleteId) {
-            deleteClient(confirmDeleteId);
+            const id = confirmDeleteId;
             setConfirmDeleteId(null);
-            setIsFormOpen(false);
-            showToast('Cliente eliminado.', 'success');
+            deleteClient(id).then(deleted => {
+                if (deleted === false) return;
+                setIsFormOpen(false);
+                showToast('Cliente eliminado.', 'success');
+            });
         }
     };
 
