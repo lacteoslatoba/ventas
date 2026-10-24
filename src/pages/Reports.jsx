@@ -751,6 +751,7 @@ export default function Reports() {
                 selectedSale={selectedSale}
                 clients={clients}
                 users={users}
+                ticketConfig={ticketConfig}
                 btPrinting={btPrinting}
                 handleBTPrint={handleBTPrint}
                 deleteSale={deleteSale}

@@ -1,9 +1,11 @@
 import React from 'react';
+import TicketPreview from '../TicketPreview';
 
 export default function SaleDetailModal({
     selectedSale,
     clients,
     users,
+    ticketConfig,
     btPrinting,
     handleBTPrint,
     deleteSale,
@@ -12,11 +14,14 @@ export default function SaleDetailModal({
     showConfirm
 }) {
     const [editPm, setEditPm] = React.useState('efectivo');
+    // "Reimprimir" muestra primero cómo saldrá el ticket; se imprime al confirmar
+    const [showPreview, setShowPreview] = React.useState(false);
 
     React.useEffect(() => {
         if (selectedSale) {
             setEditPm(selectedSale.paymentMethod || selectedSale.paymentmethod || 'efectivo');
         }
+        setShowPreview(false);
     }, [selectedSale]);
 
     if (!selectedSale) return null;
@@ -30,6 +35,14 @@ export default function SaleDetailModal({
     function changePm(pm) {
         setEditPm(pm);
         if (updateSale) updateSale(selectedSale.id, { paymentMethod: pm });
+    }
+
+    const saleToPrint = { ...selectedSale, paymentMethod: editPm };
+    const printerConnected = !!window.__btPrinter;
+
+    async function print() {
+        if (window.__btPrinter) await handleBTPrint(saleToPrint);
+        else window.print();
     }
 
     return (
@@ -58,6 +71,22 @@ export default function SaleDetailModal({
                     </div>
                 </div>
 
+                {showPreview ? (
+                    <div className="flex-1 overflow-y-auto bg-gray-100 p-4">
+                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center mb-3">Vista previa del ticket</p>
+                        <TicketPreview
+                            config={ticketConfig}
+                            sale={saleToPrint}
+                            user={{ name: seller }}
+                            client={{ name: client?.name || 'General' }}
+                        />
+                        {!printerConnected && (
+                            <p className="mt-3 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-center">
+                                Impresora Bluetooth no conectada. Conéctala desde el ícono de impresora para imprimir.
+                            </p>
+                        )}
+                    </div>
+                ) : (
                 <div className="flex-1 overflow-y-auto">
                     {/* ── Info grid ── */}
                     <div className="grid grid-cols-2 gap-2 mx-4 mt-4">
@@ -118,16 +147,31 @@ export default function SaleDetailModal({
                         </div>
                     </div>
                 </div>
+                )}
 
                 {/* ── Acciones ── */}
+                {showPreview ? (
                 <div className="px-4 py-3 border-t-2 border-gray-900 flex gap-2 bg-white">
                     <button
-                        onClick={async () => {
-                            const saleToprint = { ...selectedSale, paymentMethod: editPm };
-                            const btPrinter = window.__btPrinter;
-                            if (btPrinter) await handleBTPrint(saleToprint);
-                            else window.print();
-                        }}
+                        onClick={() => setShowPreview(false)}
+                        className="px-4 flex items-center justify-center gap-1.5 bg-white text-gray-700 border border-gray-300 font-black py-3 rounded-lg active:scale-95 transition-all text-xs uppercase tracking-wide hover:border-gray-900"
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: 17 }}>arrow_back</span>
+                        Volver
+                    </button>
+                    <button
+                        onClick={print}
+                        disabled={btPrinting}
+                        className="flex-1 flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-700 text-white font-black py-3 rounded-lg active:scale-95 transition-all disabled:opacity-50 text-xs uppercase tracking-wide"
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: 17 }}>{btPrinting ? 'refresh' : 'print'}</span>
+                        {btPrinting ? 'Imprimiendo…' : 'Imprimir'}
+                    </button>
+                </div>
+                ) : (
+                <div className="px-4 py-3 border-t-2 border-gray-900 flex gap-2 bg-white">
+                    <button
+                        onClick={() => setShowPreview(true)}
                         disabled={btPrinting}
                         className="flex-1 flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-700 text-white font-black py-3 rounded-lg active:scale-95 transition-all disabled:opacity-50 text-xs uppercase tracking-wide"
                     >
@@ -148,6 +192,7 @@ export default function SaleDetailModal({
                         <span className="material-symbols-outlined" style={{ fontSize: 19 }}>delete</span>
                     </button>
                 </div>
+                )}
             </div>
         </div>
     );
