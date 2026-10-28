@@ -31,7 +31,9 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-logo.png', 'logo.png'],
       workbox: {
         globIgnores: ['instalar.html'],
-        navigateFallbackDenylist: [/^\/instalar\.html/],
+        // Sin /\.apk$/ el service worker contestaba /VentasRepartidor.apk con la app web
+        // en vez de dejar que el navegador descargue el archivo.
+        navigateFallbackDenylist: [/^\/instalar\.html/, /\.apk$/],
       },
       manifest: {
         name: 'Ventas Repartidor',
